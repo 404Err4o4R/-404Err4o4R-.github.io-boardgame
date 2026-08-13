@@ -332,7 +332,7 @@ function renderWaitingPanel(){
   gp.innerHTML=`
     <div class="eyebrow">READY CHECK</div>
     <h2 class="game-title">${state.game==="game1"?"心有靈犀一點通":"9upper瞎掰王"}</h2>
-    <p class="notice">目前 ${state.players.length}/6 人。至少需要 4 人才能開始。</p>
+    <p class="notice">目前 ${state.players.length}/6 人。至少需要 2 人才能開始。</p>
     <div class="player-list">${state.players.map(p=>`<div class="player-pill ${p.host?'host':''}">${p.host?'👑 ':''}${esc(p.nickname)}</div>`).join("")}</div>
     <p class="notice">已選分類：${cats.map(esc).join(" · ")}</p>
     ${state.role==="host"?`<div class="host-controls"><button id="startBtn" class="btn btn-yellow">START GAME</button></div>`:""}
