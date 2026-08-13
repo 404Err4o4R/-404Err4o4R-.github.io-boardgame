@@ -201,12 +201,11 @@ export class GameRoom extends DurableObject {
       return new Response("ok");
     }
 
-    if(
-  url.pathname !== "/websocket" &&
-  !url.pathname.startsWith("/ws/")
-    ) {
-  return new Response("Not Found", { status: 404 });
-    }
+    if (url.pathname !== "/websocket") {
+  return new Response("Not Found", {
+    status: 404
+  });
+}
     
     if(request.method!=="GET" || request.headers.get("Upgrade")!=="websocket"){
       return new Response("Expected WebSocket",{status:426});
