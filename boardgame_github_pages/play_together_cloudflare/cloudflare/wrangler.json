@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "play-together-game-server",
+  "name": "404err404r--github-io-boardgame",
   "main": "src/index.js",
   "compatibility_date": "2026-08-13",
   "workers_dev": true,
