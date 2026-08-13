@@ -86,13 +86,37 @@ export default {
       return json({ok:false,error:"建立房間失敗，請再試一次。"},409,originHeaders);
     }
 
-    if (url.pathname.startsWith("/ws/")) {
+    if (url.pathname === "/websocket") {
   if (request.method !== "GET") {
     return new Response("Expected GET", {
       status: 400,
       headers: originHeaders
     });
   }
+
+  if (request.headers.get("Upgrade") !== "websocket") {
+    return new Response("Expected WebSocket", {
+      status: 426,
+      headers: originHeaders
+    });
+  }
+
+  const roomCode = (
+    url.searchParams.get("room") || ""
+  ).toUpperCase();
+
+  if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+    return new Response("Invalid room code", {
+      status: 400,
+      headers: originHeaders
+    });
+  }
+
+  const id = env.GAME_ROOM.idFromName(roomCode);
+  const stub = env.GAME_ROOM.get(id);
+
+  return stub.fetch(request);
+}
 
   if (request.headers.get("Upgrade") !== "websocket") {
     return new Response("Expected WebSocket", {
