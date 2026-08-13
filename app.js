@@ -298,9 +298,11 @@ function connectRoom(code, mode, saved = null) {
     S.role = null;
     S.explanation = null;
 
-    const socket = new WebSocket(
-      WS_BASE + "/ws/" + encodeURIComponent(code)
-    );
+    const ws = new WebSocket(
+  WS_BASE +
+  "/websocket?room=" +
+  encodeURIComponent(code)
+);
 
     S.socket = socket;
 
