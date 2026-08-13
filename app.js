@@ -313,7 +313,7 @@ S.socket = ws;
 
       finished = true;
 
-      socket.close();
+      ws.close();
 
       reject(
         new Error(
@@ -322,7 +322,7 @@ S.socket = ws;
       );
     }, 12000);
 
-    socket.onopen = () => {
+    ws.onopen = () => {
       socket.send(JSON.stringify({
         type: "hello",
         mode,
@@ -332,7 +332,7 @@ S.socket = ws;
       }));
     };
 
-    socket.onmessage = (event) => {
+    ws.onmessage = (event) => {
       let message;
 
       try {
@@ -350,7 +350,7 @@ S.socket = ws;
       handleServerMessage(message);
     };
 
-    socket.onerror = () => {
+    ws.onerror = () => {
       if (!finished) {
         finished = true;
         clearTimeout(timeout);
@@ -365,7 +365,7 @@ S.socket = ws;
       setConnectionStatus("ERROR", false);
     };
 
-    socket.onclose = () => {
+    ws.onclose = () => {
       setConnectionStatus(
         "DISCONNECTED",
         false
