@@ -87,14 +87,41 @@ export default {
     }
 
     if (url.pathname.startsWith("/ws/")) {
-      if (request.headers.get("Upgrade") !== "websocket") {
-        return new Response("Expected WebSocket", {status:426,headers:originHeaders});
-      }
-      const roomCode = url.pathname.slice(4).toUpperCase();
-      if (!/^[A-Z0-9]{6}$/.test(roomCode)) return new Response("Invalid room code", {status:400});
-      const id = env.GAME_ROOM.idFromName(roomCode);
-      return env.GAME_ROOM.get(id).fetch(request);
-    }
+  if (request.method !== "GET") {
+    return new Response("Expected GET", {
+      status: 400,
+      headers: originHeaders
+    });
+  }
+
+  if (request.headers.get("Upgrade") !== "websocket") {
+    return new Response("Expected WebSocket", {
+      status: 426,
+      headers: originHeaders
+    });
+  }
+
+  const roomCode = url.pathname
+    .slice("/ws/".length)
+    .toUpperCase();
+
+  if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+    return new Response("Invalid room code", {
+      status: 400,
+      headers: originHeaders
+    });
+  }
+
+  const id = env.GAME_ROOM.idFromName(roomCode);
+  const stub = env.GAME_ROOM.get(id);
+
+  const wsRequest = new Request(
+    "https://room.internal/websocket",
+    request
+  );
+
+  return stub.fetch(wsRequest);
+}
 
     return new Response("Play Together game server", {status:200,headers:originHeaders});
   }
