@@ -304,7 +304,7 @@ function connectRoom(code, mode, saved = null) {
   encodeURIComponent(code)
 );
 
-    S.socket = socket;
+S.socket = ws;
 
     let finished = false;
 
