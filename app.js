@@ -950,7 +950,7 @@ function roleBlock() {
     S.role === "judge"
       ? "法官（公開）"
       : S.role === "truth"
-        ? "直言者"
+        ? "知情人"
         : "騙子";
 
   return `
