@@ -100,7 +100,7 @@ function renderCategories() {
   box.innerHTML = categories.map((category) => `
     <button
       type="button"
-      class="chip ${S.filters.includes(category) ? "active" : ""}"
+      class="filter-chip ${S.filters.includes(category) ? "active" : ""}"
       data-category="${esc(category)}"
     >
       ${esc(category)}
@@ -189,7 +189,7 @@ $("#gameSelect")?.addEventListener("change", () => {
 
 $("#toggleCats")?.addEventListener("click", () => {
   const buttons = [
-    ...document.querySelectorAll("#catBox .chip")
+    ...document.querySelectorAll("#catBox .filter-chip")
   ];
 
   const allSelected =
