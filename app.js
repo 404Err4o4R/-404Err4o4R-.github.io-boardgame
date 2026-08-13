@@ -460,7 +460,7 @@ function leaveRoom() {
   clearInterval(S.timer);
 
   if (S.socket) {
-    S.socket.close();
+    S.ws.close();
   }
 
   clearSession();
