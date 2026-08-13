@@ -3,6 +3,7 @@
   "name": "play-together-game-server",
   "main": "src/index.js",
   "compatibility_date": "2026-08-13",
+  "workers_dev": true,
   "durable_objects": {
     "bindings": [
       {
