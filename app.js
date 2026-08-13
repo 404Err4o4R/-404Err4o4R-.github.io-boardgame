@@ -323,7 +323,7 @@ S.socket = ws;
     }, 12000);
 
     ws.onopen = () => {
-      socket.send(JSON.stringify({
+      ws.send(JSON.stringify({
         type: "hello",
         mode,
         nickname: S.nickname,
