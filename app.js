@@ -107,11 +107,11 @@ function renderCategories() {
     </button>
   `).join("");
 
-  box.querySelectorAll(".chip").forEach((button) => {
+  box.querySelectorAll(".filter-chip").forEach((button) => {
     button.addEventListener("click", () => {
       button.classList.toggle("active");
 
-      S.filters = [...box.querySelectorAll(".chip.active")]
+      S.filters = [...box.querySelectorAll(".filter-chip.active")]
         .map((x) => x.dataset.category);
     });
   });
