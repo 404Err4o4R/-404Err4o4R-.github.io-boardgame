@@ -7,7 +7,7 @@ import {
 } from "./question-bank.js";
 
 const MAX_PLAYERS = 6;
-const MIN_PLAYERS = 4;
+const MIN_PLAYERS = 2;
 const ROOM_TTL = 1000 * 60 * 60 * 6;
 const MAX_MESSAGE = 12_000;
 
@@ -332,7 +332,7 @@ export class GameRoom extends DurableObject {
     if(playerId!==this.room.hostId) return this.errorPlayer(playerId,"只有房主可以開始。");
     const connected=this.room.players.filter(p=>p.connected);
     if(connected.length<MIN_PLAYERS || connected.length>MAX_PLAYERS){
-      return this.errorPlayer(playerId,"需要4-6位已連線玩家。");
+      return this.errorPlayer(playerId,"需要2-6位已連線玩家。");
     }
     if(this.room.gameState?.phase && this.room.gameState.phase!=="waiting"){
       return this.errorPlayer(playerId,"遊戲已開始。");
