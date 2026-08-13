@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#FEFEF2">
+  <title>PLAY TOGETHER · 聯機桌遊</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="bg-orb orb-blue"></div>
+  <div class="bg-orb orb-yellow"></div>
+  <div class="planet planet-one"></div>
+  <div class="planet planet-two"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="#top" aria-label="Play Together">
+      <span class="brand-mark">P</span>
+      <span>PLAY<br>TOGETHER</span>
+    </a>
+    <nav>
+      <a href="#games">Games</a>
+      <a href="#how">How to play</a>
+      <a href="#about">About</a>
+    </nav>
+    <button class="nav-cta" data-scroll="#room">PLAY</button>
+  </header>
+
+  <main id="top">
+    <section class="hero section">
+      <div class="hero-copy">
+        <div class="eyebrow">LET THE GAMES BEGIN</div>
+        <h1>PLAY<br><span>TOGETHER.</span></h1>
+        <p>兩款為朋友聚會設計的派對桌遊。無需註冊，使用瀏覽器直接建立 P2P 房間。</p>
+        <div class="hero-actions">
+          <button class="btn btn-yellow" data-scroll="#room">CREATE A ROOM</button>
+          <button class="btn btn-outline" data-scroll="#games">EXPLORE GAMES</button>
+        </div>
+        <div class="hero-note">GitHub Pages · No Node.js · No database</div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="character">
+          <div class="ear left"></div><div class="ear right"></div>
+          <div class="head">
+            <span class="eye e1"></span><span class="eye e2"></span>
+            <span class="mouth"></span>
+            <span class="star">★</span>
+          </div>
+          <div class="body"></div>
+          <div class="arm arm-l"></div><div class="arm arm-r"></div>
+          <div class="leg leg-l"></div><div class="leg leg-r"></div>
+        </div>
+        <div class="speech-card">
+          <span>4–6 PLAYERS</span>
+          <strong>ONE ROOM.<br>LOTS OF CHAOS.</strong>
+        </div>
+      </div>
+    </section>
+
+    <section id="games" class="section game-section">
+      <div class="section-head">
+        <div class="eyebrow">CHOOSE YOUR GAME</div>
+        <h2>MEET THE <span>PLAYERS.</span></h2>
+        <p>先選一款遊戲，再建立房間。題庫會直接從 GitHub Pages 上的 <code>questions.json</code> 載入。</p>
+      </div>
+      <div class="game-grid">
+        <article class="game-card blue-card">
+          <div class="sticker">01</div>
+          <div class="game-icon">💭</div>
+          <h3>心有靈犀<br>一點通</h3>
+          <p>二選一投票＋聊天。十秒做決定，再看看大家真正怎麼想。</p>
+          <div class="tag-row">
+            <span>VOTE</span><span>TALK</span><span>4–6</span>
+          </div>
+          <button class="btn btn-light" data-game-start="game1">PLAY THIS GAME</button>
+        </article>
+
+        <article class="game-card yellow-card">
+          <div class="sticker">02</div>
+          <div class="game-icon">🎭</div>
+          <h3>9upper<br>瞎掰王</h3>
+          <p>法官、直言者、騙子。大家都在解釋同一個詞，只有一個人知道真相。</p>
+          <div class="tag-row">
+            <span>BLUFF</span><span>JUDGE</span><span>4–6</span>
+          </div>
+          <button class="btn btn-dark" data-game-start="game2">PLAY THIS GAME</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="room" class="section room-section">
+      <div class="room-panel">
+        <div class="room-visual">
+          <div class="mini-card">P2P</div>
+          <div class="mini-card yellow">NO BACKEND</div>
+          <div class="mini-card blue">BROWSER ONLY</div>
+          <div class="orbit"></div>
+        </div>
+
+        <div class="room-form">
+          <div class="eyebrow">LET'S GET STARTED</div>
+          <h2>CREATE OR <span>JOIN.</span></h2>
+
+          <div class="tabs">
+            <button class="tab active" data-tab="create">CREATE ROOM</button>
+            <button class="tab" data-tab="join">JOIN ROOM</button>
+          </div>
+
+          <div id="createTab" class="tab-panel active">
+            <label>你的暱稱<input id="hostName" maxlength="20" placeholder="例如：小米"></label>
+            <label>遊戲<select id="hostGame">
+              <option value="game1">心有靈犀一點通</option>
+              <option value="game2">9upper瞎掰王</option>
+            </select></label>
+            <div>
+              <div class="label-row"><label style="margin:0">題庫分類</label><button id="selectAllCats" class="text-btn">全選 / 取消全選</button></div>
+              <div id="createFilters" class="filter-box"></div>
+            </div>
+            <button id="createBtn" class="btn btn-yellow wide">CREATE ROOM</button>
+          </div>
+
+          <div id="joinTab" class="tab-panel">
+            <label>你的暱稱<input id="guestName" maxlength="20" placeholder="例如：阿哲"></label>
+            <label>房間號<input id="guestCode" maxlength="6" placeholder="例如：A7K9P2"></label>
+            <label>房主邀請資料<textarea id="offerInput" rows="7" placeholder="把房主提供的邀請資料貼在這裡"></textarea></label>
+            <button id="joinBtn" class="btn btn-blue wide">JOIN ROOM</button>
+          </div>
+
+          <div id="status" class="status hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="section how-section">
+      <div class="section-head">
+        <div class="eyebrow">HOW IT WORKS</div>
+        <h2>THREE STEPS.<br><span>THAT'S IT.</span></h2>
+      </div>
+      <div class="steps">
+        <div class="step"><b>01</b><h3>CHOOSE</h3><p>選遊戲與題庫分類，建立房間。</p></div>
+        <div class="step"><b>02</b><h3>CONNECT</h3><p>房主與玩家用一次性 WebRTC 邀請資料建立 P2P 連線。</p></div>
+        <div class="step"><b>03</b><h3>PLAY</h3><p>房主瀏覽器負責同步回合、倒計時與遊戲狀態。</p></div>
+      </div>
+    </section>
+
+    <section id="about" class="section about-section">
+      <div class="about-card">
+        <div class="eyebrow">ABOUT</div>
+        <h2>PURE LIGHT.<br><span>GOOD VIBES.</span></h2>
+        <p>整體色彩以 Pure Light 作為底色，Serenity Blue 與 Golden Custard 作為主要視覺點綴；排版採用大型 display 標題、圓角卡片、貼紙感標籤與遊戲化 CTA。</p>
+        <div class="palette">
+          <span style="--c:#FEFEF2">Pure Light</span>
+          <span style="--c:#929FC1">Serenity Blue</span>
+          <span style="--c:#F2D965">Golden Custard</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section id="roomView" class="game-shell hidden">
+    <div class="game-topbar">
+      <button id="backHome" class="icon-btn">←</button>
+      <div>
+        <span class="eyebrow">ROOM</span>
+        <strong id="roomCodeLabel">------</strong>
+      </div>
+      <div class="top-spacer"></div>
+      <div class="peer-status" id="peerStatus">OFFLINE</div>
+    </div>
+
+    <div class="game-content">
+      <div id="hostPanel" class="panel hidden"></div>
+      <div id="guestPanel" class="panel hidden"></div>
+      <div id="gamePanel" class="panel"></div>
+    </div>
+  </section>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
