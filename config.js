@@ -1,2 +1,3 @@
-API_BASE_URL: "https://404err4o4r--github-io-boardgame.workers.dev"
-// Cloudflare build trigger
+window.PLAY_TOGETHER_CONFIG = {
+  API_BASE_URL: "https://404err404r--github-io-boardgame.mtcczyy4w9n.workers.dev"
+};
