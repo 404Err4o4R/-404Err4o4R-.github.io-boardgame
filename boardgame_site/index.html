@@ -145,14 +145,14 @@ window.next1=()=>socket.emit("game1:next");
 function renderGame2Public(){
   if(!room?.state || !room.state.phase || room.game!=="game2") return;
   const s=room.state;
-  const roleText=myRole==="judge"?"法官（公開）":myRole==="truth"?"直言者":"騙子";
+  const roleText=myRole==="judge"?"法官（公開）":myRole==="truth"?"知情人":"騙子";
   let html=`<div class="row" style="justify-content:space-between"><h2>🎭 9upper瞎掰王</h2><div id="timer" class="timer"></div></div>
   <div id="privateRole" class="card" style="margin:0 0 12px"><b>你的身份：</b>${roleText}${myExplanation?`<div style="margin-top:8px"><b>正確解釋：</b>${esc(myExplanation)}</div>`:""}</div>
   <p>術語：<b>${esc(s.term)}</b></p>`;
   if(s.phase==="prep")html+=`<div class="card">準備階段：30秒內不能發言，記住你的身份與任務。</div>`;
   if(s.phase==="speaking")html+=`<p>目前發言：<b>${esc((room.players.find(p=>p.id===s.currentPlayerId)||{}).nickname||"")}</b></p>
     <div id="g2Chat" class="chat"></div><div class="row" style="margin-top:10px"><input id="g2Input" placeholder="${s.currentPlayerId===socket.id?'現在輪到你，輸入解釋…':'等待當前玩家發言…'}" ${s.currentPlayerId===socket.id?'':'disabled'}><button onclick="sendChat2()" ${s.currentPlayerId===socket.id?'':'disabled'}>發送</button></div>`;
-  if(s.phase==="judge")html+=`<div class="card"><b>法官請選擇你認為的直言者：</b><div class="grid grid2" style="margin-top:10px">${s.choices.map(p=>`<button onclick="judge(${JSON.stringify(p.id)})">${esc(p.nickname)}</button>`).join("")}</div></div>`;
+  if(s.phase==="judge")html+=`<div class="card"><b>法官請選擇你認為的知情人：</b><div class="grid grid2" style="margin-top:10px">${s.choices.map(p=>`<button onclick="judge(${JSON.stringify(p.id)})">${esc(p.nickname)}</button>`).join("")}</div></div>`;
   if(s.phase==="result"){ const truth=room.players.find(p=>p.id===s.truthId)?.nickname||""; html+=`<div class="card"><h3>${s.correct?'✅ 法官猜中':'❌ 法官猜錯'}</h3><p>真正的直言者：<b>${esc(truth)}</b></p></div>`; }
   $("#game").innerHTML=html; if(s.endsAt)countdown($("#timer"),s.endsAt);
 }
