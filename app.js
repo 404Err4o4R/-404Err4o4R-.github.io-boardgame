@@ -1274,23 +1274,74 @@ function renderGame2(game) {
       </p>
 
       <div class="players">
-        ${
-          S.room.players
-            .map(
-              (player) => `
-                <div class="player">
-                  ${esc(
-                    player.nickname
-                  )}
-                  ·
-                  ${player.score || 0}
-                  分
-                </div>
+  ${
+    room.players.map(
+      (player) => `
+        <div
+          class="player ${
+            player.host
+              ? "host"
+              : ""
+          }"
+          style="display:flex;justify-content:space-between;align-items:center;gap:10px"
+        >
+          <div>
+            ${
+              player.host
+                ? "👑 "
+                : ""
+            }
+
+            ${esc(player.nickname)}
+
+            <span style="opacity:.65">
+              ${
+                player.connected
+                  ? "●"
+                  : "○"
+              }
+            </span>
+          </div>
+
+          ${
+            player.id === S.playerId
+              ? `
+                <button
+                  id="readyBtn"
+                  class="btn ${
+                    player.ready
+                      ? "btn-green"
+                      : "btn-ready"
+                  }"
+                >
+                  ${
+                    player.ready
+                      ? "✓"
+                      : "Ready？"
+                  }
+                </button>
               `
-            )
-            .join("")
-        }
-      </div>
+              : `
+                <span
+                  class="${
+                    player.ready
+                      ? "ready-label"
+                      : "not-ready-label"
+                  }"
+                >
+                  ${
+                    player.ready
+                      ? "✓ Ready"
+                      : "未準備"
+                  }
+                </span>
+              `
+          }
+        </div>
+      `
+    ).join("")
+  }
+</div>
 
       ${
         S.room.hostId ===
