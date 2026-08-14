@@ -1078,7 +1078,7 @@ if (game.phase === "intro") {
   S.room.hostId === S.playerId
     ? `
       <button
-        class="btn yellow"
+        class="btn btn-yellow"
         onclick="next1()"
       >
         NEXT QUESTION
