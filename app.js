@@ -959,93 +959,67 @@ if (game.phase === "intro") {
     </div>
 
     <div class="bars">
-    <div class="row" style="margin-top:20px;gap:20px;flex-wrap:wrap">
+  ${[0, 1]
+    .map((index) => {
+      const count = counts[index] || 0;
+      const maxCount = Math.max(
+        counts[0] || 0,
+        counts[1] || 0,
+        1
+      );
 
-  <div style="flex:1;min-width:220px">
-    <div class="eyebrow">
-      選擇 A
-    </div>
+      const width =
+        count === 0
+          ? 0
+          : Math.max(
+              10,
+              (count / maxCount) * 100
+            );
 
-    <div class="status">
-      ${
-        (game.voters?.[0] || [])
-          .map(
-            name => `
-              <div>
-                ${esc(name)}
-              </div>
-            `
-          )
-          .join("")
-        ||
-        "沒有人選 A"
-      }
-    </div>
-  </div>
+      const voters =
+        game.voters?.[index] || [];
 
-  <div style="flex:1;min-width:220px">
-    <div class="eyebrow">
-      選擇 B
-    </div>
+      const isMajority =
+        game.winner === index;
 
-    <div class="status">
-      ${
-        (game.voters?.[1] || [])
-          .map(
-            name => `
-              <div>
-                ${esc(name)}
-              </div>
-            `
-          )
-          .join("")
-        ||
-        "沒有人選 B"
-      }
-    </div>
-  </div>
+      return `
+        <div class="vote-result-row">
+          <div class="vote-result-head">
+            <strong>
+              選擇 ${String.fromCharCode(65 + index)}
+            </strong>
 
-</div>
-      ${
-        game.question.options
-          .map(
-            (option, index) => `
-              <div class="barrow">
-                <b>
-                  ${
-                    String.fromCharCode(
-                      65 + index
+            <strong>
+              ${count} 票
+            </strong>
+          </div>
+
+          <div class="vote-result-bar">
+            <div
+              class="vote-result-fill ${
+                isMajority ? "majority" : ""
+              }"
+              style="width:${width}%"
+            ></div>
+          </div>
+
+          <div class="vote-result-names">
+            ${
+              voters.length
+                ? voters
+                    .map(
+                      (name) =>
+                        `<span>${esc(name)}</span>`
                     )
-                  }
-                </b>
-
-                <div class="bar">
-                  <div
-                    class="fill ${
-                      game.winner === index
-                        ? "win"
-                        : ""
-                    }"
-                    style="width:${Math.max(
-                      4,
-                      (counts[index] || 0) /
-                        (
-                          S.room.players.length || 1
-                        ) *
-                        100
-                    )}%"
-                  ></div>
-                </div>
-
-                <b>
-                  ${counts[index] || 0}
-                </b>
-              </div>
-            `
-          )
-          .join("")
-      }
-    </div>
+                    .join("、")
+                : "沒有人選這個選項"
+            }
+          </div>
+        </div>
+      `;
+    })
+    .join("")}
+</div>
 
     <div
       class="${
