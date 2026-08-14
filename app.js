@@ -641,41 +641,24 @@ function renderRoom() {
                 : ""
             }
           </div>
-${
-  player.id === S.playerId && !player.host
-    ? `
-      <button
-        id="readyBtn"
-        class="btn ${
+${ 
+  player.host
+    ? ""
+    : `
+      <span
+        class="${
           player.ready
-            ? "btn-green"
-            : "btn-ready"
+            ? "ready-label"
+            : "not-ready-label"
         }"
       >
         ${
           player.ready
             ? "✓ Ready"
-            : "Ready？"
+            : "未準備"
         }
-      </button>
+      </span>
     `
-    : player.host
-      ? ""
-      : `
-        <span
-          class="${
-            player.ready
-              ? "ready-label"
-              : "not-ready-label"
-          }"
-        >
-          ${
-            player.ready
-              ? "✓ Ready"
-              : "未準備"
-          }
-        </span>
-      `
 }
         </div>
       `
