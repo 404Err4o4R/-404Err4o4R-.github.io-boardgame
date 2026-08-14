@@ -978,6 +978,34 @@ if (chatInput && chatSend) {
 
   updateSendButton();
 }
+
+  const chatInput = $("#chat2");
+const chatSend = $("#chat2Send");
+
+if (chatInput && chatSend) {
+  const updateSendButton = () => {
+    const hasText =
+      chatInput.value.trim().length > 0;
+
+    const canSend =
+      ${mine ? "true" : "false"};
+
+    chatSend.disabled =
+      !canSend || !hasText;
+
+    chatSend.classList.toggle(
+      "ready",
+      canSend && hasText
+    );
+  };
+
+  chatInput.addEventListener(
+    "input",
+    updateSendButton
+  );
+
+  updateSendButton();
+}
   
   scrollChat();
 }
