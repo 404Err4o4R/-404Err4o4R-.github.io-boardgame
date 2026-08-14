@@ -1370,7 +1370,7 @@ function renderGame2(game) {
         )}
       </p>
 
-      <div class="players">
+     <div class="players">
   ${
     room.players.map(
       (player) => `
@@ -1380,7 +1380,12 @@ function renderGame2(game) {
               ? "host"
               : ""
           }"
-          style="display:flex;justify-content:space-between;align-items:center;gap:10px"
+          style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px
+          "
         >
           <div>
             ${
@@ -1398,6 +1403,12 @@ function renderGame2(game) {
                   : "○"
               }
             </span>
+
+            ${
+              player.score
+                ? ` · ${player.score} 分`
+                : ""
+            }
           </div>
 
           ${
@@ -1435,6 +1446,10 @@ function renderGame2(game) {
               `
           }
         </div>
+      `
+    ).join("")
+  }
+</div>
       `
     ).join("")
   }
