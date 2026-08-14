@@ -946,7 +946,13 @@ function renderGame1(game) {
   scrollChat();
 }
 
-window.vote1 = (index) => {
+window.vote1 = async (index) => {
+  const ok = await askConfirm(
+    "是否確定投票？"
+  );
+
+  if (!ok) return;
+
   send({
     type: "g1:vote",
     option: index
