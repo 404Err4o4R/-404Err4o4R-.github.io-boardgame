@@ -251,3 +251,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   background:var(--yellow);
   border-color:var(--yellow-deep);
 }
+
+.answer{
+  border:2px solid #e7e9ee;
+  border-radius:18px;
+  padding:18px;
+  background:#fff;
+  color:var(--ink);
+  font-weight:900;
+  transition:.15s ease;
+}
+
+.answer:hover{
+  border-color:var(--yellow);
+}
+
+.answer.selected{
+  background:var(--yellow);
+  border-color:var(--yellow-deep);
+}
