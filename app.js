@@ -981,37 +981,6 @@ function renderGame1(game) {
 
   scrollChat();
 
-  const chatInput = $("#chat2");
-const chatSend = $("#chat2Send");
-
-if (chatInput && chatSend) {
-  const updateSendButton = () => {
-    const hasText =
-      chatInput.value.trim().length > 0;
-
-    const canSend =
-      ${mine ? "true" : "false"};
-
-    chatSend.disabled =
-      !canSend || !hasText;
-
-    chatSend.classList.toggle(
-      "ready",
-      canSend && hasText
-    );
-  };
-
-  chatInput.addEventListener(
-    "input",
-    updateSendButton
-  );
-
-  updateSendButton();
-}
-  
-  scrollChat();
-}
-
 window.vote1 = async (index) => {
   const ok = await askConfirm(
     "是否確定投票？"
@@ -1139,36 +1108,6 @@ function renderGame2(game) {
         只有直言者收到正確解釋。
       </div>
     `;
-  }
-
-      const chatInput = $("#chat2");
-    const chatSend = $("#chat2Send");
-
-    if (chatInput && chatSend) {
-      const canSend = mine;
-
-      const updateSendButton = () => {
-        const hasText =
-          chatInput.value.trim().length > 0;
-
-        chatSend.disabled =
-          !canSend || !hasText;
-
-        chatSend.classList.toggle(
-          "ready",
-          canSend && hasText
-        );
-      };
-
-      chatInput.addEventListener(
-        "input",
-        updateSendButton
-      );
-
-      updateSendButton();
-    }
-
-    scrollChat();
   }
 
   if (game.phase === "judge") {
