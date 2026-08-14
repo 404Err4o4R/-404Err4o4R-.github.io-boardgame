@@ -118,35 +118,6 @@ export default {
   return stub.fetch(request);
 }
 
-  if (request.headers.get("Upgrade") !== "websocket") {
-    return new Response("Expected WebSocket", {
-      status: 426,
-      headers: originHeaders
-    });
-  }
-
-  const roomCode = url.pathname
-    .slice("/ws/".length)
-    .toUpperCase();
-
-  if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
-    return new Response("Invalid room code", {
-      status: 400,
-      headers: originHeaders
-    });
-  }
-
-  const id = env.GAME_ROOM.idFromName(roomCode);
-  const stub = env.GAME_ROOM.get(id);
-
-  const wsRequest = new Request(
-    "https://room.internal/websocket",
-    request
-  );
-
-  return stub.fetch(wsRequest);
-}
-
     return new Response("Play Together game server", {status:200,headers:originHeaders});
   }
 };
