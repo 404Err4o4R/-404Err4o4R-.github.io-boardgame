@@ -729,16 +729,6 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
 
-  if(
-  g?.game==="game1" &&
-  g.phase==="intro" &&
-  g.endsAt &&
-  Date.now()+50>=g.endsAt
-){
-  await this.startVoteGame1();
-  return;
-}
-
   async advanceSpeakingGame2(){
     const g=this.room.gameState;if(!g||g.phase!=="speaking")return;
     const next=g.currentIndex+1;
