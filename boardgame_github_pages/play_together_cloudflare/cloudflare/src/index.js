@@ -709,7 +709,7 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
   
-    for(const p of this.room.players){
+      async sendPrivateRoles(){for(const p of this.room.players){
       if(!p.connected)continue;
       const role=this.room.gameState.roles?.[p.id];
       const message={
@@ -742,6 +742,7 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
 
+  async advanceSpeakingGame2(){
     const g=this.room.gameState;if(!g||g.phase!=="speaking")return;
     const next=g.currentIndex+1;
     if(next>=g.order.length){
@@ -751,7 +752,6 @@ async onG1Next(playerId){
     g.currentIndex=next;g.currentPlayerId=g.order[next];g.endsAt=Date.now()+60000;
     await this.save();await this.ctx.storage.setAlarm(g.endsAt);await this.broadcastRoom();
   }
-  async advanceSpeakingGame2(){
   async onG2Chat(playerId,text){
     const g=this.room.gameState;if(!g||g.phase!=="speaking"||g.currentPlayerId!==playerId)return;
     const p=this.room.players.find(x=>x.id===playerId);if(!p)return;
@@ -761,16 +761,45 @@ async onG1Next(playerId){
 
   async onG2Judge(playerId,targetId){
     const g=this.room.gameState;
-    if(!g||g.phase!=="judge"||playerId!==g.judgeId)return;
-    if(!this.room.players.some(p=>p.id===targetId && p.id!==g.judgeId))return;
+
+    if(!g || g.phase!=="judge" || playerId!==g.judgeId)
+      return;
+
+    if(!this.room.players.some(
+      p => p.id===targetId && p.id!==g.judgeId
+    ))
+      return;
+
+    const correct =
+      targetId === g.truthId;
+
+    if(correct){
+      for(const p of this.room.players){
+        if(
+          p.id===g.judgeId ||
+          p.id===g.truthId
+        ){
+          p.score=(p.score||0)+2;
+        }
       }
     }else{
       for(const p of this.room.players){
-        if(p.id!==g.judgeId && p.id!==g.truthId)p.score=(p.score||0)+1;
+        if(
+          p.id!==g.judgeId &&
+          p.id!==g.truthId
+        ){
+          p.score=(p.score||0)+1;
+        }
       }
     }
-    g.phase="result";g.targetId=targetId;g.correct=correct;g.endsAt=null;
-    await this.save();await this.broadcastRoom();
+
+    g.phase="result";
+    g.targetId=targetId;
+    g.correct=correct;
+    g.endsAt=null;
+
+    await this.save();
+    await this.broadcastRoom();
   }
 
   async onG2Next(playerId){
