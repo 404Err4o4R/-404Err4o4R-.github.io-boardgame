@@ -625,7 +625,7 @@ function renderRoom() {
                 : ""
             }
 
-            ${esc(player.nickname)}
+            <strong class="player-name">   ${esc(player.nickname)} </strong>
 
             <span style="opacity:.65">
               ${
