@@ -1491,10 +1491,6 @@ function renderGame2(game) {
     ).join("")
   }
 </div>
-      `
-    ).join("")
-  }
-</div>
 
       ${
         S.room.hostId ===
