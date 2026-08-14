@@ -642,40 +642,23 @@ function renderRoom() {
             }
           </div>
 ${
-  player.id === S.playerId && !player.host
-    ? `
-      <button
-        id="readyBtn"
-        class="btn ${
+  player.host
+    ? ""
+    : `
+      <span
+        class="${
           player.ready
-            ? "btn-green"
-            : "btn-ready"
+            ? "ready-label"
+            : "not-ready-label"
         }"
       >
         ${
           player.ready
             ? "✓ Ready"
-            : "Ready？"
+            : "未準備"
         }
-      </button>
+      </span>
     `
-    : player.host
-      ? ""
-      : `
-        <span
-          class="${
-            player.ready
-              ? "ready-label"
-              : "not-ready-label"
-          }"
-        >
-          ${
-            player.ready
-              ? "✓ Ready"
-              : "未準備"
-          }
-        </span>
-      `
 }
         </div>
       `
@@ -732,7 +715,22 @@ const canStart =
       `;
     })()
   : `
-      <div style="margin-top:15px">
+      <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
+        <button
+          id="readyBtn"
+          class="btn ${
+            room.players.find(p => p.id === S.playerId)?.ready
+              ? "btn-green"
+              : "btn-ready"
+          }"
+        >
+          ${
+            room.players.find(p => p.id === S.playerId)?.ready
+              ? "✓ Ready"
+              : "Ready？"
+          }
+        </button>
+
         <button
           id="leaveBtn"
           class="btn btn-outline"
