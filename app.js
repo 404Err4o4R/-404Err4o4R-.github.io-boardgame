@@ -922,12 +922,14 @@ function renderGame1(game) {
         placeholder="說說你的想法…"
       >
 
-      <button
-        class="btn blue"
-        onclick="chat1()"
-      >
-        SEND
-      </button>
+    <button
+  id="chat1Send"
+  class="btn btn-send"
+  disabled
+  onclick="chat1()"
+>
+  SEND
+</button>
 
  ${
   S.room.hostId === S.playerId
