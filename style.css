@@ -41,6 +41,56 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef0f3;
 .btn-dark{background:var(--ink);color:var(--white)}
 .btn-outline{background:transparent;border:2px solid var(--ink);box-shadow:none}
 .btn-light{background:var(--pure);color:var(--ink)}
+.btn-green{
+  background:#53c878;
+  color:#fff;
+}
+
+.btn-disabled{
+  background:#c7c9ce;
+  color:#777;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+.btn-disabled:hover{
+  transform:none;
+}
+
+.confirm-overlay{
+  position:fixed;
+  inset:0;
+  z-index:999;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:rgba(31,39,64,.35);
+  backdrop-filter:blur(6px);
+}
+
+.confirm-card{
+  width:min(420px,100%);
+  background:#fff;
+  border-radius:24px;
+  padding:28px;
+  box-shadow:0 25px 70px rgba(31,39,64,.2);
+}
+
+.confirm-card h3{
+  font-family:"Fredoka",sans-serif;
+  font-size:30px;
+  line-height:1.15;
+  margin:12px 0 22px;
+}
+
+.confirm-actions{
+  display:flex;
+  gap:10px;
+}
+
+.confirm-actions .btn{
+  flex:1;
+}
 .btn:hover{transform:translateY(-2px)}
 .wide{width:100%}
 .hero-note{margin-top:16px;font-size:12px;opacity:.55;font-weight:800}
