@@ -1136,6 +1136,28 @@ window.vote1 = async (index) => {
 
   if (!ok) return;
 
+  const buttons = [
+    ...document.querySelectorAll(".answer")
+  ];
+
+  const button = buttons[index];
+
+  if (button) {
+    button.classList.add("selected");
+    button.disabled = true;
+
+    button.style.background =
+      "var(--yellow)";
+
+    button.style.borderColor =
+      "var(--yellow-deep)";
+
+    button.style.color =
+      "var(--ink)";
+
+    button.style.opacity = "1";
+  }
+
   send({
     type: "g1:vote",
     option: index
