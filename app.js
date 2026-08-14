@@ -845,7 +845,10 @@ if (game.phase === "intro") {
       game.votes || {};
 
     const myVote =
-      votes[S.playerId];
+  game.myVote !== null &&
+  game.myVote !== undefined
+    ? Number(game.myVote)
+    : undefined;
 
     $("#gamePanel").innerHTML = `
       <div
