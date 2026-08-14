@@ -600,10 +600,23 @@ function renderRoom() {
     room.gameState.phase === "waiting"
   )
   ? (() => {
-      const connectedCount =
-        room.players.filter((p) => p.connected).length;
+      const connectedPlayers =
+  room.players.filter(
+    (p) => p.connected
+  );
 
-      const canStart = connectedCount >= 2;
+const connectedCount =
+  connectedPlayers.length;
+
+const allReady =
+  connectedCount >= 2 &&
+  connectedPlayers.every(
+    (p) => p.ready
+  );
+
+const canStart =
+  room.hostId === S.playerId &&
+  allReady;
 
       return `
         <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
