@@ -593,8 +593,7 @@ function renderRoom() {
                 : ""
             }
           </div>
-
- ${
+${
   player.id === S.playerId && !player.host
     ? `
       <button
