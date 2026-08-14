@@ -1411,47 +1411,6 @@ function renderGame2(game) {
         )}
       </p>
 
-     <div class="players">
-  ${
-    room.players.map(
-      (player) => `
-        <div
-          class="player ${
-            player.host
-              ? "host"
-              : ""
-          }"
-          style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:10px
-          "
-        >
-          <div>
-            ${
-              player.host
-                ? "👑 "
-                : ""
-            }
-
-            ${esc(player.nickname)}
-
-            <span style="opacity:.65">
-              ${
-                player.connected
-                  ? "●"
-                  : "○"
-              }
-            </span>
-
-            ${
-              player.score
-                ? ` · ${player.score} 分`
-                : ""
-            }
-          </div>
-
           ${
             player.id === S.playerId
               ? `
