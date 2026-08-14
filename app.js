@@ -753,6 +753,7 @@ const startBtn = $("#startBtn");
 startBtn?.addEventListener("click", async () => {
   if (startBtn.disabled) return;
 
+window.vote1 = async (index) => {
   const ok = await askConfirm(
     "是否確定開始遊戲？"
   );
@@ -1146,42 +1147,6 @@ if (game.phase === "intro") {
   scrollChat();
 }
 
-window.vote1 = async (index) => {
-  const ok = await askConfirm(
-    "是否確定投票？"
-  );
-
-  if (!ok) return;
-
-  S.myVote = index;
-
-  renderGame();
-
-  send({
-    type: "g1:vote",
-    option: index
-  });
-};
-
-  if (!ok) return;
-
-  S.myVote = index;
-
-  renderGame();
-
-  send({
-    type: "g1:vote",
-    option: index
-  });
-};
-
-  send({
-    type: "g1:vote",
-    option: index
-  });
-};
-
-window.chat1 = () => {
   const input = $("#chat1");
   const button = $("#chat1Send");
 
