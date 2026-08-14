@@ -997,19 +997,25 @@ window.vote1 = async (index) => {
 
 window.chat1 = () => {
   const input = $("#chat1");
+  const button = $("#chat1Send");
 
   if (!input) return;
 
   const text =
     input.value.trim();
 
+  if (!text) return;
+
+  send({
+    type: "g1:chat",
+    text
+  });
+
   input.value = "";
 
-  if (text) {
-    send({
-      type: "g1:chat",
-      text
-    });
+  if (button) {
+    button.disabled = true;
+    button.classList.remove("ready");
   }
 };
 
