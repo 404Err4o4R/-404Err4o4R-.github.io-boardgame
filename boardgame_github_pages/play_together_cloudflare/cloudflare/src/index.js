@@ -395,28 +395,6 @@ export class GameRoom extends DurableObject {
 
     switch(msg.type){
       case "start": return this.onStart(session.playerId);
-      async onReady(playerId, ready){
-  if (!this.room?.players) return;
-
-  const player =
-    this.room.players.find(
-      p => p.id === playerId
-    );
-
-  if (!player) return;
-
-  if (
-    this.room.gameState &&
-    this.room.gameState.phase !== "waiting"
-  ) {
-    return;
-  }
-
-  player.ready = !!ready;
-
-  await this.save();
-  await this.broadcastRoom();
-}
       case "ready":
   return this.onReady(
     session.playerId,
@@ -515,6 +493,33 @@ export class GameRoom extends DurableObject {
     await this.broadcastRoom();
   }
 
+async onReady(playerId, ready){
+  if (!this.room?.players) return;
+
+  const player =
+    this.room.players.find(
+      p => p.id === playerId
+    );
+
+  if (!player) return;
+
+  if (
+    this.room.gameState &&
+    this.room.gameState.phase !== "waiting"
+  ) {
+    return;
+  }
+
+  player.ready = !!ready;
+
+  await this.save();
+  await this.broadcastRoom();
+}
+
+async onStart(playerId){
+  ...
+}
+  
   async onStart(playerId){
     if(playerId!==this.room.hostId) return this.errorPlayer(playerId,"只有房主可以開始。");
     const connected=this.room.players.filter(p=>p.connected);
