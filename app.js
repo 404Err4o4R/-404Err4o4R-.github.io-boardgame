@@ -1325,19 +1325,25 @@ function renderGame2(game) {
 
 window.chat2 = () => {
   const input = $("#chat2");
+  const button = $("#chat2Send");
 
   if (!input) return;
 
   const text =
     input.value.trim();
 
+  if (!text) return;
+
+  send({
+    type: "g2:chat",
+    text
+  });
+
   input.value = "";
 
-  if (text) {
-    send({
-      type: "g2:chat",
-      text
-    });
+  if (button) {
+    button.disabled = true;
+    button.classList.remove("ready");
   }
 };
 
