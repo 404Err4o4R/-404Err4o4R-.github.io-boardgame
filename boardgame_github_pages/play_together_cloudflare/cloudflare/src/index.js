@@ -524,7 +524,9 @@ async onReady(playerId, ready){
     }
     const notReady =
   connected.filter(
-    p => !p.ready
+    p =>
+      p.id !== this.room.hostId &&
+      !p.ready
   );
 
 if (notReady.length > 0) {
