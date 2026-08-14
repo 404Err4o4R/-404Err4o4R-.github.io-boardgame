@@ -215,7 +215,27 @@ $("#toggleCats")?.addEventListener("click", () => {
 $("#createBtn")?.addEventListener("click", createRoom);
 $("#joinBtn")?.addEventListener("click", joinRoom);
 $("#closeGame")?.addEventListener("click", leaveRoom);
+$("#joinCode")?.addEventListener("input", () => {
+  const input = $("#joinCode");
+  const button = $("#joinBtn");
 
+  if (!input || !button) return;
+
+  const code = input.value.trim().toUpperCase();
+  input.value = code;
+
+  const valid = /^[A-Z0-9]{6}$/.test(code);
+
+  button.classList.toggle(
+    "btn-yellow",
+    valid
+  );
+
+  button.classList.toggle(
+    "btn-blue",
+    !valid
+  );
+});
 async function createRoom() {
   try {
     if (!API || API.includes("YOUR-WORKER")) {
