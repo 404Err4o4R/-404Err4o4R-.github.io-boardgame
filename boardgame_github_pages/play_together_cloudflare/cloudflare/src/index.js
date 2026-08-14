@@ -515,10 +515,6 @@ async onReady(playerId, ready){
   await this.save();
   await this.broadcastRoom();
 }
-
-async onStart(playerId){
-  ...
-}
   
   async onStart(playerId){
     if(playerId!==this.room.hostId) return this.errorPlayer(playerId,"只有房主可以開始。");
