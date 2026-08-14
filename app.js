@@ -886,6 +886,53 @@ if (game.phase === "intro") {
     </div>
 
     <div class="bars">
+    <div class="row" style="margin-top:20px;gap:20px;flex-wrap:wrap">
+
+  <div style="flex:1;min-width:220px">
+    <div class="eyebrow">
+      選擇 A
+    </div>
+
+    <div class="status">
+      ${
+        (game.voters?.[0] || [])
+          .map(
+            name => `
+              <div>
+                ${esc(name)}
+              </div>
+            `
+          )
+          .join("")
+        ||
+        "沒有人選 A"
+      }
+    </div>
+  </div>
+
+  <div style="flex:1;min-width:220px">
+    <div class="eyebrow">
+      選擇 B
+    </div>
+
+    <div class="status">
+      ${
+        (game.voters?.[1] || [])
+          .map(
+            name => `
+              <div>
+                ${esc(name)}
+              </div>
+            `
+          )
+          .join("")
+        ||
+        "沒有人選 B"
+      }
+    </div>
+  </div>
+
+</div>
       ${
         game.question.options
           .map(
