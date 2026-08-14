@@ -956,6 +956,29 @@ function renderGame1(game) {
     </p>
   `;
 
+  const chatInput = $("#chat1");
+const chatSend = $("#chat1Send");
+
+if (chatInput && chatSend) {
+  const updateSendButton = () => {
+    const hasText =
+      chatInput.value.trim().length > 0;
+
+    chatSend.disabled = !hasText;
+    chatSend.classList.toggle(
+      "ready",
+      hasText
+    );
+  };
+
+  chatInput.addEventListener(
+    "input",
+    updateSendButton
+  );
+
+  updateSendButton();
+}
+  
   scrollChat();
 }
 
