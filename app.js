@@ -955,29 +955,31 @@ function renderGame1(game) {
       }
     </p>
   `;
-
   const chatInput = $("#chat1");
-const chatSend = $("#chat1Send");
+  const chatSend = $("#chat1Send");
 
-if (chatInput && chatSend) {
-  const updateSendButton = () => {
-    const hasText =
-      chatInput.value.trim().length > 0;
+  if (chatInput && chatSend) {
+    const updateSendButton = () => {
+      const hasText =
+        chatInput.value.trim().length > 0;
 
-    chatSend.disabled = !hasText;
-    chatSend.classList.toggle(
-      "ready",
-      hasText
+      chatSend.disabled = !hasText;
+
+      chatSend.classList.toggle(
+        "ready",
+        hasText
+      );
+    };
+
+    chatInput.addEventListener(
+      "input",
+      updateSendButton
     );
-  };
 
-  chatInput.addEventListener(
-    "input",
-    updateSendButton
-  );
+    updateSendButton();
+  }
 
-  updateSendButton();
-}
+  scrollChat();
 
   const chatInput = $("#chat2");
 const chatSend = $("#chat2Send");
@@ -1139,69 +1141,32 @@ function renderGame2(game) {
     `;
   }
 
-  if (game.phase === "speaking") {
-    const active =
-      S.room.players.find(
-        (player) =>
-          player.id ===
-          game.currentPlayerId
+      const chatInput = $("#chat2");
+    const chatSend = $("#chat2Send");
+
+    if (chatInput && chatSend) {
+      const canSend = mine;
+
+      const updateSendButton = () => {
+        const hasText =
+          chatInput.value.trim().length > 0;
+
+        chatSend.disabled =
+          !canSend || !hasText;
+
+        chatSend.classList.toggle(
+          "ready",
+          canSend && hasText
+        );
+      };
+
+      chatInput.addEventListener(
+        "input",
+        updateSendButton
       );
 
-    const mine =
-      game.currentPlayerId ===
-      S.playerId;
-
-    html += `
-      <div class="status">
-        目前發言：
-        <b>
-          ${esc(
-            active?.nickname || ""
-          )}
-        </b>
-
-        ${
-          mine
-            ? " · 輪到你了。"
-            : ""
-        }
-      </div>
-
-      <div
-        id="chatBox"
-        class="chat"
-      >
-        ${renderChatHtml()}
-      </div>
-
-      <div
-        class="row"
-        style="margin-top:10px"
-      >
-        <input
-          id="chat2"
-          ${
-            mine
-              ? ""
-              : "disabled"
-          }
-          placeholder="${
-            mine
-              ? "輸入你的解釋…"
-              : "等待發言…"
-          }"
-        >
-
-        <button
-  id="chat2Send"
-  class="btn btn-send"
-  disabled
-  onclick="chat2()"
->
-  SEND
-</button>
-      </div>
-    `;
+      updateSendButton();
+    }
 
     scrollChat();
   }
