@@ -1303,3 +1303,61 @@ function scrollChat() {
       box.scrollHeight;
   }
 }
+
+
+function askConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+
+    overlay.className = "confirm-overlay";
+
+    overlay.innerHTML = `
+      <div class="confirm-card">
+        <div class="eyebrow">
+          CONFIRM
+        </div>
+
+        <h3>
+          ${esc(message)}
+        </h3>
+
+        <div class="confirm-actions">
+          <button
+            class="btn btn-green"
+            data-confirm="yes"
+          >
+            是
+          </button>
+
+          <button
+            class="btn btn-outline"
+            data-confirm="no"
+          >
+            取消
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const finish = (value) => {
+      overlay.remove();
+      resolve(value);
+    };
+
+    overlay
+      .querySelector('[data-confirm="yes"]')
+      .addEventListener(
+        "click",
+        () => finish(true)
+      );
+
+    overlay
+      .querySelector('[data-confirm="no"]')
+      .addEventListener(
+        "click",
+        () => finish(false)
+      );
+  });
+}
