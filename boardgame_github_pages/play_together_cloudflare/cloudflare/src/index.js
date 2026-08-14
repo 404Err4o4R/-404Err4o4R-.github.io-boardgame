@@ -606,37 +606,76 @@ async onG1Next(playerId){
   }
 
   async startGame2(){
-    const players=shuffle(this.room.players.filter(p=>p.connected));
-    const judge=players[0];
-    const truth=players[1];
-    const pool=GAME2_QUESTIONS.filter(q=>this.room.filters.includes(q.category));
-    const q=shuffle(pool)[0];
-    const order=shuffle(players.map(p=>p.id));
-    const roles={};
-    players.forEach(p=>roles[p.id]=p.id===judge.id?"judge":p.id===truth.id?"truth":"bluffer");
-   this.room.gameState={
-  game:"game1",
-  phase:"intro",
-  round:(this.room.gameState?.round||0)+1,
-  question:q,
-  usedIds:[
-    ...new Set([
-      ...prevUsed,
-      q.id
-    ])
-  ],
-  votes:{},
-  nextReady:{},
-  winner:null,
-  endsAt:Date.now()+2000
-};
-  async startVoteGame1(){
-  const g = this.room.gameState;
+  const players =
+    shuffle(
+      this.room.players.filter(
+        p => p.connected
+      )
+    );
 
-  if (!g || g.phase !== "intro") {
-    return;
-  }
+  const judge = players[0];
+  const truth = players[1];
 
+  const pool =
+    GAME2_QUESTIONS.filter(
+      q =>
+        this.room.filters.includes(
+          q.category
+        )
+    );
+
+  const q =
+    shuffle(pool)[0];
+
+  const order =
+    shuffle(
+      players.map(
+        p => p.id
+      )
+    );
+
+  const roles = {};
+
+  players.forEach(
+    p => {
+      roles[p.id] =
+        p.id === judge.id
+          ? "judge"
+          : p.id === truth.id
+            ? "truth"
+            : "bluffer";
+    }
+  );
+
+  this.room.gameState = {
+    game: "game2",
+    phase: "prep",
+    round: 1,
+    term: q.term,
+    category: q.category,
+    privateExplanation:
+      q.explanation,
+    judgeId: judge.id,
+    truthId: truth.id,
+    roles,
+    order,
+    currentIndex: 0,
+    currentPlayerId: null,
+    endsAt:
+      Date.now() + 30000
+  };
+
+  await this.save();
+
+  await this.sendPrivateRoles();
+
+  await this.ctx.storage.setAlarm(
+    this.room.gameState.endsAt
+  );
+
+  await this.broadcastRoom();
+}
+  
   g.phase = "vote";
   g.votes = {};
   g.winner = null;
