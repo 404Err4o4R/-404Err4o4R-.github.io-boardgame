@@ -381,6 +381,33 @@ export class GameRoom extends DurableObject {
 
     switch(msg.type){
       case "start": return this.onStart(session.playerId);
+      async onReady(playerId, ready){
+  if (!this.room?.players) return;
+
+  const player =
+    this.room.players.find(
+      p => p.id === playerId
+    );
+
+  if (!player) return;
+
+  if (
+    this.room.gameState &&
+    this.room.gameState.phase !== "waiting"
+  ) {
+    return;
+  }
+
+  player.ready = !!ready;
+
+  await this.save();
+  await this.broadcastRoom();
+}
+      case "ready":
+  return this.onReady(
+    session.playerId,
+    msg.ready
+  );
       case "g1:vote": return this.onG1Vote(session.playerId,msg.option);
       case "g1:chat": return this.onG1Chat(session.playerId,msg.text);
       case "g1:next": return this.onG1Next(session.playerId);
@@ -480,6 +507,17 @@ export class GameRoom extends DurableObject {
     if(connected.length<MIN_PLAYERS || connected.length>MAX_PLAYERS){
       return this.errorPlayer(playerId,"需要2-6位已連線玩家。");
     }
+    const notReady =
+  connected.filter(
+    p => !p.ready
+  );
+
+if (notReady.length > 0) {
+  return this.errorPlayer(
+    playerId,
+    "所有玩家都準備好後才能開始。"
+  );
+}
     if(this.room.gameState?.phase && this.room.gameState.phase!=="waiting"){
       return this.errorPlayer(playerId,"遊戲已開始。");
     }
