@@ -646,6 +646,21 @@ function renderRoom() {
     </p>
   `;
 
+const currentPlayer =
+  room.players.find(
+    p => p.id === S.playerId
+  );
+
+$("#readyBtn")?.addEventListener(
+  "click",
+  () => {
+    send({
+      type: "ready",
+      ready: !currentPlayer?.ready
+    });
+  }
+);
+  
 const startBtn = $("#startBtn");
 
 startBtn?.addEventListener("click", async () => {
