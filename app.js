@@ -881,18 +881,30 @@ if (game.phase === "intro") {
             .map(
               (option, index) => `
                 <button
-                  class="answer ${
-                    myVote === index
-                      ? "selected"
-                      : ""
-                  }"
-                  ${
-                    myVote !== undefined
-                      ? "disabled"
-                      : ""
-                  }
-                  onclick="vote1(${index})"
-                >
+  class="answer ${
+    myVote === index
+      ? "selected"
+      : ""
+  }"
+  style="
+    background:${
+      myVote === index
+        ? "var(--yellow)"
+        : "#fff"
+    };
+    border-color:${
+      myVote === index
+        ? "var(--yellow-deep)"
+        : "#e7e9ee"
+    };
+  "
+  ${
+    myVote !== undefined
+      ? "disabled"
+      : ""
+  }
+  onclick="vote1(${index})"
+>
                   ${
                     String.fromCharCode(
                       65 + index
