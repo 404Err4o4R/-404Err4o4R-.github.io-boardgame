@@ -980,6 +980,7 @@ function renderGame1(game) {
   }
 
   scrollChat();
+}
 
 window.vote1 = async (index) => {
   const ok = await askConfirm(
