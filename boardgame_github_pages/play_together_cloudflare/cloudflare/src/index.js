@@ -237,7 +237,7 @@ function publicRoom(room, viewerId=null) {
   ready:!!p.ready,
   score:p.score||0
 })),
-    gameState: publicGameState(room),
+    gameState: publicGameState(room, viewerId),
     viewerRole: viewerId && room.gameState?.roles?.[viewerId] || null,
     viewerExplanation: viewerId && room.gameState?.roles?.[viewerId]==="truth"
       ? room.gameState.privateExplanation || null
@@ -245,7 +245,7 @@ function publicRoom(room, viewerId=null) {
   };
 }
 
-function publicGameState(room) {
+function publicGameState(room, viewerId=null) {
   const g=room.gameState;
   if(!g) return {phase:"waiting"};
 
@@ -260,6 +260,13 @@ function publicGameState(room) {
   0:Object.values(g.votes||{}).filter(v=>v===0).length,
   1:Object.values(g.votes||{}).filter(v=>v===1).length
 } : (g.voteCounts||[0,0]),
+
+myVote:
+  g.phase==="vote" &&
+  viewerId &&
+  g.votes?.[viewerId] !== undefined
+    ? g.votes[viewerId]
+    : null,
 
 voters:g.phase!=="vote" ? {
   0:room.players
