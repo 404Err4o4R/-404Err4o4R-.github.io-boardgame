@@ -1147,6 +1147,9 @@ window.vote1 = async (index) => {
 
   if (!ok) return;
 
+  S.myVote = index;
+  renderGame();
+
   send({
     type: "g1:vote",
     option: index
