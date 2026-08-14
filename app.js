@@ -1165,16 +1165,13 @@ function renderGame2(game) {
         >
 
         <button
-          class="btn blue"
-          ${
-            mine
-              ? ""
-              : "disabled"
-          }
-          onclick="chat2()"
-        >
-          SEND
-        </button>
+  id="chat2Send"
+  class="btn btn-send"
+  ${mine ? "disabled" : "disabled"}
+  onclick="chat2()"
+>
+  SEND
+</button>
       </div>
     `;
 
