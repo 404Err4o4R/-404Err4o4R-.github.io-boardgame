@@ -1153,10 +1153,15 @@ window.vote1 = async (index) => {
 
   if (!ok) return;
 
-window.vote1 = async (index) => {
-  const ok = await askConfirm(
-    "是否確定投票？"
-  );
+  S.myVote = index;
+
+  renderGame();
+
+  send({
+    type: "g1:vote",
+    option: index
+  });
+};
 
   if (!ok) return;
 
