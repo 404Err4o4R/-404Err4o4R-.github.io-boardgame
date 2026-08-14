@@ -53,72 +53,172 @@ export default {
     const originHeaders = corsHeaders();
 
     if (request.method === "OPTIONS") {
-      return new Response(null, {status:204, headers:originHeaders});
+      return new Response(null, {
+        status: 204,
+        headers: originHeaders
+      });
     }
 
-    if (request.method==="GET" && url.pathname==="/health") {
-      return json({ok:true, service:"play-together-cloudflare", now:Date.now()},200,originHeaders);
+    if (
+      request.method === "GET" &&
+      url.pathname === "/health"
+    ) {
+      return json(
+        {
+          ok: true,
+          service: "play-together-cloudflare",
+          now: Date.now()
+        },
+        200,
+        originHeaders
+      );
     }
 
-    if (request.method==="POST" && url.pathname==="/api/rooms") {
-      const body = await request.json().catch(()=>null);
-      if (!body || !validGame(body.game)) return json({ok:false,error:"無效遊戲。"},400,originHeaders);
-      const requested = String(body.code || "").trim().toUpperCase();
-      const list = requested ? [requested] : Array.from({length:6},()=>code());
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/rooms"
+    ) {
+      const body = await request
+        .json()
+        .catch(() => null);
+
+      if (!body || !validGame(body.game)) {
+        return json(
+          {
+            ok: false,
+            error: "無效遊戲。"
+          },
+          400,
+          originHeaders
+        );
+      }
+
+      const requested = String(
+        body.code || ""
+      )
+        .trim()
+        .toUpperCase();
+
+      const list = requested
+        ? [requested]
+        : Array.from(
+            { length: 6 },
+            () => code()
+          );
 
       for (const roomCode of list) {
-        if (!/^[A-Z0-9]{6}$/.test(roomCode)) continue;
-        const id = env.GAME_ROOM.idFromName(roomCode);
-        const stub = env.GAME_ROOM.get(id);
-        const res = await stub.fetch("https://room.internal/bootstrap", {
-          method:"POST",
-          body:JSON.stringify({
-            roomCode,
-            game:body.game,
-            filters:body.filters?.categories || [],
-            roomTtl: ROOM_TTL
-          })
-        });
+        if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+          continue;
+        }
+
+        const id =
+          env.GAME_ROOM.idFromName(roomCode);
+
+        const stub =
+          env.GAME_ROOM.get(id);
+
+        const res = await stub.fetch(
+          "https://room.internal/bootstrap",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              roomCode,
+              game: body.game,
+              filters:
+                body.filters?.categories || [],
+              roomTtl: ROOM_TTL
+            })
+          }
+        );
+
         if (res.ok) {
-          return json({ok:true,roomCode},200,originHeaders);
+          return json(
+            {
+              ok: true,
+              roomCode
+            },
+            200,
+            originHeaders
+          );
         }
       }
-      return json({ok:false,error:"建立房間失敗，請再試一次。"},409,originHeaders);
+
+      return json(
+        {
+          ok: false,
+          error: "建立房間失敗，請再試一次。"
+        },
+        409,
+        originHeaders
+      );
     }
 
+    /*
+     * WebSocket endpoint
+     *
+     * Browser:
+     *   /websocket?room=ABC123
+     *
+     * Worker:
+     *   → Durable Object
+     */
     if (url.pathname === "/websocket") {
-  if (request.method !== "GET") {
-    return new Response("Expected GET", {
-      status: 400,
-      headers: originHeaders
-    });
-  }
+      if (request.method !== "GET") {
+        return new Response(
+          "Expected GET",
+          {
+            status: 400,
+            headers: originHeaders
+          }
+        );
+      }
 
-  if (request.headers.get("Upgrade") !== "websocket") {
-    return new Response("Expected WebSocket", {
-      status: 426,
-      headers: originHeaders
-    });
-  }
+      if (
+        request.headers.get("Upgrade") !==
+        "websocket"
+      ) {
+        return new Response(
+          "Expected WebSocket",
+          {
+            status: 426,
+            headers: originHeaders
+          }
+        );
+      }
 
-  const roomCode = (
-    url.searchParams.get("room") || ""
-  ).toUpperCase();
+      const roomCode = (
+        url.searchParams.get("room") || ""
+      )
+        .toUpperCase();
 
-  if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
-    return new Response("Invalid room code", {
-      status: 400,
-      headers: originHeaders
-    });
-  }
+      if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+        return new Response(
+          "Invalid room code",
+          {
+            status: 400,
+            headers: originHeaders
+          }
+        );
+      }
 
-  const id = env.GAME_ROOM.idFromName(roomCode);
-  const stub = env.GAME_ROOM.get(id);
+      const id =
+        env.GAME_ROOM.idFromName(
+          roomCode
+        );
 
-  return stub.fetch(request);
-}
+      const stub =
+        env.GAME_ROOM.get(id);
 
-    return new Response("Play Together game server", {status:200,headers:originHeaders});
+      return stub.fetch(request);
+    }
+
+    return new Response(
+      "Play Together game server",
+      {
+        status: 200,
+        headers: originHeaders
+      }
+    );
   }
 };
 
