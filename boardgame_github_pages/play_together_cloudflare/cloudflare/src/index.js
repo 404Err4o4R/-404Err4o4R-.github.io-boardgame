@@ -599,12 +599,42 @@ async onG1Next(playerId){
     const order=shuffle(players.map(p=>p.id));
     const roles={};
     players.forEach(p=>roles[p.id]=p.id===judge.id?"judge":p.id===truth.id?"truth":"bluffer");
-    this.room.gameState={
-      game:"game2",phase:"prep",round:1,
-      term:q.term,category:q.category,privateExplanation:q.explanation,
-      judgeId:judge.id,truthId:truth.id,roles,order,currentIndex:0,currentPlayerId:null,
-      endsAt:Date.now()+30000
-    };
+   this.room.gameState={
+  game:"game1",
+  phase:"intro",
+  round:(this.room.gameState?.round||0)+1,
+  question:q,
+  usedIds:[
+    ...new Set([
+      ...prevUsed,
+      q.id
+    ])
+  ],
+  votes:{},
+  nextReady:{},
+  winner:null,
+  endsAt:Date.now()+2000
+};
+  async startVoteGame1(){
+  const g = this.room.gameState;
+
+  if (!g || g.phase !== "intro") {
+    return;
+  }
+
+  g.phase = "vote";
+  g.votes = {};
+  g.winner = null;
+  g.endsAt = Date.now() + 10000;
+
+  await this.save();
+
+  await this.ctx.storage.setAlarm(
+    g.endsAt
+  );
+
+  await this.broadcastRoom();
+}
     await this.save();
     await this.sendPrivateRoles();
     await this.ctx.storage.setAlarm(this.room.gameState.endsAt);
@@ -644,6 +674,16 @@ async onG1Next(playerId){
     await this.ctx.storage.setAlarm(g.endsAt);
     await this.broadcastRoom();
   }
+
+  if(
+  g?.game==="game1" &&
+  g.phase==="intro" &&
+  g.endsAt &&
+  Date.now()+50>=g.endsAt
+){
+  await this.startVoteGame1();
+  return;
+}
 
   async advanceSpeakingGame2(){
     const g=this.room.gameState;if(!g||g.phase!=="speaking")return;
