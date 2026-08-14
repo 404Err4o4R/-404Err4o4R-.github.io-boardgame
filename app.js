@@ -297,6 +297,22 @@ function connectRoom(code, mode, saved = null) {
     S.chat = [];
     S.role = null;
     S.explanation = null;
+    $("#roomPanel").innerHTML = "";
+    
+$("#gamePanel").innerHTML = `
+  <div class="eyebrow">
+    CONNECTING
+  </div>
+
+  <p class="notice">
+    正在連線到房間……
+  </p>
+`;
+
+setConnectionStatus(
+  "CONNECTING",
+  false
+);
 
     const ws = new WebSocket(
   WS_BASE +
