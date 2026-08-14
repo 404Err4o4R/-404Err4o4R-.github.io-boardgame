@@ -442,6 +442,7 @@ export class GameRoom extends DurableObject {
   nickname,
   seat,
   connected:true,
+  ready:false,
   score:0,
   lastSeen:Date.now()
 };
