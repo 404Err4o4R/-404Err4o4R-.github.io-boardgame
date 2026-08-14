@@ -318,3 +318,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   -webkit-appearance:none;
   appearance:none;
 }
+.lobby-code{
+  margin-top:8px;
+}
+
+.lobby-code strong{
+  display:block;
+  font-family:"Fredoka",sans-serif;
+  font-size:clamp(56px, 10vw, 110px);
+  line-height:.9;
+  letter-spacing:.12em;
+  color:var(--ink);
+}
