@@ -1195,7 +1195,7 @@ function renderGame2(game) {
         <button
   id="chat2Send"
   class="btn btn-send"
-  ${mine ? "disabled" : "disabled"}
+  disabled
   onclick="chat2()"
 >
   SEND
