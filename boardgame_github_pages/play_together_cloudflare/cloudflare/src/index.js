@@ -506,8 +506,17 @@ export class GameRoom extends DurableObject {
     this.broadcast({type:"chat",chat:{playerId,nickname:p.nickname,text:clean,at:Date.now()}});
   }
 
-  async onG1Next(playerId){
-    const g=this.room.gameState;if(!g||g.phase!=="chat")return;
+ async onG1Next(playerId){
+  const g=this.room.gameState;
+
+  if (!g || g.phase !== "chat") return;
+
+  if (playerId !== this.room.hostId) {
+    return this.errorPlayer(
+      playerId,
+      "只有房主可以進入下一題。"
+    );
+  }
     g.nextReady[playerId]=true;
     const eligible=this.room.players.filter(p=>p.connected).map(p=>p.id);
     const ready=eligible.filter(id=>g.nextReady[id]).length;
