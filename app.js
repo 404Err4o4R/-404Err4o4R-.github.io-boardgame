@@ -461,6 +461,7 @@ function leaveRoom() {
 
   if (S.socket) {
     S.socket.close();
+    S.socket = null;
   }
 
   clearSession();
@@ -471,6 +472,8 @@ function leaveRoom() {
   S.role = null;
   S.explanation = null;
   S.chat = [];
+
+  showError("");
 
   $("#gameShell")?.classList.add("hidden");
   $("#landing")?.classList.remove("hidden");
