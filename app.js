@@ -590,24 +590,48 @@ function renderRoom() {
       }
     </div>
 
-    ${
-      room.hostId === S.playerId &&
-      (
-        !room.gameState ||
-        room.gameState.phase === "waiting"
-      )
-        ? `
-          <div style="margin-top:15px">
-            <button
-              id="startBtn"
-              class="btn yellow"
-            >
-              START GAME
-            </button>
-          </div>
-        `
-        : ""
-    }
+ ${ 
+  room.hostId === S.playerId &&
+  (
+    !room.gameState ||
+    room.gameState.phase === "waiting"
+  )
+  ? (() => {
+      const connectedCount =
+        room.players.filter((p) => p.connected).length;
+
+      const canStart = connectedCount >= 2;
+
+      return `
+        <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
+          <button
+            id="startBtn"
+            class="btn ${canStart ? "btn-green" : "btn-disabled"}"
+            ${canStart ? "" : "disabled"}
+          >
+            START GAME
+          </button>
+
+          <button
+            id="leaveBtn"
+            class="btn btn-outline"
+          >
+            LEAVE ROOM
+          </button>
+        </div>
+      `;
+    })()
+  : `
+      <div style="margin-top:15px">
+        <button
+          id="leaveBtn"
+          class="btn btn-outline"
+        >
+          LEAVE ROOM
+        </button>
+      </div>
+    `
+}
 
     <p class="notice">
       ${
