@@ -681,30 +681,45 @@ ${
 const connectedCount =
   connectedPlayers.length;
 
-const allReady =
-  connectedCount >= 2 &&
-  connectedPlayers
-    .filter(
-      (p) => !p.host
-    )
-    .every(
-      (p) => p.ready
-    );
+${
+  (() => {
+    const connectedPlayers =
+      room.players.filter(
+        (p) => p.connected
+      );
 
-const canStart =
-  room.hostId === S.playerId &&
-  allReady;
+    const connectedCount =
+      connectedPlayers.length;
 
+    const allReady =
+      connectedCount >= 2 &&
+      connectedPlayers
+        .filter(
+          (p) => !p.host
+        )
+        .every(
+          (p) => p.ready
+        );
+
+    const canStart =
+      room.hostId === S.playerId &&
+      allReady;
+
+    const currentPlayer =
+      room.players.find(
+        (p) => p.id === S.playerId
+      );
+
+    const isHost =
+      room.hostId === S.playerId;
+
+    const canShowActions =
+      !room.gameState ||
+      room.gameState.phase === "waiting";
+
+    if (!canShowActions) {
       return `
-        <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
-          <button
-            id="startBtn"
-            class="btn ${canStart ? "btn-green" : "btn-disabled"}"
-            ${canStart ? "" : "disabled"}
-          >
-            START GAME
-          </button>
-
+        <div style="margin-top:15px">
           <button
             id="leaveBtn"
             class="btn btn-outline"
@@ -713,9 +728,54 @@ const canStart =
           </button>
         </div>
       `;
-    })()
-  : `
-      <div style="margin-top:15px">
+    }
+
+    return `
+      <div
+        style="
+          margin-top:15px;
+          display:flex;
+          gap:10px;
+          flex-wrap:wrap;
+        "
+      >
+        ${
+          isHost
+            ? `
+              <button
+                id="startBtn"
+                class="btn ${
+                  canStart
+                    ? "btn-green"
+                    : "btn-disabled"
+                }"
+                ${
+                  canStart
+                    ? ""
+                    : "disabled"
+                }
+              >
+                START GAME
+              </button>
+            `
+            : `
+              <button
+                id="readyBtn"
+                class="btn ${
+                  currentPlayer?.ready
+                    ? "btn-green"
+                    : "btn-yellow"
+                }"
+              >
+                ${
+                  currentPlayer?.ready
+                    ? "✓ Ready"
+                    : "Ready？"
+                }
+              </button>
+            `
+        }
+
         <button
           id="leaveBtn"
           class="btn btn-outline"
@@ -723,9 +783,9 @@ const canStart =
           LEAVE ROOM
         </button>
       </div>
-    `
+    `;
+  })()
 }
-
     <p class="notice">
       ${
         room.players
@@ -736,14 +796,14 @@ const canStart =
     </p>
   `;
 
-const currentPlayer =
-  room.players.find(
-    p => p.id === S.playerId
-  );
-
 $("#readyBtn")?.addEventListener(
   "click",
   () => {
+    const currentPlayer =
+      room.players.find(
+        (p) => p.id === S.playerId
+      );
+
     send({
       type: "ready",
       ready: !currentPlayer?.ready
