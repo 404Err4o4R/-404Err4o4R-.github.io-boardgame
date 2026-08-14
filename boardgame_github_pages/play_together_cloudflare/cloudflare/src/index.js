@@ -563,15 +563,50 @@ if (notReady.length > 0) {
   }
 
   async onG1Vote(playerId,option){
-    const g=this.room.gameState;
-    if(!g || g.phase!=="vote") return;
-    const p=this.room.players.find(x=>x.id===playerId);
-    if(!p || !p.connected || ![0,1].includes(Number(option))) return;
-    if(g.votes[playerId]!==undefined)return;
-    g.votes[playerId]=Number(option);
-    await this.save();
-    await this.broadcastRoom();
+  const g=this.room.gameState;
+
+  if(!g || g.phase!=="vote") return;
+
+  const p=this.room.players.find(
+    x=>x.id===playerId
+  );
+
+  if(
+    !p ||
+    !p.connected ||
+    ![0,1].includes(Number(option))
+  ){
+    return;
   }
+
+  if(g.votes[playerId]!==undefined){
+    return;
+  }
+
+  g.votes[playerId]=Number(option);
+
+  const eligiblePlayers =
+    this.room.players.filter(
+      p=>p.connected
+    );
+
+  const votedCount =
+    eligiblePlayers.filter(
+      p=>g.votes[p.id]!==undefined
+    ).length;
+
+  await this.save();
+
+  if(
+    eligiblePlayers.length>=MIN_PLAYERS &&
+    votedCount===eligiblePlayers.length
+  ){
+    await this.lockGame1();
+    return;
+  }
+
+  await this.broadcastRoom();
+}
 
   async onG1Chat(playerId,text){
     const g=this.room.gameState;if(!g||g.phase!=="chat")return;
