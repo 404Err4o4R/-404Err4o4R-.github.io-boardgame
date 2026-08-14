@@ -594,40 +594,42 @@ function renderRoom() {
             }
           </div>
 
+ ${
+  player.id === S.playerId && !player.host
+    ? `
+      <button
+        id="readyBtn"
+        class="btn ${
+          player.ready
+            ? "btn-green"
+            : "btn-ready"
+        }"
+      >
+        ${
+          player.ready
+            ? "✓ Ready"
+            : "Ready？"
+        }
+      </button>
+    `
+    : player.host
+      ? ""
+      : `
+        <span
+          class="${
+            player.ready
+              ? "ready-label"
+              : "not-ready-label"
+          }"
+        >
           ${
-            player.id === S.playerId
-              ? `
-                <button
-                  id="readyBtn"
-                  class="btn ${
-                    player.ready
-                      ? "btn-green"
-                      : "btn-ready"
-                  }"
-                >
-                  ${
-                    player.ready
-                      ? "✓"
-                      : "Ready？"
-                  }
-                </button>
-              `
-              : `
-                <span
-                  class="${
-                    player.ready
-                      ? "ready-label"
-                      : "not-ready-label"
-                  }"
-                >
-                  ${
-                    player.ready
-                      ? "✓ Ready"
-                      : "未準備"
-                  }
-                </span>
-              `
+            player.ready
+              ? "✓ Ready"
+              : "未準備"
           }
+        </span>
+      `
+}
         </div>
       `
     ).join("")
