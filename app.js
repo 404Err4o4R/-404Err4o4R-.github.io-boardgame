@@ -756,6 +756,28 @@ function startTimer(element, endsAt) {
 
 function renderGame1(game) {
 
+if (game.phase === "intro") {
+  $("#gamePanel").innerHTML = `
+    <div class="game-intro">
+      <div class="eyebrow">
+        ROUND ${game.round}
+      </div>
+
+      <h2>
+        遊戲準備開始！
+      </h2>
+
+      <p>
+        請準備選擇你的答案
+      </p>
+    </div>
+  `;
+
+  clearInterval(S.timer);
+
+  return;
+}
+
   if (game.phase === "vote") {
 
     const votes =
