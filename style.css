@@ -308,3 +308,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   color:#68708a;
   line-height:1.5;
 }
+
+.answer.selected,
+.answer.selected:disabled{
+  background:var(--yellow) !important;
+  border-color:var(--yellow-deep) !important;
+  color:var(--ink) !important;
+  opacity:1 !important;
+  -webkit-appearance:none;
+  appearance:none;
+}
