@@ -664,6 +664,8 @@ $("#leaveBtn")?.addEventListener(
   "click",
   leaveRoom
 );
+}
+
 /* =========================
    Game state
 ========================= */
