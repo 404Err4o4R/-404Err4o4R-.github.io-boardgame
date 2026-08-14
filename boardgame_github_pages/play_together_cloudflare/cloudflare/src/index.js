@@ -257,12 +257,26 @@ function publicGameState(room) {
         question:g.question.question, options:g.question.options
       } : null,
       votes:g.phase==="vote" ? {
-        0:Object.values(g.votes||{}).filter(v=>v===0).length,
-        1:Object.values(g.votes||{}).filter(v=>v===1).length
-      } : (g.voteCounts||[0,0]),
-      submittedCount:Object.keys(g.votes||{}).length,
-      nextReadyCount:Object.keys(g.nextReady||{}).length,
-      winner:g.winner ?? null
+  0:Object.values(g.votes||{}).filter(v=>v===0).length,
+  1:Object.values(g.votes||{}).filter(v=>v===1).length
+} : (g.voteCounts||[0,0]),
+
+voters:g.phase!=="vote" ? {
+  0:room.players
+    .filter(p => g.votes?.[p.id] === 0)
+    .map(p => p.nickname),
+
+  1:room.players
+    .filter(p => g.votes?.[p.id] === 1)
+    .map(p => p.nickname)
+} : {
+  0:[],
+  1:[]
+},
+
+submittedCount:Object.keys(g.votes||{}).length,
+nextReadyCount:Object.keys(g.nextReady||{}).length,
+winner:g.winner ?? null
     };
   }
 
