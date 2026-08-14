@@ -193,3 +193,43 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .btn-send:disabled:hover {
   transform: none;
 }
+
+.btn-ready{
+  background:var(--yellow);
+  color:var(--ink);
+}
+
+.btn-ready:hover{
+  transform:translateY(-2px);
+}
+
+.ready-label{
+  background:#53c878;
+  color:#fff;
+  padding:7px 12px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+}
+
+.not-ready-label{
+  opacity:.5;
+  font-size:13px;
+}
+
+.game-intro{
+  min-height:340px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  text-align:center;
+}
+
+.game-intro h2{
+  font:700 48px "Fredoka",sans-serif;
+  margin:12px 0;
+}
+
+.game-intro p{
+  opacity:.65;
+}
