@@ -408,7 +408,16 @@ export class GameRoom extends DurableObject {
 
     if(mode==="create"){
       if(this.room.hostId || this.room.players.length) return this.safeSend(ws,{type:"error",message:"房間已存在玩家。"});
-      const p={id:crypto.randomUUID(),token:token(),nickname,seat:0,connected:true,score:0,lastSeen:Date.now()};
+      const p={
+  id:crypto.randomUUID(),
+  token:token(),
+  nickname,
+  seat:0,
+  connected:true,
+  ready:false,
+  score:0,
+  lastSeen:Date.now()
+};
       this.room.hostId=p.id;
       this.room.players=[p];
       ws.serializeAttachment({playerId:p.id,token:p.token});
@@ -427,7 +436,15 @@ export class GameRoom extends DurableObject {
     if(this.room.players.length>=MAX_PLAYERS) return this.safeSend(ws,{type:"error",message:"房間已滿，最多6人。"});
     if(this.room.players.some(p=>p.nickname===nickname)) return this.safeSend(ws,{type:"error",message:"暱稱已被使用。"});
     const seat=this.room.players.length;
-    const p={id:crypto.randomUUID(),token:token(),nickname,seat,connected:true,score:0,lastSeen:Date.now()};
+   const p={
+  id:crypto.randomUUID(),
+  token:token(),
+  nickname,
+  seat,
+  connected:true,
+  score:0,
+  lastSeen:Date.now()
+};
     this.room.players.push(p);
     ws.serializeAttachment({playerId:p.id,token:p.token});
     await this.save();
