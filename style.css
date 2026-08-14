@@ -156,6 +156,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 @media (max-width:900px){.hero{grid-template-columns:1fr}.hero-art{min-height:420px}.game-grid,.room-panel,.sync-room{grid-template-columns:1fr}.room-visual{min-height:280px}.steps{grid-template-columns:1fr}}
 @media (max-width:620px){.site-nav nav{display:none}.site-nav{padding:14px 18px}.section{padding:60px 18px}.game-card h3{font-size:38px}.room-form{padding:26px}.option-grid,.choice-grid{grid-template-columns:1fr}.game-title{font-size:42px}.question-box{font-size:24px}.timer{font-size:42px}}
 
+..btn-green {
+  background: #53c878;
+  color: #fff;
+}
+
+.btn-disabled {
+  background: #c7c9ce;
+  color: #777;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-disabled:hover {
+  transform: none;
+}
+
 .btn-send {
   background: #c7c9ce;
   color: #777;
