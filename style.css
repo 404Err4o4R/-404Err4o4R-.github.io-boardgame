@@ -270,3 +270,41 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   background:var(--yellow);
   border-color:var(--yellow-deep);
 }
+
+.vote-result-row{
+  margin:18px 0 24px;
+}
+
+.vote-result-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+  font-size:14px;
+}
+
+.vote-result-bar{
+  height:18px;
+  background:#e6e8ee;
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.vote-result-fill{
+  height:100%;
+  min-width:0;
+  background:#929fc1;
+  border-radius:999px;
+  transition:width .25s ease;
+}
+
+.vote-result-fill.majority{
+  background:var(--yellow);
+}
+
+.vote-result-names{
+  margin-top:8px;
+  font-size:13px;
+  color:#68708a;
+  line-height:1.5;
+}
