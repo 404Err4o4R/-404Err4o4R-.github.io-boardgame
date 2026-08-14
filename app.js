@@ -642,40 +642,23 @@ function renderRoom() {
             }
           </div>
 ${
-  player.id === S.playerId && !player.host
-    ? `
-      <button
-        id="readyBtn"
-        class="btn ${
+  player.host
+    ? ""
+    : `
+      <span
+        class="${
           player.ready
-            ? "btn-green"
-            : "btn-ready"
+            ? "ready-label"
+            : "not-ready-label"
         }"
       >
         ${
           player.ready
             ? "✓ Ready"
-            : "Ready？"
+            : "未準備"
         }
-      </button>
+      </span>
     `
-    : player.host
-      ? ""
-      : `
-        <span
-          class="${
-            player.ready
-              ? "ready-label"
-              : "not-ready-label"
-          }"
-        >
-          ${
-            player.ready
-              ? "✓ Ready"
-              : "未準備"
-          }
-        </span>
-      `
 }
         </div>
       `
@@ -683,45 +666,45 @@ ${
   }
 </div>
 
- ${ 
-  room.hostId === S.playerId &&
-  (
-    !room.gameState ||
-    room.gameState.phase === "waiting"
-  )
-  ? (() => {
-      const connectedPlayers =
-  room.players.filter(
-    (p) => p.connected
-  );
+ ${
+  (() => {
+    const connectedPlayers =
+      room.players.filter(
+        (p) => p.connected
+      );
 
-const connectedCount =
-  connectedPlayers.length;
+    const connectedCount =
+      connectedPlayers.length;
 
-const allReady =
-  connectedCount >= 2 &&
-  connectedPlayers
-    .filter(
-      (p) => !p.host
-    )
-    .every(
-      (p) => p.ready
-    );
+    const allReady =
+      connectedCount >= 2 &&
+      connectedPlayers
+        .filter(
+          (p) => !p.host
+        )
+        .every(
+          (p) => p.ready
+        );
 
-const canStart =
-  room.hostId === S.playerId &&
-  allReady;
+    const canStart =
+      room.hostId === S.playerId &&
+      allReady;
 
+    const currentPlayer =
+      room.players.find(
+        (p) => p.id === S.playerId
+      );
+
+    const isHost =
+      room.hostId === S.playerId;
+
+    const waiting =
+      !room.gameState ||
+      room.gameState.phase === "waiting";
+
+    if (!waiting) {
       return `
-        <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
-          <button
-            id="startBtn"
-            class="btn ${canStart ? "btn-green" : "btn-disabled"}"
-            ${canStart ? "" : "disabled"}
-          >
-            START GAME
-          </button>
-
+        <div style="margin-top:15px">
           <button
             id="leaveBtn"
             class="btn btn-outline"
@@ -730,9 +713,54 @@ const canStart =
           </button>
         </div>
       `;
-    })()
-  : `
-      <div style="margin-top:15px">
+    }
+
+    return `
+      <div
+        style="
+          margin-top:15px;
+          display:flex;
+          gap:10px;
+          flex-wrap:wrap;
+        "
+      >
+        ${
+          isHost
+            ? `
+              <button
+                id="startBtn"
+                class="btn ${
+                  canStart
+                    ? "btn-green"
+                    : "btn-disabled"
+                }"
+                ${
+                  canStart
+                    ? ""
+                    : "disabled"
+                }
+              >
+                START GAME
+              </button>
+            `
+            : `
+              <button
+                id="readyBtn"
+                class="btn ${
+                  currentPlayer?.ready
+                    ? "btn-green"
+                    : "btn-yellow"
+                }"
+              >
+                ${
+                  currentPlayer?.ready
+                    ? "✓ Ready"
+                    : "Ready？"
+                }
+              </button>
+            `
+        }
+
         <button
           id="leaveBtn"
           class="btn btn-outline"
@@ -740,7 +768,8 @@ const canStart =
           LEAVE ROOM
         </button>
       </div>
-    `
+    `;
+  })()
 }
 
     <p class="notice">
