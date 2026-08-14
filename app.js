@@ -929,12 +929,18 @@ function renderGame1(game) {
         SEND
       </button>
 
+ ${
+  S.room.hostId === S.playerId
+    ? `
       <button
         class="btn yellow"
         onclick="next1()"
       >
         NEXT QUESTION
       </button>
+    `
+    : ""
+}
     </div>
 
     <p class="notice">
