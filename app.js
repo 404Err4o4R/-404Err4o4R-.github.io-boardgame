@@ -16,6 +16,7 @@ const S = {
   selectedGame: "game1",
   filters: [],
   questions: null
+  myVote: undefined
 };
 
 function esc(value) {
@@ -421,8 +422,20 @@ function handleServerMessage(message) {
   }
 
   if (message.type === "state") {
-    S.room = message.room;
+  S.room = message.room;
 
+  if (message.room.gameState?.phase === "vote") {
+    if (
+      message.room.gameState.myVote !== null &&
+      message.room.gameState.myVote !== undefined
+    ) {
+      S.myVote = Number(
+        message.room.gameState.myVote
+      );
+    }
+  } else {
+    S.myVote = undefined;
+  }
     if (message.room.viewerRole) {
       S.role = message.room.viewerRole;
     }
@@ -845,10 +858,14 @@ if (game.phase === "intro") {
       game.votes || {};
 
     const myVote =
-  game.myVote !== null &&
-  game.myVote !== undefined
-    ? Number(game.myVote)
-    : undefined;
+  S.myVote !== undefined
+    ? S.myVote
+    : (
+        game.myVote !== null &&
+        game.myVote !== undefined
+          ? Number(game.myVote)
+          : undefined
+      );
 
     $("#gamePanel").innerHTML = `
       <div
@@ -1136,27 +1153,22 @@ window.vote1 = async (index) => {
 
   if (!ok) return;
 
-  const buttons = [
-    ...document.querySelectorAll(".answer")
-  ];
+window.vote1 = async (index) => {
+  const ok = await askConfirm(
+    "是否確定投票？"
+  );
 
-  const button = buttons[index];
+  if (!ok) return;
 
-  if (button) {
-    button.classList.add("selected");
-    button.disabled = true;
+  S.myVote = index;
 
-    button.style.background =
-      "var(--yellow)";
+  renderGame();
 
-    button.style.borderColor =
-      "var(--yellow-deep)";
-
-    button.style.color =
-      "var(--ink)";
-
-    button.style.opacity = "1";
-  }
+  send({
+    type: "g1:vote",
+    option: index
+  });
+};
 
   send({
     type: "g1:vote",
