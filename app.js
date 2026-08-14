@@ -15,7 +15,7 @@ const S = {
   timer: null,
   selectedGame: "game1",
   filters: [],
-  questions: null
+  questions: null,
   myVote: undefined
 };
 
