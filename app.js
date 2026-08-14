@@ -653,9 +653,13 @@ const connectedCount =
 
 const allReady =
   connectedCount >= 2 &&
-  connectedPlayers.every(
-    (p) => p.ready
-  );
+  connectedPlayers
+    .filter(
+      (p) => !p.host
+    )
+    .every(
+      (p) => p.ready
+    );
 
 const canStart =
   room.hostId === S.playerId &&
