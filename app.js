@@ -643,12 +643,24 @@ function renderRoom() {
     </p>
   `;
 
-  $("#startBtn")?.addEventListener(
-    "click",
-    () => send({ type: "start" })
-  );
-}
+const startBtn = $("#startBtn");
 
+startBtn?.addEventListener("click", async () => {
+  if (startBtn.disabled) return;
+
+  const ok = await askConfirm(
+    "是否確定開始遊戲？"
+  );
+
+  if (ok) {
+    send({ type: "start" });
+  }
+});
+
+$("#leaveBtn")?.addEventListener(
+  "click",
+  leaveRoom
+);
 /* =========================
    Game state
 ========================= */
