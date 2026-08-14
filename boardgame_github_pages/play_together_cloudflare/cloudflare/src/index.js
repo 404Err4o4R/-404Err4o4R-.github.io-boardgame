@@ -229,13 +229,14 @@ function publicRoom(room, viewerId=null) {
     hostId: room.hostId,
     filters: room.filters,
     players: room.players.map(p=>({
-      id:p.id,
-      nickname:p.nickname,
-      seat:p.seat,
-      host:p.id===room.hostId,
-      connected:!!p.connected,
-      score:p.score||0
-    })),
+  id:p.id,
+  nickname:p.nickname,
+  seat:p.seat,
+  host:p.id===room.hostId,
+  connected:!!p.connected,
+  ready:!!p.ready,
+  score:p.score||0
+})),
     gameState: publicGameState(room),
     viewerRole: viewerId && room.gameState?.roles?.[viewerId] || null,
     viewerExplanation: viewerId && room.gameState?.roles?.[viewerId]==="truth"
