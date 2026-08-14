@@ -298,8 +298,7 @@ function connectRoom(code, mode, saved = null) {
     S.role = null;
     S.explanation = null;
     $("#roomPanel").innerHTML = "";
-    
-$("#gamePanel").innerHTML = `
+    $("#gamePanel").innerHTML = `
   <div class="eyebrow">
     CONNECTING
   </div>
