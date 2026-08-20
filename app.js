@@ -1,22 +1,15 @@
 const CONFIG = window.PLAY_TOGETHER_CONFIG || {};
-const SB_URL = String(CONFIG.SUPABASE_URL || "").replace(/\/+$/, "");
-const SB_KEY = String(CONFIG.SUPABASE_ANON_KEY || "");
+const WORKER_URL = String(CONFIG.WORKER_URL || "").replace(/\/+$/, "");
+const HTTP_BASE = WORKER_URL;
+const WS_BASE = WORKER_URL.replace(/^http/, "ws");
 
-const sb =
-  window.supabase && SB_URL && SB_KEY
-    ? window.supabase.createClient(SB_URL, SB_KEY, {
-        auth: { persistSession: false },
-        realtime: { params: { eventsPerSecond: 10 } }
-      })
-    : null;
 const $ = (selector) => document.querySelector(selector);
 
 const S = {
-  channel: null,
-  beat: null,
-  loop: null,
-  busy: false,
-  ticking: false,
+  socket: null,
+  reconnectTimer: null,
+  reconnectAttempts: 0,
+  intentionalClose: false,
   room: null,
   playerId: null,
   token: null,
@@ -80,21 +73,21 @@ function clearSession() {
 ========================= */
 
 async function loadQuestions() {
-  if (!sb) {
-    throw new Error("Supabase 設定未完成，請檢查 config.js。");
+  if (!HTTP_BASE) {
+    throw new Error("Worker 網址未設定，請檢查 config.js。");
   }
 
   const [g1, g2] = await Promise.all([
-    sb.rpc("list_categories", { p_game: "game1" }),
-    sb.rpc("list_categories", { p_game: "game2" })
+    fetch(`${HTTP_BASE}/api/categories?game=game1`).then((r) => r.json()),
+    fetch(`${HTTP_BASE}/api/categories?game=game2`).then((r) => r.json())
   ]);
 
-  if (g1.error) throw new Error(g1.error.message);
-  if (g2.error) throw new Error(g2.error.message);
+  if (!g1.ok) throw new Error(g1.error || "載入題庫分類失敗。");
+  if (!g2.ok) throw new Error(g2.error || "載入題庫分類失敗。");
 
   S.questions = {
-    game1: { categories: g1.data || [] },
-    game2: { categories: g2.data || [] }
+    game1: { categories: g1.categories || [] },
+    game2: { categories: g2.categories || [] }
   };
 
   renderCategories();
@@ -258,20 +251,24 @@ $("#joinCode")?.addEventListener("input", () => {
 });
 async function createRoom() {
   try {
-    if (!sb) {
-      throw new Error("Supabase 設定未完成，請檢查 config.js。");
+    if (!HTTP_BASE) {
+      throw new Error("Worker 網址未設定，請檢查 config.js。");
     }
 
     S.nickname = $("#createName")?.value.trim() || "玩家";
 
-    const { data, error } = await sb.rpc("create_room", {
-      p_game: S.selectedGame,
-      p_filters: S.filters
-    });
+    const res = await fetch(`${HTTP_BASE}/api/rooms`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        game: S.selectedGame,
+        filters: { categories: S.filters }
+      })
+    }).then((r) => r.json());
 
-    if (error) throw new Error(error.message);
+    if (!res.ok) throw new Error(res.error || "建立房間失敗。");
 
-    await connectRoom(data, "create");
+    await connectRoom(res.roomCode, "create");
 
   } catch (error) {
     showError(error.message);
@@ -280,8 +277,8 @@ async function createRoom() {
 
 async function joinRoom() {
   try {
-    if (!sb) {
-      throw new Error("Supabase 設定未完成，請檢查 config.js。");
+    if (!HTTP_BASE) {
+      throw new Error("Worker 網址未設定，請檢查 config.js。");
     }
 
     const code = $("#joinCode")?.value.trim().toUpperCase();
@@ -303,138 +300,99 @@ async function joinRoom() {
 
 function teardown() {
   clearInterval(S.timer);
-  clearInterval(S.beat);
-  clearInterval(S.loop);
-  S.timer = S.beat = S.loop = null;
+  S.timer = null;
 
-  if (S.channel && sb) {
-    sb.removeChannel(S.channel);
+  clearTimeout(S.reconnectTimer);
+  S.reconnectTimer = null;
+
+  S.intentionalClose = true;
+
+  if (S.socket) {
+    try { S.socket.close(); } catch {}
   }
 
-  S.channel = null;
+  S.socket = null;
 }
 
-async function fetchState(advance = true) {
-  const { data, error } = await sb.rpc(advance ? "sync" : "get_state", {
-    p_code: S.room.code,
-    p_token: S.token
-  });
+function openSocket(code, mode, saved) {
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(`${WS_BASE}/websocket?room=${code}`);
+    let settled = false;
 
-  if (error) throw new Error(error.message);
-
-  return data;
-}
-
-async function refresh(advance = true) {
-  if (!S.room || S.busy) return;
-
-  S.busy = true;
-
-  try {
-    const room = await fetchState(advance);
-    handleServerMessage({ type: "state", room });
-    S.failed = 0;
-  } catch (error) {
-    S.failed = (S.failed || 0) + 1;
-
-    // 連續失敗三次先出聲，避免一下網絡抖動就彈字
-    if (S.failed === 3) {
-      flash("同步出錯：" + error.message);
-    }
-  } finally {
-    S.busy = false;
-  }
-}
-
-async function loadChat() {
-  const { data } = await sb
-    .from("chat_messages")
-    .select("player_id,nickname,text,created_at")
-    .eq("room_code", S.room.code)
-    .order("created_at", { ascending: true })
-    .limit(100);
-
-  S.chat = (data || []).map((row) => ({
-    playerId: row.player_id,
-    nickname: row.nickname,
-    text: row.text,
-    at: row.created_at
-  }));
-}
-
-function subscribe(code) {
-  S.channel = sb
-    .channel("room:" + code)
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "rooms", filter: "code=eq." + code },
-      () => refresh(false)
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "players", filter: "room_code=eq." + code },
-      () => refresh(false)
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_messages",
-        filter: "room_code=eq." + code
-      },
-      (payload) => {
-        S.chat.push({
-          playerId: payload.new.player_id,
-          nickname: payload.new.nickname,
-          text: payload.new.text,
-          at: payload.new.created_at
-        });
-
-        S.chat = S.chat.slice(-100);
-        renderGame();
-      }
-    )
-    .subscribe((status) => {
-      const online = status === "SUBSCRIBED";
-
-      setConnectionStatus(
-        online ? "CONNECTED" : "CONNECTING",
-        online
-      );
+    socket.addEventListener("open", () => {
+      socket.send(JSON.stringify(
+        mode === "reconnect"
+          ? { type: "hello", mode: "reconnect", playerId: saved.playerId, token: saved.token, nickname: S.nickname }
+          : { type: "hello", mode, nickname: S.nickname }
+      ));
     });
-}
 
-function startLoops() {
-  clearInterval(S.beat);
-  clearInterval(S.loop);
+    socket.addEventListener("message", (event) => {
+      let message;
 
-  // 心跳：保持在線狀態（refresh 本身已經會推進階段）
-  S.beat = setInterval(() => {
-    if (!S.token) return;
+      try {
+        message = JSON.parse(event.data);
+      } catch {
+        return;
+      }
 
-    sb.rpc("touch_player", { p_token: S.token });
-    refresh();
-  }, 15000);
+      if (!settled) {
+        if (message.type === "welcome") {
+          settled = true;
+          S.reconnectAttempts = 0;
+          resolve(socket);
+        } else if (message.type === "error") {
+          settled = true;
+          reject(new Error(message.message || "連線失敗。"));
+          try { socket.close(); } catch {}
+          return;
+        }
+      }
 
-  // 計時守衛：夠鐘就叫 sync 推進階段
-  S.loop = setInterval(() => {
-    const endsAt = S.room?.gameState?.endsAt;
+      handleServerMessage(message);
+    });
 
-    if (!endsAt) return;
+    socket.addEventListener("close", () => {
+      if (!settled) {
+        settled = true;
+        reject(new Error("連線失敗，請再試一次。"));
+        return;
+      }
 
-    const over = Date.now() >= endsAt;
+      // 呢個已經係舊 socket（已經被新連線取代咗），唔使再處理。
+      if (S.socket !== socket) return;
 
-    // 夠鐘之後每秒試一次，最多試到有人成功推進為止
-    if (over) refresh();
-  }, 1000);
+      setConnectionStatus("CONNECTING", false);
+
+      if (S.intentionalClose || !S.room) return;
+
+      // 意外斷線就自動嘗試重連，逐次加長等待時間。
+      S.reconnectAttempts = (S.reconnectAttempts || 0) + 1;
+      const delay = Math.min(1000 * S.reconnectAttempts, 8000);
+      const code2 = S.room.code;
+      const savedSession = loadSession(code2);
+
+      clearTimeout(S.reconnectTimer);
+      S.reconnectTimer = setTimeout(() => {
+        if (!S.room || S.room.code !== code2) return;
+        connectRoom(code2, "reconnect", savedSession).catch((error) => {
+          flash("重連失敗：" + error.message);
+        });
+      }, delay);
+    });
+
+    socket.addEventListener("error", () => {});
+  });
 }
 
 async function connectRoom(code, mode, saved = null) {
-  if (!sb) {
-    throw new Error("Supabase 設定未完成，請檢查 config.js。");
+  if (!HTTP_BASE) {
+    throw new Error("Worker 網址未設定，請檢查 config.js。");
   }
 
+  // teardown() 會標記 intentionalClose=true 同埋斷開舊嘅連線；
+  // 呢個 flag 要留到新連線真正接手先解除，
+  // 否則舊 socket 嘅 close 事件可能會同新連線嘅重連邏輯撞埋一齊。
   teardown();
 
   S.room = { code };
@@ -457,50 +415,11 @@ async function connectRoom(code, mode, saved = null) {
   setConnectionStatus("CONNECTING", false);
   showGame();
 
-  let joined = null;
+  const socket = await openSocket(code, mode, saved);
+  S.socket = socket;
+  S.intentionalClose = false;
 
-  if (saved?.token) {
-    const { data, error } = await sb.rpc("touch_player", {
-      p_token: saved.token
-    });
-
-    if (!error && data) {
-      S.playerId = data.playerId;
-      S.token = saved.token;
-      S.nickname = saved.nickname || S.nickname;
-    } else {
-      clearSession();
-    }
-  }
-
-  if (!S.token) {
-    const { data, error } = await sb.rpc("join_room", {
-      p_code: code,
-      p_nickname: S.nickname
-    });
-
-    if (error) throw new Error(error.message);
-
-    joined = data;
-    S.playerId = data.playerId;
-    S.token = data.token;
-  }
-
-  await loadChat();
-
-  const room = await fetchState();
-
-  handleServerMessage({
-    type: "welcome",
-    playerId: S.playerId,
-    token: S.token,
-    room
-  });
-
-  subscribe(code);
-  startLoops();
-
-  return joined;
+  return null;
 }
 
 /* =========================
@@ -518,6 +437,7 @@ function handleServerMessage(message) {
     S.playerId = message.playerId;
     S.token = message.token;
     S.room = message.room;
+    S.chat = message.room?.chat || [];
 
     saveSession();
 
@@ -598,8 +518,10 @@ function showGame() {
 function leaveRoom() {
   clearInterval(S.timer);
 
-  if (sb && S.token) {
-    sb.rpc("leave_room", { p_token: S.token });
+  if (S.socket && S.socket.readyState === WebSocket.OPEN) {
+    try {
+      S.socket.send(JSON.stringify({ type: "leave" }));
+    } catch {}
   }
 
   teardown();
@@ -641,43 +563,17 @@ function flash(text) {
   );
 }
 
-async function send(message) {
-  if (!sb || !S.token) return;
-
-  const t = message.type;
-
-  try {
-    if (t === "ready") {
-      await sb.rpc("set_ready", { p_token: S.token, p_ready: !!message.ready });
-    } else if (t === "start") {
-      const { error } = await sb.rpc("start_game", { p_token: S.token });
-      if (error) throw error;
-    } else if (t === "g1:vote") {
-      await sb.rpc("g1_vote", { p_token: S.token, p_option: message.option });
-    } else if (t === "g1:chat" || t === "g2:chat") {
-      await sb.rpc("send_chat", { p_token: S.token, p_text: message.text });
-    } else if (t === "g1:next") {
-      const isHost = S.room?.hostId === S.playerId;
-
-      const { error } = isHost
-        ? await sb.rpc("g1_next", { p_token: S.token })
-        : await sb.rpc("g1_ready", { p_token: S.token });
-
-      if (error) throw error;
-    } else if (t === "g2:pick") {
-      await sb.rpc("g2_pick", { p_token: S.token, p_target: message.targetId });
-    } else if (t === "g2:judge") {
-      await sb.rpc("g2_judge", { p_token: S.token, p_target: message.targetId });
-    } else if (t === "g2:next") {
-      const { error } = await sb.rpc("g2_next", { p_token: S.token });
-      if (error) throw error;
-    }
-  } catch (error) {
-    flash(error.message || "操作失敗。");
+function send(message) {
+  if (!S.socket || S.socket.readyState !== WebSocket.OPEN || !S.token) {
+    flash("未連線，請等重連後再試。");
     return;
   }
 
-  refresh();
+  try {
+    S.socket.send(JSON.stringify(message));
+  } catch (error) {
+    flash(error.message || "操作失敗。");
+  }
 }
 
 /* =========================
