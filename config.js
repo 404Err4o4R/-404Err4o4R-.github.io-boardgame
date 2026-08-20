@@ -1,4 +1,5 @@
 window.PLAY_TOGETHER_CONFIG = {
-  SUPABASE_URL: "https://vwyiqpsnlxdmsthilrmn.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3eWlxcHNubHhkbXN0aGlscm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4NTgyNjUsImV4cCI6MjEwMjQzNDI2NX0.ieWHtvY0YeR3wifB1XN8OYyfF8iR8QUlUr49KpOiVAM"
+  // 換成你 wrangler deploy 之後嗰個 Worker 網址（例如：
+  // https://404err404r--github-io-boardgame.<你嘅-cloudflare-subdomain>.workers.dev）
+  WORKER_URL: "https://REPLACE-WITH-YOUR-WORKER-URL.workers.dev"
 };
