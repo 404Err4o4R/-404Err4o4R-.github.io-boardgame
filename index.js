@@ -648,6 +648,7 @@ if (notReady.length > 0) {
       game:"game1",phase:"vote",round:(this.room.gameState?.round||0)+1,
       question:q,usedIds:[...new Set([...prevUsed,q.id])],votes:{},nextReady:{},winner:null,endsAt:Date.now()+G1_VOTE_MS
     };
+    this.room.chat=[]; // 新一題開始，舊嘅傾偈記錄唔再顯示，個聊天框先唔會越玩越長
     await this.save();
     await this.ctx.storage.setAlarm(this.room.gameState.endsAt);
     await this.broadcastRoom();
