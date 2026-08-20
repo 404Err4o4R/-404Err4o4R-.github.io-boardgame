@@ -10,6 +10,13 @@ const MAX_PLAYERS = 6;
 const MIN_PLAYERS = 2;
 const ROOM_TTL = 1000 * 60 * 60 * 6;
 const MAX_MESSAGE = 12_000;
+const MAX_CHAT_HISTORY = 100;
+
+const G1_VOTE_MS = 10000;
+const G2_PREP_MS = 30000;
+const G2_PICK_MS = 10000;
+const G2_SPEAK_MS = 30000;
+const G2_JUDGE_MS = 120000;
 
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
@@ -69,6 +76,31 @@ export default {
           service: "play-together-cloudflare",
           now: Date.now()
         },
+        200,
+        originHeaders
+      );
+    }
+
+    // 房間建立前，前端用嚟載入題庫分類（取代之前 Supabase 嘅 list_categories RPC）。
+    if (
+      request.method === "GET" &&
+      url.pathname === "/api/categories"
+    ) {
+      const game = url.searchParams.get("game");
+
+      if (!validGame(game)) {
+        return json(
+          { ok: false, error: "無效遊戲。" },
+          400,
+          originHeaders
+        );
+      }
+
+      const categories =
+        game === "game1" ? GAME1_CATEGORIES : GAME2_CATEGORIES;
+
+      return json(
+        { ok: true, categories },
         200,
         originHeaders
       );
@@ -238,6 +270,7 @@ function publicRoom(room, viewerId=null) {
   score:p.score||0
 })),
     gameState: publicGameState(room, viewerId),
+    chat: room.chat || [],
     viewerRole: viewerId && room.gameState?.roles?.[viewerId] || null,
     viewerExplanation: viewerId && room.gameState?.roles?.[viewerId]==="truth"
       ? room.gameState.privateExplanation || null
@@ -290,9 +323,15 @@ winner:g.winner ?? null
   const base={
     phase:g.phase, round:g.round, term:g.term || null,
     endsAt:g.endsAt||null, judgeId:g.judgeId||null,
-    order:g.order||[], currentPlayerId:g.currentPlayerId||null
+    order:g.order||[], spokenIds:g.spokenIds||[],
+    currentPlayerId:g.currentPlayerId||null
   };
 
+  if(g.phase==="picking") {
+    base.candidates = room.players
+      .filter(p => (g.candidates||[]).includes(p.id))
+      .map(p=>({id:p.id,nickname:p.nickname}));
+  }
   if(g.phase==="judge") {
     base.choices=room.players
       .filter(p=>p.id!==g.judgeId)
@@ -337,6 +376,7 @@ export class GameRoom extends DurableObject {
         hostId:null,
         players:[],
         gameState:null,
+        chat:[],
         createdAt:Date.now(),
         updatedAt:Date.now()
       };
@@ -350,7 +390,7 @@ export class GameRoom extends DurableObject {
     status: 404
   });
 }
-    
+
     if(request.method!=="GET" || request.headers.get("Upgrade")!=="websocket"){
       return new Response("Expected WebSocket",{status:426});
     }
@@ -407,10 +447,12 @@ export class GameRoom extends DurableObject {
     session.playerId,
     msg.ready
   );
+      case "leave": return this.onLeave(session.playerId);
       case "g1:vote": return this.onG1Vote(session.playerId,msg.option);
-      case "g1:chat": return this.onG1Chat(session.playerId,msg.text);
+      case "g1:chat": return this.onChat(session.playerId,msg.text,"chat");
       case "g1:next": return this.onG1Next(session.playerId);
-      case "g2:chat": return this.onG2Chat(session.playerId,msg.text);
+      case "g2:pick": return this.onG2Pick(session.playerId,msg.targetId);
+      case "g2:chat": return this.onChat(session.playerId,msg.text,"speaking");
       case "g2:judge": return this.onG2Judge(session.playerId,msg.targetId);
       case "g2:next": return this.onG2Next(session.playerId);
       case "reconnect": return this.onReconnect(ws,session.playerId);
@@ -522,7 +564,38 @@ async onReady(playerId, ready){
   await this.save();
   await this.broadcastRoom();
 }
-  
+
+  // 房主喺 lobby 離開就直接踢走個位；遊戲中途離開先淨係標記做離線，
+  // 避免搞亂法官／老實人呢啲已經分配咗嘅角色。
+  async onLeave(playerId){
+    const p=this.room.players.find(x=>x.id===playerId);
+    if(!p) return;
+
+    const wasHost = p.id===this.room.hostId;
+    const inLobby = !this.room.gameState || this.room.gameState.phase==="waiting";
+
+    if(inLobby){
+      this.room.players = this.room.players.filter(x=>x.id!==playerId);
+      if(wasHost){
+        const next = this.room.players.find(x=>x.connected) || this.room.players[0];
+        this.room.hostId = next ? next.id : null;
+      }
+    } else {
+      p.connected=false;
+      p.lastSeen=Date.now();
+      if(wasHost){
+        const next=this.room.players.find(x=>x.connected && x.id!==p.id);
+        if(next)this.room.hostId=next.id;
+      }
+      if(this.room.game==="game1" && this.room.gameState?.phase==="chat"){
+        this.room.gameState.nextReady[p.id]=true;
+      }
+    }
+
+    await this.save();
+    await this.broadcastRoom();
+  }
+
   async onStart(playerId){
     if(playerId!==this.room.hostId) return this.errorPlayer(playerId,"只有房主可以開始。");
     const connected=this.room.players.filter(p=>p.connected);
@@ -562,7 +635,7 @@ if (notReady.length > 0) {
     const q=this.pickGame1Question();
     this.room.gameState={
       game:"game1",phase:"vote",round:(this.room.gameState?.round||0)+1,
-      question:q,usedIds:[...new Set([...prevUsed,q.id])],votes:{},nextReady:{},winner:null,endsAt:Date.now()+10000
+      question:q,usedIds:[...new Set([...prevUsed,q.id])],votes:{},nextReady:{},winner:null,endsAt:Date.now()+G1_VOTE_MS
     };
     await this.save();
     await this.ctx.storage.setAlarm(this.room.gameState.endsAt);
@@ -615,11 +688,16 @@ if (notReady.length > 0) {
   await this.broadcastRoom();
 }
 
-  async onG1Chat(playerId,text){
-    const g=this.room.gameState;if(!g||g.phase!=="chat")return;
+  // Game 1 同 Game 2 嘅聊天室共用呢個方法：淨係喺啱嘅 phase 先接受發言，
+  // 並將最近 100 條留喺房間狀態入面，等新加入／重連嘅玩家都睇到歷史記錄。
+  async onChat(playerId,text,expectedPhase){
+    const g=this.room.gameState;if(!g||g.phase!==expectedPhase)return;
     const p=this.room.players.find(x=>x.id===playerId);if(!p)return;
     const clean=String(text||"").trim().slice(0,400);if(!clean)return;
-    this.broadcast({type:"chat",chat:{playerId,nickname:p.nickname,text:clean,at:Date.now()}});
+    const chat={playerId,nickname:p.nickname,text:clean,at:Date.now()};
+    this.room.chat=[...(this.room.chat||[]),chat].slice(-MAX_CHAT_HISTORY);
+    await this.save();
+    this.broadcast({type:"chat",chat});
   }
 
 async onG1Next(playerId){
@@ -629,14 +707,35 @@ async onG1Next(playerId){
     return;
   }
 
-  if (playerId !== this.room.hostId) {
-    return this.errorPlayer(
-      playerId,
-      "只有房主可以進入下一題。"
-    );
+  // 房主隨時可以強制入下一題。
+  if (playerId === this.room.hostId) {
+    await this.startGame1();
+    return;
   }
 
-  await this.startGame1();
+  // 其他人按「準備好」只會標記自己已就緒；
+  // 全部在線嘅非房主玩家都準備好之後先會自動入下一題。
+  const player = this.room.players.find(p => p.id === playerId);
+  if (!player) return;
+
+  g.nextReady = g.nextReady || {};
+  g.nextReady[playerId] = true;
+
+  const connected = this.room.players.filter(
+    p => p.connected && p.id !== this.room.hostId
+  );
+
+  const allReady =
+    connected.length > 0 &&
+    connected.every(p => g.nextReady[p.id]);
+
+  if (allReady) {
+    await this.startGame1();
+    return;
+  }
+
+  await this.save();
+  await this.broadcastRoom();
 }
 
   async lockGame1(){
@@ -669,12 +768,6 @@ async onG1Next(playerId){
 
     const q = shuffle(pool)[0];
 
-    const order = shuffle(
-      players.map(
-        p => p.id
-      )
-    );
-
     const roles = {};
 
     players.forEach(
@@ -691,18 +784,23 @@ async onG1Next(playerId){
     this.room.gameState = {
       game: "game2",
       phase: "prep",
-      round: 1,
+      round: (this.room.gameState?.round || 0) + 1,
       term: q.term,
       category: q.category,
       privateExplanation:
-        q.explanation,
+        q.explanation || null,
       judgeId: judge.id,
       truthId: truth.id,
       roles,
-      order,
-      currentIndex: 0,
+      // order 淨係用嚟俾前端顯示「幾多人已經發言」嘅分母，
+      // 實際發言次序由法官逐個揀（picking phase）。
+      order: players
+        .filter(p => p.id !== judge.id)
+        .map(p => p.id),
+      spokenIds: [],
+      candidates: [],
       currentPlayerId: null,
-      endsAt: Date.now() + 30000
+      endsAt: Date.now() + G2_PREP_MS
     };
 
     await this.save();
@@ -715,7 +813,7 @@ async onG1Next(playerId){
 
     await this.broadcastRoom();
   }
-  
+
       async sendPrivateRoles(){for(const p of this.room.players){
       if(!p.connected)continue;
       const role=this.room.gameState.roles?.[p.id];
@@ -741,29 +839,65 @@ async onG1Next(playerId){
     });
   }
 
-  async startSpeakingGame2(){
-    const g=this.room.gameState;if(!g||g.phase!=="prep")return;
-    g.phase="speaking";g.currentIndex=0;g.currentPlayerId=g.order[0];g.endsAt=Date.now()+60000;
+  // 揀邊個下一個發言：法官有 10 秒揀人，唔揀就隨機喺剩低未發言嘅人度抽一個。
+  async startPickingGame2(){
+    const g=this.room.gameState;if(!g||g.game!=="game2")return;
+    const spoken=new Set(g.spokenIds||[]);
+    const remaining=this.room.players.filter(
+      p=>p.id!==g.judgeId && !spoken.has(p.id)
+    );
+
+    if(!remaining.length){
+      await this.startJudgeGame2();
+      return;
+    }
+
+    g.phase="picking";
+    g.candidates=remaining.map(p=>p.id);
+    g.currentPlayerId=null;
+    g.endsAt=Date.now()+G2_PICK_MS;
+
     await this.save();
     await this.ctx.storage.setAlarm(g.endsAt);
     await this.broadcastRoom();
   }
 
-  async advanceSpeakingGame2(){
-    const g=this.room.gameState;if(!g||g.phase!=="speaking")return;
-    const next=g.currentIndex+1;
-    if(next>=g.order.length){
-      g.phase="judge";g.currentPlayerId=null;g.endsAt=null;
-      await this.save();await this.broadcastRoom();return;
-    }
-    g.currentIndex=next;g.currentPlayerId=g.order[next];g.endsAt=Date.now()+60000;
-    await this.save();await this.ctx.storage.setAlarm(g.endsAt);await this.broadcastRoom();
+  async onG2Pick(playerId,targetId){
+    const g=this.room.gameState;
+    if(!g||g.phase!=="picking"||playerId!==g.judgeId) return;
+    if(!(g.candidates||[]).includes(targetId)) return;
+    await this.beginSpeakingGame2(targetId);
   }
-  async onG2Chat(playerId,text){
-    const g=this.room.gameState;if(!g||g.phase!=="speaking"||g.currentPlayerId!==playerId)return;
-    const p=this.room.players.find(x=>x.id===playerId);if(!p)return;
-    const clean=String(text||"").trim().slice(0,400);if(!clean)return;
-    this.broadcast({type:"chat",chat:{playerId,nickname:p.nickname,text:clean,at:Date.now()}});
+
+  async beginSpeakingGame2(targetId){
+    const g=this.room.gameState;if(!g)return;
+    g.phase="speaking";
+    g.currentPlayerId=targetId;
+    g.candidates=[];
+    g.endsAt=Date.now()+G2_SPEAK_MS;
+
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async advanceAfterSpeakingGame2(){
+    const g=this.room.gameState;if(!g||g.phase!=="speaking")return;
+    g.spokenIds=[...(g.spokenIds||[]),g.currentPlayerId];
+    g.currentPlayerId=null;
+    await this.startPickingGame2();
+  }
+
+  async startJudgeGame2(){
+    const g=this.room.gameState;if(!g)return;
+    g.phase="judge";
+    g.currentPlayerId=null;
+    g.candidates=[];
+    g.endsAt=Date.now()+G2_JUDGE_MS;
+
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
   }
 
   async onG2Judge(playerId,targetId){
@@ -771,6 +905,13 @@ async onG1Next(playerId){
 
     if(!g || g.phase!=="judge" || playerId!==g.judgeId)
       return;
+
+    await this.finishJudgeGame2(targetId);
+  }
+
+  async finishJudgeGame2(targetId){
+    const g=this.room.gameState;
+    if(!g || g.phase!=="judge") return;
 
     if(!this.room.players.some(
       p => p.id===targetId && p.id!==g.judgeId
@@ -834,7 +975,6 @@ async onG1Next(playerId){
   }
 
   async broadcastRoom(){
-    const data=JSON.stringify({type:"state",room:this.room.players.map(p=>p.id)});
     for(const ws of this.ctx.getWebSockets()){
       const a=ws.deserializeAttachment() || {};
       const viewer=a.playerId||null;
@@ -879,16 +1019,39 @@ async onG1Next(playerId){
     if(!this.room)return;
 
     const g=this.room.gameState;
+
     if(g?.phase==="vote" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.lockGame1();
       return;
     }
+
     if(g?.game==="game2" && g.phase==="prep" && g.endsAt && Date.now()+50>=g.endsAt){
-      await this.startSpeakingGame2();
+      await this.startPickingGame2();
       return;
     }
+
+    if(g?.game==="game2" && g.phase==="picking" && g.endsAt && Date.now()+50>=g.endsAt){
+      const cands=g.candidates||[];
+      if(cands.length){
+        const pick=cands[Math.floor(Math.random()*cands.length)];
+        await this.beginSpeakingGame2(pick);
+      } else {
+        await this.startJudgeGame2();
+      }
+      return;
+    }
+
     if(g?.game==="game2" && g.phase==="speaking" && g.endsAt && Date.now()+50>=g.endsAt){
-      await this.advanceSpeakingGame2();
+      await this.advanceAfterSpeakingGame2();
+      return;
+    }
+
+    if(g?.game==="game2" && g.phase==="judge" && g.endsAt && Date.now()+50>=g.endsAt){
+      const choices=this.room.players.filter(p=>p.id!==g.judgeId);
+      if(choices.length){
+        const target=choices[Math.floor(Math.random()*choices.length)];
+        await this.finishJudgeGame2(target.id);
+      }
       return;
     }
 
