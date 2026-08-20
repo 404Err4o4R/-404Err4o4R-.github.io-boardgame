@@ -1,4 +1,4 @@
 window.PLAY_TOGETHER_CONFIG = {
-  API_BASE_URL:
-    "https://404err404r--github-io-boardgame.playtogether-err4o4r.workers.dev"
+  SUPABASE_URL: "https://vwyiqpsnlxdmsthilrmn.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3eWlxcHNubHhkbXN0aGlscm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4NTgyNjUsImV4cCI6MjEwMjQzNDI2NX0.ieWHtvY0YeR3wifB1XN8OYyfF8iR8QUlUr49KpOiVAM"
 };
