@@ -154,6 +154,17 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .copy-row{display:flex;gap:8px}.copy-row textarea{flex:1}
 .host-controls{display:flex;gap:10px;flex-wrap:wrap}
 
+/* 遊戲畫面實際用緊嘅 class（同上面幾組同義但改咗名），
+   之前無對應樣式，會顯示成完全冇裝飾嘅純文字／預設按鈕。 */
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.question{background:var(--blue);color:#fff;padding:26px;border-radius:26px;font-family:"Fredoka";font-size:28px;line-height:1.15;margin:14px 0 18px}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.bars{display:grid;gap:2px}
+.chat{max-height:260px;overflow-y:auto;background:#fbfbf6;border-radius:18px;padding:14px;margin-top:8px}
+.msg{margin-bottom:9px;font-size:14px;line-height:1.5}.msg b{color:var(--blue-dark)}
+.choice{padding:16px;border-radius:18px;border:2px solid #e7e9ee;background:var(--pure);font-weight:900;cursor:pointer}.choice:hover{border-color:var(--blue)}
+@media (max-width:620px){.answers{grid-template-columns:1fr}}
+
 @media (max-width:900px){.hero{grid-template-columns:1fr}.hero-art{min-height:420px}.game-grid,.room-panel,.sync-room{grid-template-columns:1fr}.room-visual{min-height:280px}.steps{grid-template-columns:1fr}}
 @media (max-width:620px){.site-nav nav{display:none}.site-nav{padding:14px 18px}.section{padding:60px 18px}.game-card h3{font-size:38px}.room-form{padding:26px}.option-grid,.choice-grid{grid-template-columns:1fr}.game-title{font-size:42px}.question-box{font-size:24px}.timer{font-size:42px}}
 
