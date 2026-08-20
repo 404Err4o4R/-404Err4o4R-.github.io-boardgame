@@ -1,10 +1,22 @@
 const CONFIG = window.PLAY_TOGETHER_CONFIG || {};
-const API = String(CONFIG.API_BASE_URL || "").replace(/\/+$/, "");
-const WS_BASE = API.replace(/^https:/, "wss:").replace(/^http:/, "ws:");
+const SB_URL = String(CONFIG.SUPABASE_URL || "").replace(/\/+$/, "");
+const SB_KEY = String(CONFIG.SUPABASE_ANON_KEY || "");
+
+const sb =
+  window.supabase && SB_URL && SB_KEY
+    ? window.supabase.createClient(SB_URL, SB_KEY, {
+        auth: { persistSession: false },
+        realtime: { params: { eventsPerSecond: 10 } }
+      })
+    : null;
 const $ = (selector) => document.querySelector(selector);
 
 const S = {
-  socket: null,
+  channel: null,
+  beat: null,
+  loop: null,
+  busy: false,
+  ticking: false,
   room: null,
   playerId: null,
   token: null,
@@ -68,15 +80,23 @@ function clearSession() {
 ========================= */
 
 async function loadQuestions() {
-  const response = await fetch("./questions.json", {
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error("questions.json 載入失敗。");
+  if (!sb) {
+    throw new Error("Supabase 設定未完成，請檢查 config.js。");
   }
 
-  S.questions = await response.json();
+  const [g1, g2] = await Promise.all([
+    sb.rpc("list_categories", { p_game: "game1" }),
+    sb.rpc("list_categories", { p_game: "game2" })
+  ]);
+
+  if (g1.error) throw new Error(g1.error.message);
+  if (g2.error) throw new Error(g2.error.message);
+
+  S.questions = {
+    game1: { categories: g1.data || [] },
+    game2: { categories: g2.data || [] }
+  };
+
   renderCategories();
 }
 
@@ -238,38 +258,20 @@ $("#joinCode")?.addEventListener("input", () => {
 });
 async function createRoom() {
   try {
-    if (!API || API.includes("YOUR-WORKER")) {
-      throw new Error("Cloudflare Worker URL 尚未設定。");
+    if (!sb) {
+      throw new Error("Supabase 設定未完成，請檢查 config.js。");
     }
 
-    S.nickname =
-      $("#createName")?.value.trim() || "玩家";
+    S.nickname = $("#createName")?.value.trim() || "玩家";
 
-    const response = await fetch(API + "/api/rooms", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        game: S.selectedGame,
-        filters: {
-          categories: S.filters
-        }
-      })
+    const { data, error } = await sb.rpc("create_room", {
+      p_game: S.selectedGame,
+      p_filters: S.filters
     });
 
-    const data = await response.json();
+    if (error) throw new Error(error.message);
 
-    if (!response.ok || !data.ok) {
-      throw new Error(
-        data.error || "建立房間失敗。"
-      );
-    }
-
-    await connectRoom(
-      data.roomCode,
-      "create"
-    );
+    await connectRoom(data, "create");
 
   } catch (error) {
     showError(error.message);
@@ -278,138 +280,227 @@ async function createRoom() {
 
 async function joinRoom() {
   try {
-    if (!API || API.includes("YOUR-WORKER")) {
-      throw new Error("Cloudflare Worker URL 尚未設定。");
+    if (!sb) {
+      throw new Error("Supabase 設定未完成，請檢查 config.js。");
     }
 
-    const code =
-      $("#joinCode")?.value.trim().toUpperCase();
+    const code = $("#joinCode")?.value.trim().toUpperCase();
 
     if (!/^[A-Z0-9]{6}$/.test(code)) {
-      throw new Error("房間號需要 6 位英數字。");
+      throw new Error("房間號要 6 位英數字。");
     }
 
-    S.nickname =
-      $("#joinName")?.value.trim() || "玩家";
+    S.nickname = $("#joinName")?.value.trim() || "玩家";
 
     const saved = loadSession(code);
 
-    await connectRoom(
-      code,
-      saved ? "reconnect" : "join",
-      saved
-    );
+    await connectRoom(code, saved ? "reconnect" : "join", saved);
 
   } catch (error) {
     showError(error.message);
   }
 }
 
-function connectRoom(code, mode, saved = null) {
-  return new Promise((resolve, reject) => {
-    if (S.socket) {
-      S.socket.close();
-    }
+function teardown() {
+  clearInterval(S.timer);
+  clearInterval(S.beat);
+  clearInterval(S.loop);
+  S.timer = S.beat = S.loop = null;
 
-    S.room = {
-      code
-    };
+  if (S.channel && sb) {
+    sb.removeChannel(S.channel);
+  }
 
-    S.chat = [];
-    S.role = null;
-    S.explanation = null;
-    $("#roomPanel").innerHTML = "";
-    $("#gamePanel").innerHTML = `
-  <div class="eyebrow">
-    CONNECTING
-  </div>
+  S.channel = null;
+}
 
-  <p class="notice">
-    正在連線到房間……
-  </p>
-`;
-
-setConnectionStatus(
-  "CONNECTING",
-  false
-);
-
-    const ws = new WebSocket(
-  WS_BASE +
-  "/websocket?room=" +
-  encodeURIComponent(code)
-);
-
-S.socket = ws;
-
-    let finished = false;
-
-    const timeout = setTimeout(() => {
-      if (finished) return;
-
-      finished = true;
-
-      ws.close();
-
-      reject(
-        new Error(
-          "WebSocket 連線逾時。請確認房間號是否正確。"
-        )
-      );
-    }, 12000);
-
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: "hello",
-        mode,
-        nickname: S.nickname,
-        playerId: saved?.playerId,
-        token: saved?.token
-      }));
-    };
-
-    ws.onmessage = (event) => {
-      let message;
-
-      try {
-        message = JSON.parse(event.data);
-      } catch {
-        return;
-      }
-
-      if (message.type === "welcome" && !finished) {
-        finished = true;
-        clearTimeout(timeout);
-        resolve();
-      }
-
-      handleServerMessage(message);
-    };
-
-    ws.onerror = () => {
-      if (!finished) {
-        finished = true;
-        clearTimeout(timeout);
-
-        reject(
-          new Error(
-            "WebSocket 連線失敗。"
-          )
-        );
-      }
-
-      setConnectionStatus("ERROR", false);
-    };
-
-    ws.onclose = () => {
-      setConnectionStatus(
-        "DISCONNECTED",
-        false
-      );
-    };
-
-    showGame();
+async function fetchState(advance = true) {
+  const { data, error } = await sb.rpc(advance ? "sync" : "get_state", {
+    p_code: S.room.code,
+    p_token: S.token
   });
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
+
+async function refresh(advance = true) {
+  if (!S.room || S.busy) return;
+
+  S.busy = true;
+
+  try {
+    const room = await fetchState(advance);
+    handleServerMessage({ type: "state", room });
+    S.failed = 0;
+  } catch (error) {
+    S.failed = (S.failed || 0) + 1;
+
+    // 連續失敗三次先出聲，避免一下網絡抖動就彈字
+    if (S.failed === 3) {
+      flash("同步出錯：" + error.message);
+    }
+  } finally {
+    S.busy = false;
+  }
+}
+
+async function loadChat() {
+  const { data } = await sb
+    .from("chat_messages")
+    .select("player_id,nickname,text,created_at")
+    .eq("room_code", S.room.code)
+    .order("created_at", { ascending: true })
+    .limit(100);
+
+  S.chat = (data || []).map((row) => ({
+    playerId: row.player_id,
+    nickname: row.nickname,
+    text: row.text,
+    at: row.created_at
+  }));
+}
+
+function subscribe(code) {
+  S.channel = sb
+    .channel("room:" + code)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "rooms", filter: "code=eq." + code },
+      () => refresh(false)
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "players", filter: "room_code=eq." + code },
+      () => refresh(false)
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "chat_messages",
+        filter: "room_code=eq." + code
+      },
+      (payload) => {
+        S.chat.push({
+          playerId: payload.new.player_id,
+          nickname: payload.new.nickname,
+          text: payload.new.text,
+          at: payload.new.created_at
+        });
+
+        S.chat = S.chat.slice(-100);
+        renderGame();
+      }
+    )
+    .subscribe((status) => {
+      const online = status === "SUBSCRIBED";
+
+      setConnectionStatus(
+        online ? "CONNECTED" : "CONNECTING",
+        online
+      );
+    });
+}
+
+function startLoops() {
+  clearInterval(S.beat);
+  clearInterval(S.loop);
+
+  // 心跳：保持在線狀態（refresh 本身已經會推進階段）
+  S.beat = setInterval(() => {
+    if (!S.token) return;
+
+    sb.rpc("touch_player", { p_token: S.token });
+    refresh();
+  }, 15000);
+
+  // 計時守衛：夠鐘就叫 sync 推進階段
+  S.loop = setInterval(() => {
+    const endsAt = S.room?.gameState?.endsAt;
+
+    if (!endsAt) return;
+
+    const over = Date.now() >= endsAt;
+
+    // 夠鐘之後每秒試一次，最多試到有人成功推進為止
+    if (over) refresh();
+  }, 1000);
+}
+
+async function connectRoom(code, mode, saved = null) {
+  if (!sb) {
+    throw new Error("Supabase 設定未完成，請檢查 config.js。");
+  }
+
+  teardown();
+
+  S.room = { code };
+  S.chat = [];
+  S.role = null;
+  S.explanation = null;
+  S.myVote = undefined;
+
+  $("#roomPanel").innerHTML = "";
+  $("#gamePanel").innerHTML = `
+    <div class="eyebrow">
+      CONNECTING
+    </div>
+
+    <p class="notice">
+      連緊線……
+    </p>
+  `;
+
+  setConnectionStatus("CONNECTING", false);
+  showGame();
+
+  let joined = null;
+
+  if (saved?.token) {
+    const { data, error } = await sb.rpc("touch_player", {
+      p_token: saved.token
+    });
+
+    if (!error && data) {
+      S.playerId = data.playerId;
+      S.token = saved.token;
+      S.nickname = saved.nickname || S.nickname;
+    } else {
+      clearSession();
+    }
+  }
+
+  if (!S.token) {
+    const { data, error } = await sb.rpc("join_room", {
+      p_code: code,
+      p_nickname: S.nickname
+    });
+
+    if (error) throw new Error(error.message);
+
+    joined = data;
+    S.playerId = data.playerId;
+    S.token = data.token;
+  }
+
+  await loadChat();
+
+  const room = await fetchState();
+
+  handleServerMessage({
+    type: "welcome",
+    playerId: S.playerId,
+    token: S.token,
+    room
+  });
+
+  subscribe(code);
+  startLoops();
+
+  return joined;
 }
 
 /* =========================
@@ -507,10 +598,11 @@ function showGame() {
 function leaveRoom() {
   clearInterval(S.timer);
 
-  if (S.socket) {
-    S.socket.close();
-    S.socket = null;
+  if (sb && S.token) {
+    sb.rpc("leave_room", { p_token: S.token });
   }
+
+  teardown();
 
   clearSession();
 
@@ -549,15 +641,43 @@ function flash(text) {
   );
 }
 
-function send(message) {
-  if (
-    S.socket &&
-    S.socket.readyState === WebSocket.OPEN
-  ) {
-    S.socket.send(
-      JSON.stringify(message)
-    );
+async function send(message) {
+  if (!sb || !S.token) return;
+
+  const t = message.type;
+
+  try {
+    if (t === "ready") {
+      await sb.rpc("set_ready", { p_token: S.token, p_ready: !!message.ready });
+    } else if (t === "start") {
+      const { error } = await sb.rpc("start_game", { p_token: S.token });
+      if (error) throw error;
+    } else if (t === "g1:vote") {
+      await sb.rpc("g1_vote", { p_token: S.token, p_option: message.option });
+    } else if (t === "g1:chat" || t === "g2:chat") {
+      await sb.rpc("send_chat", { p_token: S.token, p_text: message.text });
+    } else if (t === "g1:next") {
+      const isHost = S.room?.hostId === S.playerId;
+
+      const { error } = isHost
+        ? await sb.rpc("g1_next", { p_token: S.token })
+        : await sb.rpc("g1_ready", { p_token: S.token });
+
+      if (error) throw error;
+    } else if (t === "g2:pick") {
+      await sb.rpc("g2_pick", { p_token: S.token, p_target: message.targetId });
+    } else if (t === "g2:judge") {
+      await sb.rpc("g2_judge", { p_token: S.token, p_target: message.targetId });
+    } else if (t === "g2:next") {
+      const { error } = await sb.rpc("g2_next", { p_token: S.token });
+      if (error) throw error;
+    }
+  } catch (error) {
+    flash(error.message || "操作失敗。");
+    return;
   }
+
+  refresh();
 }
 
 /* =========================
@@ -747,7 +867,7 @@ const canStart =
           .filter((p) => p.connected)
           .length
       }/6 人在線。
-      2–6 人即可開始。
+      夠人就可以開始。
     </p>
   `;
 
@@ -772,7 +892,7 @@ startBtn?.addEventListener("click", async () => {
   if (startBtn.disabled) return;
 
   const ok = await askConfirm(
-    "是否確定開始遊戲？"
+    "肯定開始遊戲？"
   );
 
   if (ok) {
@@ -806,7 +926,7 @@ function renderGame() {
       </h2>
 
       <p class="notice">
-        房主加入至少 2 位在線玩家後即可開始。
+        夠人數之後，房主就可以開始。
       </p>
     `;
 
@@ -860,7 +980,7 @@ if (game.phase === "intro") {
       </h2>
 
       <p>
-        請準備選擇你的答案
+        準備揀你嘅答案
       </p>
     </div>
   `;
@@ -961,7 +1081,7 @@ if (game.phase === "intro") {
         10 秒投票。
         ${
           myVote !== undefined
-            ? "你已投票。"
+            ? "你已經投咗。"
             : "每人一票。"
         }
       </p>
@@ -1050,7 +1170,7 @@ if (game.phase === "intro") {
                         `<span>${esc(name)}</span>`
                     )
                     .join("、")
-                : "沒有人選這個選項"
+                : "冇人揀呢個"
             }
           </div>
         </div>
@@ -1068,8 +1188,8 @@ if (game.phase === "intro") {
     >
       ${
         game.winner === null
-          ? "本題打平。"
-          : "多數選擇：" +
+          ? "今題打和。"
+          : "多數揀咗：" +
             String.fromCharCode(
               65 + game.winner
             ) +
@@ -1101,7 +1221,7 @@ if (game.phase === "intro") {
     >
       <input
         id="chat1"
-        placeholder="說說你的想法…"
+        placeholder="講下你點諗…"
       >
 
     <button
@@ -1123,12 +1243,19 @@ if (game.phase === "intro") {
         NEXT QUESTION
       </button>
     `
-    : ""
+    : `
+      <button
+        class="btn btn-outline"
+        onclick="next1()"
+      >
+        準備好
+      </button>
+    `
 }
     </div>
 
     <p class="notice">
-      已準備下一題：
+      準備好下一題：
       ${game.nextReadyCount || 0}/
       ${
         S.room.players
@@ -1166,7 +1293,7 @@ if (game.phase === "intro") {
 
 window.vote1 = async (index) => {
   const ok = await askConfirm(
-    "是否確定投票？"
+    "肯定投呢個？"
   );
 
   if (!ok) return;
@@ -1219,10 +1346,10 @@ function roleBlock() {
 
   const label =
     S.role === "judge"
-      ? "法官（公開）"
+      ? "諗樣（公開）"
       : S.role === "truth"
-        ? "知情人"
-        : "騙子";
+        ? "老實人"
+        : "9upper";
 
   return `
     <div
@@ -1290,9 +1417,55 @@ function renderGame2(game) {
   if (game.phase === "prep") {
     html += `
       <div class="status">
-        準備 30 秒。
-        只有直言者收到正確解釋。
+        睇題目 30 秒。
+        只有老實人收到正確解釋。
       </div>
+    `;
+  }
+
+  if (game.phase === "picking") {
+    const isJudge = game.judgeId === S.playerId;
+    const left = (game.candidates || []).length;
+
+    html += `
+      <div
+        class="eyebrow"
+        style="margin-top:18px"
+      >
+        WHO SPEAKS NEXT
+      </div>
+
+      ${
+        isJudge
+          ? `
+            <div class="status">
+              10 秒內揀下一位發言。
+              唔揀就隨機。
+            </div>
+
+            <div class="choice-grid">
+              ${
+                (game.candidates || [])
+                  .map(
+                    (player) => `
+                      <button
+                        class="choice"
+                        onclick="pick2('${player.id}')"
+                      >
+                        ${esc(player.nickname)}
+                      </button>
+                    `
+                  )
+                  .join("")
+              }
+            </div>
+          `
+          : `
+            <div class="status">
+              諗樣揀緊下一位發言（仲有 ${left} 位未講）。
+            </div>
+          `
+      }
     `;
   }
     if (game.phase === "speaking") {
@@ -1309,7 +1482,7 @@ function renderGame2(game) {
 
     html += `
       <div class="status">
-        目前發言：
+        而家發言：
         <b>
           ${esc(
             active?.nickname || ""
@@ -1318,9 +1491,13 @@ function renderGame2(game) {
 
         ${
           mine
-            ? " · 輪到你了。"
+            ? " · 輪到你喇，30 秒。"
             : ""
         }
+
+        <span class="muted">
+          （${(game.spokenIds || []).length}/${(game.order || []).length} 已發言）
+        </span>
       </div>
 
       <div
@@ -1343,8 +1520,8 @@ function renderGame2(game) {
           }
           placeholder="${
             mine
-              ? "輸入你的解釋…"
-              : "等待發言…"
+              ? "打你嘅解釋…"
+              : "等緊發言…"
           }"
         >
 
@@ -1398,12 +1575,17 @@ function renderGame2(game) {
         class="eyebrow"
         style="margin-top:18px"
       >
-        JUDGE
+        WHO IS THE 老實人
       </div>
 
       ${
         isJudge
           ? `
+            <div class="status">
+              2 分鐘內揀出你認為嘅老實人。
+              唔揀就隨機。
+            </div>
+
             <div class="choice-grid">
               ${
                 (game.choices || [])
@@ -1425,7 +1607,7 @@ function renderGame2(game) {
           `
           : `
             <div class="status">
-              法官正在選擇他認為的直言者。
+              諗樣有 2 分鐘揀出老實人。
             </div>
           `
       }
@@ -1438,13 +1620,13 @@ function renderGame2(game) {
       <div class="result">
         ${
           game.correct
-            ? "✅ 法官猜中了！"
-            : "❌ 法官猜錯了！"
+            ? "✅ 諗樣估中咗！"
+            : "❌ 諗樣估錯咗！"
         }
       </div>
 
       <p class="notice">
-        真正直言者：
+        真正嘅老實人：
         <b>
           ${esc(
             game.truthNickname
@@ -1507,6 +1689,13 @@ window.chat2 = () => {
     button.disabled = true;
     button.classList.remove("ready");
   }
+};
+
+window.pick2 = (targetId) => {
+  send({
+    type: "g2:pick",
+    targetId
+  });
 };
 
 window.judge2 = (targetId) => {
