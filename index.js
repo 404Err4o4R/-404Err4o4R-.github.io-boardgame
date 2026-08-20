@@ -316,7 +316,8 @@ voters:g.phase!=="vote" ? {
 
 submittedCount:Object.keys(g.votes||{}).length,
 nextReadyCount:Object.keys(g.nextReady||{}).length,
-winner:g.winner ?? null
+winner:g.winner ?? null,
+results:g.results||null
     };
   }
 
@@ -383,6 +384,8 @@ export class GameRoom extends DurableObject {
         players:[],
         gameState:null,
         chat:[],
+        // Game 1 每題鎖定嗰刻嘅投票快照，儲埋嚟計「結算」嗰陣嘅心有靈犀指數。
+        g1History:[],
         createdAt:Date.now(),
         updatedAt:Date.now()
       };
@@ -457,6 +460,7 @@ export class GameRoom extends DurableObject {
       case "g1:vote": return this.onG1Vote(session.playerId,msg.option);
       case "g1:chat": return this.onChat(session.playerId,msg.text,"chat");
       case "g1:next": return this.onG1Next(session.playerId);
+      case "g1:finish": return this.onG1Finish(session.playerId);
       case "g2:ready": return this.onG2PrepReady(session.playerId);
       case "g2:pick": return this.onG2Pick(session.playerId,msg.targetId);
       case "g2:chat": return this.onChat(session.playerId,msg.text,"speaking");
@@ -710,15 +714,19 @@ if (notReady.length > 0) {
 async onG1Next(playerId){
   const g = this.room.gameState;
 
-  if (!g || g.phase !== "chat") {
+  // 睇完結算之後，房主都可以撳呢個掣繼續玩落去（歷史記錄唔會清）。
+  if (!g || (g.phase !== "chat" && g.phase !== "final")) {
     return;
   }
 
-  // 房主隨時可以強制入下一題。
+  // 房主隨時可以強制入下一題（包括結算完之後想繼續玩）。
   if (playerId === this.room.hostId) {
     await this.startGame1();
     return;
   }
+
+  // 結算畫面淨係房主先可以繼續玩落去，其他人喺呢個 phase 冇「準備好」可以按。
+  if (g.phase !== "chat") return;
 
   // 其他人按「準備好」只會標記自己已就緒；
   // 全部在線嘅非房主玩家都準備好之後先會自動入下一題。
@@ -751,6 +759,81 @@ async onG1Next(playerId){
     Object.values(g.votes||{}).forEach(v=>{if(v===0||v===1)counts[v]++});
     const winner=counts[0]===counts[1]?null:(counts[0]>counts[1]?0:1);
     g.phase="chat";g.endsAt=null;g.voteCounts=counts;g.winner=winner;
+
+    this.room.g1History=this.room.g1History||[];
+    this.room.g1History.push({
+      category:g.question?.category||"未分類",
+      votes:{...g.votes}
+    });
+    // 派對局唔會玩到幾百題，呢個上限純粹防止極端情況下房間狀態無限脹大。
+    if(this.room.g1History.length>500) this.room.g1History.shift();
+
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  // 結算：計每兩個玩家之間「揀咗同一個選項」嘅比率，
+  // 分整體同分類兩層，畀「結束並睇結算」用。
+  computeG1Results(){
+    const history=this.room.g1History||[];
+    const players=this.room.players;
+    const pairs=[];
+
+    for(let i=0;i<players.length;i++){
+      for(let j=i+1;j<players.length;j++){
+        const a=players[i], b=players[j];
+        let shared=0, match=0;
+        const byCategory={};
+
+        for(const round of history){
+          const va=round.votes[a.id];
+          const vb=round.votes[b.id];
+          if(va===undefined || vb===undefined) continue;
+
+          const cat=round.category;
+          byCategory[cat]=byCategory[cat] || {shared:0,match:0};
+          byCategory[cat].shared++;
+
+          shared++;
+          if(va===vb){
+            match++;
+            byCategory[cat].match++;
+          }
+        }
+
+        if(shared===0) continue;
+
+        pairs.push({
+          aId:a.id, aName:a.nickname,
+          bId:b.id, bName:b.nickname,
+          shared, match,
+          rate:Math.round((match/shared)*100),
+          byCategory:Object.fromEntries(
+            Object.entries(byCategory).map(([cat,v])=>[
+              cat,
+              {shared:v.shared,match:v.match,rate:Math.round((v.match/v.shared)*100)}
+            ])
+          )
+        });
+      }
+    }
+
+    pairs.sort((x,y)=>y.rate-x.rate || y.shared-x.shared);
+
+    return {
+      totalRounds:history.length,
+      pairs
+    };
+  }
+
+  async onG1Finish(playerId){
+    const g=this.room.gameState;
+    if(!g || g.phase!=="chat" || playerId!==this.room.hostId) return;
+
+    g.phase="final";
+    g.endsAt=null;
+    g.results=this.computeG1Results();
+
     await this.save();
     await this.broadcastRoom();
   }
