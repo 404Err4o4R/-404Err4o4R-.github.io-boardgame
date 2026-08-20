@@ -327,6 +327,12 @@ winner:g.winner ?? null
     currentPlayerId:g.currentPlayerId||null
   };
 
+  if(g.phase==="prep") {
+    base.prepReadyCount=Object.keys(g.prepReady||{}).length;
+    base.prepTotal=room.players.filter(p=>p.connected).length;
+    base.myPrepReady=viewerId ? !!g.prepReady?.[viewerId] : false;
+  }
+
   if(g.phase==="picking") {
     base.candidates = room.players
       .filter(p => (g.candidates||[]).includes(p.id))
@@ -451,6 +457,7 @@ export class GameRoom extends DurableObject {
       case "g1:vote": return this.onG1Vote(session.playerId,msg.option);
       case "g1:chat": return this.onChat(session.playerId,msg.text,"chat");
       case "g1:next": return this.onG1Next(session.playerId);
+      case "g2:ready": return this.onG2PrepReady(session.playerId);
       case "g2:pick": return this.onG2Pick(session.playerId,msg.targetId);
       case "g2:chat": return this.onChat(session.playerId,msg.text,"speaking");
       case "g2:judge": return this.onG2Judge(session.playerId,msg.targetId);
@@ -792,6 +799,7 @@ async onG1Next(playerId){
       judgeId: judge.id,
       truthId: truth.id,
       roles,
+      prepReady: {},
       // order 淨係用嚟俾前端顯示「幾多人已經發言」嘅分母，
       // 實際發言次序由法官逐個揀（picking phase）。
       order: players
@@ -837,6 +845,31 @@ async onG1Next(playerId){
       explanation:role==="truth"?g.privateExplanation:null,
       isJudge:playerId===g.judgeId
     });
+  }
+
+  // prep 階段大家睇緊題目，全部在線玩家都撳咗「準備好」就唔使等夠 30 秒，
+  // 可以即刻入下一個階段。
+  async onG2PrepReady(playerId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game2" || g.phase!=="prep") return;
+
+    const p=this.room.players.find(x=>x.id===playerId);
+    if(!p) return;
+
+    g.prepReady=g.prepReady||{};
+    g.prepReady[playerId]=true;
+
+    const connected=this.room.players.filter(x=>x.connected);
+    const allReady=connected.length>0 &&
+      connected.every(x=>g.prepReady[x.id]);
+
+    if(allReady){
+      await this.startPickingGame2();
+      return;
+    }
+
+    await this.save();
+    await this.broadcastRoom();
   }
 
   // 揀邊個下一個發言：法官有 10 秒揀人，唔揀就隨機喺剩低未發言嘅人度抽一個。
