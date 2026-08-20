@@ -487,6 +487,12 @@ function handleServerMessage(message) {
 
   S.room = message.room;
 
+  // 房間狀態入面嘅 chat 先係準嘅（例如新一題開始時伺服器會清空），
+  // 每次 state 都由呢度重新同步，唔靠逐條 chat 訊息儲埋落嚟。
+  if (message.room.chat) {
+    S.chat = message.room.chat;
+  }
+
   if (message.room.gameState?.phase === "vote") {
     if (
       message.room.gameState.myVote !== null &&
@@ -900,6 +906,15 @@ function startTimer(element, endsAt) {
    Game 1
 ========================= */
 
+function categoryTagHtml(category) {
+  if (!category) return "";
+  return `
+    <div class="filter-chip" style="pointer-events:none;cursor:default;display:inline-block;margin-bottom:10px">
+      ${esc(category)}
+    </div>
+  `;
+}
+
 function renderGame1(game) {
 
 if (game.phase === "final") {
@@ -965,6 +980,8 @@ if (game.phase === "intro") {
           class="timer"
         ></div>
       </div>
+
+      ${categoryTagHtml(game.question.category)}
 
       <div class="question">
         ${esc(
@@ -1048,6 +1065,8 @@ if (game.phase === "intro") {
         <span>EVERYONE CHOOSE?</span>
       </h2>
     </div>
+
+    ${categoryTagHtml(game.question.category)}
 
     <div class="question">
       ${esc(
@@ -1143,17 +1162,6 @@ if (game.phase === "intro") {
 
     <div style="height:16px"></div>
 
-    <div class="eyebrow">
-      TALK IT OUT
-    </div>
-
-    <div
-      id="chatBox"
-      class="chat"
-    >
-      ${renderChatHtml()}
-    </div>
-
     <div
       class="row"
       style="margin-top:10px"
@@ -1209,6 +1217,19 @@ if (game.phase === "intro") {
           .length
       }
     </p>
+
+    <div style="height:16px"></div>
+
+    <div class="eyebrow">
+      TALK IT OUT
+    </div>
+
+    <div
+      id="chatBox"
+      class="chat"
+    >
+      ${renderChatHtml()}
+    </div>
   `;
   const chatInput = $("#chat1");
   const chatSend = $("#chat1Send");
