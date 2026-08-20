@@ -1069,7 +1069,7 @@ if (game.phase === "intro") {
         <div class="vote-result-row">
           <div class="vote-result-head">
             <strong>
-              選擇 ${String.fromCharCode(65 + index)}
+              ${String.fromCharCode(65 + index)} · ${esc(game.question.options[index])}
             </strong>
 
             <strong>
