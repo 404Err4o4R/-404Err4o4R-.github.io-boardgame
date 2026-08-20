@@ -535,7 +535,18 @@ function handleServerMessage(message) {
 
     S.chat = S.chat.slice(-100);
 
-    renderGame();
+    // 唔用 renderGame() 成個畫面重畫，唔係就算得返你自己輸入緊嘅字都會被清空。
+    // 淨係加返新一句落個聊天框，其他嘢（包括輸入框入面未send嘅字）唔郁。
+    const chatBox = $("#chatBox");
+
+    if (chatBox) {
+      chatBox.insertAdjacentHTML(
+        "beforeend",
+        chatMsgHtml(message.chat)
+      );
+
+      scrollChat();
+    }
   }
 }
 
@@ -908,11 +919,7 @@ function startTimer(element, endsAt) {
 
 function categoryTagHtml(category) {
   if (!category) return "";
-  return `
-    <div class="filter-chip" style="pointer-events:none;cursor:default;display:inline-block;margin-bottom:10px">
-      ${esc(category)}
-    </div>
-  `;
+  return `<div class="q-tag">#${esc(category)}</div>`;
 }
 
 function renderGame1(game) {
@@ -981,13 +988,13 @@ if (game.phase === "intro") {
         ></div>
       </div>
 
-      ${categoryTagHtml(game.question.category)}
-
       <div class="question">
         ${esc(
           game.question.question
         )}
       </div>
+
+      ${categoryTagHtml(game.question.category)}
 
       <div class="answers">
         ${
@@ -1066,13 +1073,13 @@ if (game.phase === "intro") {
       </h2>
     </div>
 
-    ${categoryTagHtml(game.question.category)}
-
     <div class="question">
       ${esc(
         game.question.question
       )}
     </div>
+
+    ${categoryTagHtml(game.question.category)}
 
     <div class="bars">
   ${[0, 1]
@@ -1166,20 +1173,6 @@ if (game.phase === "intro") {
       class="row"
       style="margin-top:10px"
     >
-      <input
-        id="chat1"
-        placeholder="講下你點諗…"
-      >
-
-    <button
-  id="chat1Send"
-  class="btn btn-send"
-  disabled
-  onclick="chat1()"
->
-  SEND
-</button>
-
  ${
   S.room.hostId === S.playerId
     ? `
@@ -1218,17 +1211,36 @@ if (game.phase === "intro") {
       }
     </p>
 
-    <div style="height:16px"></div>
+    <div class="chat-panel">
+      <div class="eyebrow">
+        TALK IT OUT
+      </div>
 
-    <div class="eyebrow">
-      TALK IT OUT
-    </div>
+      <div
+        class="row"
+        style="margin-top:8px"
+      >
+        <input
+          id="chat1"
+          placeholder="講下你點諗…"
+        >
 
-    <div
-      id="chatBox"
-      class="chat"
-    >
-      ${renderChatHtml()}
+        <button
+          id="chat1Send"
+          class="btn btn-send"
+          disabled
+          onclick="chat1()"
+        >
+          SEND
+        </button>
+      </div>
+
+      <div
+        id="chatBox"
+        class="chat"
+      >
+        ${renderChatHtml()}
+      </div>
     </div>
   `;
   const chatInput = $("#chat1");
@@ -1920,18 +1932,20 @@ window.next2 = () => {
   });
 };
 
+function chatMsgHtml(message) {
+  return `
+    <div class="msg">
+      <b>
+        ${esc(message.nickname)}
+      </b>
+      ：
+      ${esc(message.text)}
+    </div>
+  `;
+}
+
 function renderChatHtml() {
-  return S.chat.map(
-    (message) => `
-      <div class="msg">
-        <b>
-          ${esc(message.nickname)}
-        </b>
-        ：
-        ${esc(message.text)}
-      </div>
-    `
-  ).join("");
+  return S.chat.map(chatMsgHtml).join("");
 }
 
 function scrollChat() {
