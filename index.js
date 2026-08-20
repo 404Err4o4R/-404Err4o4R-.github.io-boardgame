@@ -11,6 +11,7 @@ const MIN_PLAYERS = 2;
 const ROOM_TTL = 1000 * 60 * 60 * 6;
 const MAX_MESSAGE = 12_000;
 const MAX_CHAT_HISTORY = 100;
+const MAX_CHAT_ARCHIVE = 1000; // 房主專用嘅全場聊天記錄上限（唔會跟住每題重置）
 
 const G1_VOTE_MS = 10000;
 const G2_PREP_MS = 30000;
@@ -270,7 +271,8 @@ function publicRoom(room, viewerId=null) {
   score:p.score||0
 })),
     gameState: publicGameState(room, viewerId),
-    chat: room.chat || [],
+    // 房主可以睇返成場所有題目嘅聊天記錄，其他人淨係見到依家嗰題（新一題開始就會重置）。
+    chat: (viewerId && viewerId===room.hostId) ? (room.chatArchive || room.chat || []) : (room.chat || []),
     viewerRole: viewerId && room.gameState?.roles?.[viewerId] || null,
     viewerExplanation: viewerId && room.gameState?.roles?.[viewerId]==="truth"
       ? room.gameState.privateExplanation || null
@@ -708,6 +710,8 @@ if (notReady.length > 0) {
     const clean=String(text||"").trim().slice(0,400);if(!clean)return;
     const chat={playerId,nickname:p.nickname,text:clean,at:Date.now()};
     this.room.chat=[...(this.room.chat||[]),chat].slice(-MAX_CHAT_HISTORY);
+    // 房主專屬嘅完整記錄，唔跟住 startGame1() 嘅每題重置一齊清空。
+    this.room.chatArchive=[...(this.room.chatArchive||[]),chat].slice(-MAX_CHAT_ARCHIVE);
     await this.save();
     this.broadcast({type:"chat",chat});
   }
