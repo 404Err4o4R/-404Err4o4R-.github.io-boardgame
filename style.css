@@ -335,3 +335,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   font-weight:900;
   color:var(--ink);
 }
+
+.muted {
+  opacity: .55;
+  font-size: 12px;
+}
