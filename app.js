@@ -21,7 +21,8 @@ const S = {
   selectedGame: "game1",
   filters: [],
   questions: null,
-  myVote: undefined
+  myVote: undefined,
+  g1SelectedPair: undefined
 };
 
 function esc(value) {
@@ -423,6 +424,7 @@ async function connectRoom(code, mode, saved = null) {
   S.role = null;
   S.explanation = null;
   S.myVote = undefined;
+  S.g1SelectedPair = undefined;
 
   $("#roomPanel").innerHTML = "";
   $("#gamePanel").innerHTML = `
@@ -476,6 +478,13 @@ function handleServerMessage(message) {
   }
 
   if (message.type === "state") {
+  const wasFinal = S.room?.gameState?.phase === "final";
+  const isFinal = message.room.gameState?.phase === "final";
+
+  if (isFinal && !wasFinal) {
+    S.g1SelectedPair = undefined;
+  }
+
   S.room = message.room;
 
   if (message.room.gameState?.phase === "vote") {
@@ -893,6 +902,11 @@ function startTimer(element, endsAt) {
 
 function renderGame1(game) {
 
+if (game.phase === "final") {
+  renderGame1Final(game);
+  return;
+}
+
 if (game.phase === "intro") {
   $("#gamePanel").innerHTML = `
     <div class="game-intro">
@@ -1167,6 +1181,13 @@ if (game.phase === "intro") {
       >
         NEXT QUESTION
       </button>
+
+      <button
+        class="btn btn-outline"
+        onclick="finish1()"
+      >
+        結束並睇結算
+      </button>
     `
     : `
       <button
@@ -1261,6 +1282,224 @@ window.next1 = () => {
     type: "g1:next"
   });
 };
+
+window.finish1 = async () => {
+  const ok = await askConfirm(
+    "結束呢輪，同大家睇結算？"
+  );
+
+  if (!ok) return;
+
+  send({
+    type: "g1:finish"
+  });
+};
+
+window.selectPair1 = (index) => {
+  S.g1SelectedPair = index;
+  renderGame();
+};
+
+/* =========================
+   Game 1 · 結算
+========================= */
+
+function renderGame1Final(game) {
+  const results = game.results || { totalRounds: 0, pairs: [] };
+  const pairs = results.pairs || [];
+
+  if (!pairs.length) {
+    $("#gamePanel").innerHTML = `
+      <div class="eyebrow">
+        RESULT · 心有靈犀指數
+      </div>
+
+      <h2 class="title">
+        仲未夠數據<br>
+        <span>計唔到默契指數</span>
+      </h2>
+
+      <p class="notice">
+        要至少一條題目入面有兩位玩家都投咗票，先可以計算。
+      </p>
+
+      ${
+        S.room.hostId === S.playerId
+          ? `<button class="btn btn-yellow" onclick="next1()">再嚟一題</button>`
+          : ""
+      }
+    `;
+    return;
+  }
+
+  const selectedIndex =
+    S.g1SelectedPair !== undefined && pairs[S.g1SelectedPair]
+      ? S.g1SelectedPair
+      : 0;
+
+  const selectedPair = pairs[selectedIndex];
+
+  const catRows = Object.entries(selectedPair.byCategory)
+    .sort((a, b) => b[1].rate - a[1].rate)
+    .map(([cat, stat]) => barRowHtml(cat, stat.rate, `${stat.match}/${stat.shared}`, false))
+    .join("");
+
+  const pairChips = pairs
+    .map((p, index) => `
+      <button
+        type="button"
+        class="filter-chip ${index === selectedIndex ? "active" : ""}"
+        onclick="selectPair1(${index})"
+      >
+        ${esc(p.aName)} × ${esc(p.bName)} · ${p.rate}%
+      </button>
+    `)
+    .join("");
+
+  const leaderboardRows = pairs
+    .map((p) =>
+      barRowHtml(
+        `${p.aName} × ${p.bName}`,
+        p.rate,
+        `${p.match}/${p.shared}`,
+        p === pairs[0]
+      )
+    )
+    .join("");
+
+  $("#gamePanel").innerHTML = `
+    <div class="eyebrow">
+      RESULT · 心有靈犀指數
+    </div>
+
+    <h2 class="title">
+      全場最有默契：<br>
+      <span>${esc(pairs[0].aName)} × ${esc(pairs[0].bName)}</span>
+    </h2>
+
+    <div class="result">
+      ${pairs[0].rate}% 一致（${pairs[0].match}/${pairs[0].shared} 題）
+    </div>
+
+    <p class="notice">
+      得兩個選項嘅題目，亂咁揀都有 5 成機會啱，所以 5 成以上先算真係夾。
+      一齊玩過嘅題越多，個數字就越準。（呢局一共問咗 ${results.totalRounds} 題）
+    </p>
+
+    <div style="height:18px"></div>
+
+    <div class="eyebrow">
+      揀一對玩家睇佢哋嘅分類細節
+    </div>
+
+    <div class="filter-box" style="margin-top:8px">
+      ${pairChips}
+    </div>
+
+    <div style="height:10px"></div>
+
+    <div class="bars">
+      ${catRows}
+    </div>
+
+    <div style="height:24px"></div>
+
+    <div class="eyebrow">
+      全部組合排名
+    </div>
+
+    <div class="bars" style="margin-top:8px">
+      ${leaderboardRows}
+    </div>
+
+    ${flourishHtml(results)}
+
+    ${
+      S.room.hostId === S.playerId
+        ? `
+          <div style="height:16px"></div>
+          <button class="btn btn-yellow" onclick="next1()">再嚟一題</button>
+        `
+        : ""
+    }
+  `;
+}
+
+function flourishHtml(results) {
+  const maverick = results.maverick;
+  const divisive = results.mostDivisive;
+  const soulmates = results.soulmates;
+
+  if (!maverick && !divisive && !soulmates) return "";
+
+  const cards = `
+    ${
+      maverick
+        ? `
+          <div class="role-card">
+            🎭 特立獨行獎
+            <div class="title" style="font-size:22px;margin:6px 0 4px">${esc(maverick.name)}</div>
+            ${maverick.count} / ${maverick.totalRounds} 題同全場多數意見唔同（${maverick.rate}%）
+          </div>
+        `
+        : ""
+    }
+    ${
+      divisive
+        ? `
+          <div class="role-card bluffer">
+            💥 全場最撕裂一題
+            <div class="title" style="font-size:20px;margin:6px 0 4px">${esc(divisive.question)}</div>
+            ${esc(divisive.options?.[0] || "選項A")} ${divisive.countA} 票　vs　${esc(divisive.options?.[1] || "選項B")} ${divisive.countB} 票
+          </div>
+        `
+        : ""
+    }
+  `;
+
+  const soulmateRows = (soulmates || [])
+    .map((s) => barRowHtml(`${s.name} 嘅拍檔`, s.rate, s.partnerName, false))
+    .join("");
+
+  return `
+    <div style="height:24px"></div>
+    <div class="eyebrow">花絮</div>
+
+    ${
+      cards.trim()
+        ? `<div class="choice-grid" style="margin-top:8px">${cards}</div>`
+        : ""
+    }
+
+    ${
+      soulmateRows
+        ? `
+          <div style="height:16px"></div>
+          <div class="eyebrow">你嘅心有靈犀拍檔</div>
+          <div class="bars" style="margin-top:8px">${soulmateRows}</div>
+        `
+        : ""
+    }
+  `;
+}
+
+function barRowHtml(label, rate, fraction, highlight) {
+  return `
+    <div class="vote-result-row">
+      <div class="vote-result-head">
+        <strong>${esc(label)}</strong>
+        <strong>${rate}%　·　${esc(fraction)}</strong>
+      </div>
+
+      <div class="vote-result-bar">
+        <div
+          class="vote-result-fill ${highlight ? "majority" : ""}"
+          style="width:${Math.max(rate, 3)}%"
+        ></div>
+      </div>
+    </div>
+  `;
+}
 
 /* =========================
    Game 2
