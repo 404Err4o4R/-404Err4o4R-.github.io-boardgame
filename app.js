@@ -41,31 +41,44 @@ function showError(text) {
   el.classList.toggle("hidden", !text);
 }
 
+/*
+ * 用 sessionStorage 而唔用 localStorage：
+ * localStorage 係成個瀏覽器共用，如果喺同一個瀏覽器開兩個分頁測試，
+ * 第二個分頁會讀到第一個玩家嘅 token，然後用佢嘅身份「重連」，
+ * 結果兩個分頁變成同一個玩家。sessionStorage 每個分頁獨立，
+ * 同時仍然支援喺同一個分頁 refresh 之後重連返。
+ */
 function saveSession() {
   if (!S.room || !S.playerId || !S.token) return;
 
-  localStorage.setItem(
-    "pt:" + S.room.code,
-    JSON.stringify({
-      playerId: S.playerId,
-      token: S.token,
-      nickname: S.nickname
-    })
-  );
+  try {
+    sessionStorage.setItem(
+      "pt:" + S.room.code,
+      JSON.stringify({
+        playerId: S.playerId,
+        token: S.token,
+        nickname: S.nickname
+      })
+    );
+  } catch {}
 }
 
 function loadSession(code) {
   try {
-    return JSON.parse(localStorage.getItem("pt:" + code) || "null");
+    return JSON.parse(sessionStorage.getItem("pt:" + code) || "null");
   } catch {
     return null;
   }
 }
 
-function clearSession() {
-  if (S.room) {
-    localStorage.removeItem("pt:" + S.room.code);
-  }
+function clearSession(code) {
+  const target = code || S.room?.code;
+
+  if (!target) return;
+
+  try {
+    sessionStorage.removeItem("pt:" + target);
+  } catch {}
 }
 
 /* =========================
@@ -291,7 +304,17 @@ async function joinRoom() {
 
     const saved = loadSession(code);
 
-    await connectRoom(code, saved ? "reconnect" : "join", saved);
+    if (saved?.token) {
+      try {
+        await connectRoom(code, "reconnect", saved);
+        return;
+      } catch {
+        // 儲存住嘅身份已經失效（例如個房重開過），清走佢再當新玩家加入。
+        clearSession(code);
+      }
+    }
+
+    await connectRoom(code, "join");
 
   } catch (error) {
     showError(error.message);
@@ -642,6 +665,12 @@ function renderRoom() {
             }
 
             <strong class="player-name">   ${esc(player.nickname)} </strong>
+
+            ${
+              player.id === S.playerId
+                ? `<span class="you-tag">你</span>`
+                : ""
+            }
 
             <span style="opacity:.65">
               ${
@@ -1311,10 +1340,28 @@ function renderGame2(game) {
   `;
 
   if (game.phase === "prep") {
+    const myReady = !!game.myPrepReady;
+
     html += `
       <div class="status">
         睇題目 30 秒。
         只有老實人收到正確解釋。
+      </div>
+
+      <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button
+          id="prepReadyBtn"
+          class="btn ${myReady ? "btn-green" : "btn-ready"}"
+          ${myReady ? "disabled" : ""}
+          onclick="ready2()"
+        >
+          ${myReady ? "✓ Ready" : "準備好"}
+        </button>
+
+        <span class="notice">
+          ${game.prepReadyCount || 0}/${game.prepTotal || 0} 人準備好，
+          全部準備好就唔使等夠 30 秒。
+        </span>
       </div>
     `;
   }
@@ -1585,6 +1632,12 @@ window.chat2 = () => {
     button.disabled = true;
     button.classList.remove("ready");
   }
+};
+
+window.ready2 = () => {
+  send({
+    type: "g2:ready"
+  });
 };
 
 window.pick2 = (targetId) => {
