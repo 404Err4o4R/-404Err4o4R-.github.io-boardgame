@@ -1,66 +1,66 @@
-# PLAY TOGETHER · GitHub Pages 版
+# PLAY TOGETHER · Cloudflare Workers 版
 
-這個版本完全移除 Node.js、Express、Socket.io 與 `server.js`。
+呢個版本用 **Cloudflare Workers + Durable Objects** 做房間邏輯同即時同步，前端純靜態（GitHub Pages 或者 Cloudflare Pages 都得）。
 
 ## 專案結構
 
 ```text
 /
-├── index.html
+├── index.html          前端頁面
 ├── style.css
-├── app.js
-├── questions.json
-├── .nojekyll
+├── app.js               前端邏輯，透過 WebSocket 連去 Worker
+├── config.js             設定 Worker 網址
+├── index.js               Cloudflare Worker + Durable Object（GameRoom）
+├── question-bank.js        題庫（Worker 匯入呢個檔案，唔係 questions.json）
+├── wrangler.json
+├── package.json
+├── .github/workflows/deploy.yml   推去 main 分支自動 wrangler deploy
 └── README.md
 ```
 
-## GitHub Pages 部署
+> `questions.json` 而家冇任何程式碼會讀取（前端、Worker 都唔會），純粹係舊版留低嘅資料備份，可以刪除或者當備份保留，睇你哋需要。
 
-1. 建立一個 GitHub repository。
-2. 把以上檔案直接上傳到 repository 根目錄。
-3. GitHub → `Settings` → `Pages`。
-4. 選擇 `Deploy from a branch`，Branch 選你的主分支、Folder 選 `/ (root)`。
-5. 儲存後等待 GitHub Pages 完成部署。
+## 部署步驟
 
-網站會直接載入 `questions.json`，所以不需要 `npm install` 或 `npm start`。
+### 1. Cloudflare Worker（房間邏輯）
 
-## 純靜態聯機方式
+```bash
+npm install
+npx wrangler deploy
+```
 
-GitHub Pages 本身只負責提供靜態 HTML/CSS/JS/JSON。
+部署完成之後，終端機會印出一個類似
+`https://404err404r--github-io-boardgame.<你嘅-subdomain>.workers.dev`
+嘅網址。將呢個網址填入 `config.js` 嘅 `WORKER_URL`。
 
-跨裝置聯機使用瀏覽器原生 WebRTC：
+如果想用 GitHub Actions 自動部署，喺 repo 嘅 `Settings → Secrets and variables → Actions` 入面加一個
+`CLOUDFLARE_API_TOKEN`，推去 `main` 分支就會自動觸發 `.github/workflows/deploy.yml`。
 
-- 房主建立房間。
-- 房主按 `CREATE INVITE` 產生一次性邀請資料。
-- 把邀請資料貼給一位玩家。
-- 玩家產生 `ANSWER` 後貼回房主。
-- P2P DataChannel 建立成功後，雙方直接傳遞遊戲狀態。
-- 房主瀏覽器負責回合、倒計時、投票與遊戲狀態。
-- 每局支援 4–6 人，房主需要逐一邀請其他玩家。
+### 2. 前端靜態頁面
 
-### 很重要的限制
+`index.html` / `style.css` / `app.js` / `config.js` 純靜態，可以：
 
-這是真正的「零應用後端」版本，因此房主瀏覽器取代了原本的 Socket.io 伺服器。
+- 用 GitHub Pages（`Settings → Pages → Deploy from a branch`），或者
+- 用 Cloudflare Pages（連埋個 repo，Build command 留空，Output directory 用 `/`）。
 
-優點：
-- 不需要 Node.js。
-- 不需要 npm。
-- 可以直接放 GitHub Pages。
-- 遊戲資料透過 P2P DataChannel 傳輸。
+記得 `config.js` 嘅 `WORKER_URL` 一定要指返去上面部署好嘅 Worker 網址。
 
-限制：
-- 房主關閉頁面，遊戲房間就會消失。
-- 手動交換 WebRTC 邀請 / Answer，比真正的房間伺服器麻煩。
-- 某些公司、學校或嚴格 NAT 網路可能無法建立 P2P 連線；本版使用公開 STUN 服務協助穿透 NAT，但沒有 TURN 中繼。
-- 房主的瀏覽器保存整個遊戲狀態，因此「法官 / 知情人 / 騙子」並非像真正服務器那樣對房主完全保密。這是零後端架構的安全邊界。
+## 運作方式
+
+- 房主喺前端建立房間 → 前端 `POST /api/rooms` 去 Worker，Worker 開一個 Durable Object 代表呢間房。
+- 之後所有玩家（包括房主）透過 `wss://.../websocket?room=CODE` 連 WebSocket，直接同 Durable Object 通訊。
+- 投票、聊天、計時、角色分配全部喺 Durable Object 入面處理，並透過 WebSocket 即時 broadcast 俾房入面所有人。
+- 房間狀態存喺 Durable Object 嘅 SQLite storage，6 小時冇活動會自動清理。
 
 ## 題庫
 
-`questions.json` 包含：
+`question-bank.js` 包含：
 
-- 遊戲1：6 類 × 180 題 = 1,080 題
-- 遊戲2：5 類 × 30 題 = 150 題
-- 總共 1,230 題
+- 遊戲一（心有靈犀一點通）：8 個分類 × 共 568 題
+- 遊戲二（9upper 瞎掰王）：5 個分類 × 30 題 = 150 題
+
+> 遊戲二嘅 `explanation`（畀「老實人」睇嘅正確解釋）目前係 AI 根據術語常見定義寫嘅草稿，
+> 建議入正式局之前自己快速覆核一次，尤其係「網絡梗起源」呢類同時效有關嘅題目。
 
 ## 設計
 
