@@ -763,6 +763,8 @@ async onG1Next(playerId){
     this.room.g1History=this.room.g1History||[];
     this.room.g1History.push({
       category:g.question?.category||"未分類",
+      question:g.question?.question||"",
+      options:g.question?.options||[],
       votes:{...g.votes}
     });
     // 派對局唔會玩到幾百題，呢個上限純粹防止極端情況下房間狀態無限脹大。
@@ -822,8 +824,102 @@ async onG1Next(playerId){
 
     return {
       totalRounds:history.length,
-      pairs
+      pairs,
+      maverick:this.computeG1Maverick(history,players),
+      mostDivisive:this.computeG1MostDivisive(history),
+      soulmates:players.length>=3 ? this.computeG1Soulmates(pairs,players) : null
     };
+  }
+
+  // 特立獨行獎：邊個玩家最常同「全場多數」揀唔同（淨計有明確多數嘅題，即冇撞平）。
+  // 只有 3 人或以上先計得出真正嘅「多數」，2 人局差異就淨係一半一半，無意義。
+  computeG1Maverick(history,players){
+    if(players.length<3) return null;
+
+    const stats={};
+    for(const round of history){
+      const votes=round.votes||{};
+      const ids=Object.keys(votes);
+      if(ids.length<2) continue;
+
+      const counts=[0,0];
+      ids.forEach(id=>{const v=votes[id]; if(v===0||v===1) counts[v]++});
+      if(counts[0]===counts[1]) continue; // 撞平，冇明確多數
+
+      const majority=counts[0]>counts[1] ? 0 : 1;
+      ids.forEach(id=>{
+        const v=votes[id];
+        if(v!==0 && v!==1) return;
+        stats[id]=stats[id] || {counted:0,minority:0};
+        stats[id].counted++;
+        if(v!==majority) stats[id].minority++;
+      });
+    }
+
+    let best=null;
+    for(const p of players){
+      const s=stats[p.id];
+      if(!s || s.counted<2) continue;
+      const rate=s.minority/s.counted;
+      if(!best || s.minority>best.minority || (s.minority===best.minority && rate>best.rate)){
+        best={id:p.id,name:p.nickname,minority:s.minority,counted:s.counted,rate};
+      }
+    }
+    if(!best || best.minority===0) return null;
+
+    return {
+      id:best.id,name:best.name,
+      count:best.minority,totalRounds:best.counted,
+      rate:Math.round(best.rate*100)
+    };
+  }
+
+  // 全場最撕裂嘅一題：邊條題目嘅投票最接近一半一半（起碼要有兩個人投先計）。
+  computeG1MostDivisive(history){
+    let best=null;
+    for(const round of history){
+      const votes=round.votes||{};
+      const counts=[0,0];
+      Object.values(votes).forEach(v=>{if(v===0||v===1) counts[v]++});
+      const total=counts[0]+counts[1];
+      if(total<2) continue;
+
+      const score=Math.min(counts[0],counts[1])/total;
+      if(!best || score>best.score){
+        best={
+          score,
+          question:round.question||"",
+          options:round.options||[],
+          category:round.category||"未分類",
+          countA:counts[0],countB:counts[1]
+        };
+      }
+    }
+    if(!best || best.score===0) return null; // 全員意見一致，唔算撕裂
+
+    return {
+      question:best.question,options:best.options,category:best.category,
+      countA:best.countA,countB:best.countB
+    };
+  }
+
+  // 每個玩家專屬一句「你嘅心有靈犀拍檔係邊個」：喺呢個玩家所有配對入面揀match rate最高嗰個。
+  computeG1Soulmates(pairs,players){
+    const result=[];
+    for(const p of players){
+      let best=null;
+      for(const pair of pairs){
+        if(pair.aId!==p.id && pair.bId!==p.id) continue;
+        const partnerId=pair.aId===p.id ? pair.bId : pair.aId;
+        const partnerName=pair.aId===p.id ? pair.bName : pair.aName;
+        if(!best || pair.rate>best.rate || (pair.rate===best.rate && pair.shared>best.shared)){
+          best={partnerId,partnerName,rate:pair.rate,shared:pair.shared};
+        }
+      }
+      if(!best) continue;
+      result.push({id:p.id,name:p.nickname,partnerId:best.partnerId,partnerName:best.partnerName,rate:best.rate});
+    }
+    return result;
   }
 
   async onG1Finish(playerId){
