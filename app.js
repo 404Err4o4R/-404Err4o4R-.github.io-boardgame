@@ -25,6 +25,29 @@ const S = {
   g1SelectedPair: undefined
 };
 
+/* =========================
+   遊戲一分類顏色
+   （順序＋色值已經用 dataviz 驗證器跑過鄰接色盲對比，
+   固定順序，唔會隨機跳，每個分類永遠對應返同一隻色。）
+========================= */
+
+const CATEGORY_COLORS = {
+  "哲學題": "#5f76c2",
+  "社交題": "#e2884a",
+  "飲食習慣題": "#2f9e8f",
+  "價值觀題": "#d9ab2e",
+  "戀愛題": "#c46fa3",
+  "情境題": "#5fa151",
+  "個人愛好題": "#8272cc",
+  "十八禁題": "#d16b63"
+};
+
+const CATEGORY_ORDER = Object.keys(CATEGORY_COLORS);
+
+function categoryColor(category) {
+  return CATEGORY_COLORS[category] || "#68779f";
+}
+
 function esc(value) {
   return String(value).replace(/[&<>"']/g, (c) => ({
     "&": "&amp;",
@@ -107,6 +130,16 @@ async function loadQuestions() {
   renderCategories();
 }
 
+// 淨係遊戲一嘅分類有喺 CATEGORY_COLORS 度，遊戲二嘅分類會跌返去用預設嘅黃色 active 樣式。
+function filterChipStyle(category, active) {
+  const color = CATEGORY_COLORS[category];
+  if (!color) return "";
+
+  return active
+    ? `background:${color};border-color:${color};color:#fff`
+    : `border-color:${color}77;color:${color}`;
+}
+
 function renderCategories() {
   if (!S.questions) return;
 
@@ -125,19 +158,31 @@ function renderCategories() {
 
   if (!box) return;
 
-  box.innerHTML = categories.map((category) => `
-    <button
-      type="button"
-      class="filter-chip ${S.filters.includes(category) ? "active" : ""}"
-      data-category="${esc(category)}"
-    >
-      ${esc(category)}
-    </button>
-  `).join("");
+  box.innerHTML = categories.map((category) => {
+    const active = S.filters.includes(category);
+    return `
+      <button
+        type="button"
+        class="filter-chip ${active ? "active" : ""}"
+        data-category="${esc(category)}"
+        style="${filterChipStyle(category, active)}"
+      >
+        ${esc(category)}
+      </button>
+    `;
+  }).join("");
 
   box.querySelectorAll(".filter-chip").forEach((button) => {
     button.addEventListener("click", () => {
       button.classList.toggle("active");
+
+      button.setAttribute(
+        "style",
+        filterChipStyle(
+          button.dataset.category,
+          button.classList.contains("active")
+        )
+      );
 
       S.filters = [...box.querySelectorAll(".filter-chip.active")]
         .map((x) => x.dataset.category);
@@ -634,7 +679,24 @@ function renderRoom() {
 
   if (!room?.players) return;
 
-  $("#roomPanel").innerHTML = `
+  const roomPanel = $("#roomPanel");
+
+  // 遊戲開始咗之後（唔係 waiting 大堂），成個 ROOM CODE + 玩家清單嗰塊冇乜用，
+  // 房號同連線狀態頂欄本身已經有,呢度就唔使再佔位。
+  const isPlaying =
+    room.gameState &&
+    room.gameState.phase &&
+    room.gameState.phase !== "waiting";
+
+  if (isPlaying) {
+    roomPanel.innerHTML = "";
+    roomPanel.classList.add("hidden");
+    return;
+  }
+
+  roomPanel.classList.remove("hidden");
+
+  roomPanel.innerHTML = `
     <div
       class="row"
       style="justify-content:space-between;align-items:end"
@@ -919,7 +981,7 @@ function startTimer(element, endsAt) {
 
 function categoryTagHtml(category) {
   if (!category) return "";
-  return `<div class="q-tag">#${esc(category)}</div>`;
+  return `<div class="q-tag" style="color:${categoryColor(category)}">#${esc(category)}</div>`;
 }
 
 function renderGame1(game) {
@@ -1374,8 +1436,12 @@ function renderGame1Final(game) {
 
   const catRows = Object.entries(selectedPair.byCategory)
     .sort((a, b) => b[1].rate - a[1].rate)
-    .map(([cat, stat]) => barRowHtml(cat, stat.rate, `${stat.match}/${stat.shared}`, false))
+    .map(([cat, stat]) =>
+      barRowHtml(cat, stat.rate, `${stat.match}/${stat.shared}`, false, categoryColor(cat))
+    )
     .join("");
+
+  const radar = radarChartHtml(selectedPair.byCategory);
 
   const pairChips = pairs
     .map((p, index) => `
@@ -1430,6 +1496,8 @@ function renderGame1Final(game) {
     </div>
 
     <div style="height:10px"></div>
+
+    ${radar ? `<div style="margin:8px 0">${radar}</div>` : ""}
 
     <div class="bars">
       ${catRows}
@@ -1516,7 +1584,7 @@ function flourishHtml(results) {
   `;
 }
 
-function barRowHtml(label, rate, fraction, highlight) {
+function barRowHtml(label, rate, fraction, highlight, color) {
   return `
     <div class="vote-result-row">
       <div class="vote-result-head">
@@ -1527,11 +1595,85 @@ function barRowHtml(label, rate, fraction, highlight) {
       <div class="vote-result-bar">
         <div
           class="vote-result-fill ${highlight ? "majority" : ""}"
-          style="width:${Math.max(rate, 3)}%"
+          style="width:${Math.max(rate, 3)}%${color ? `;background:${color}` : ""}"
         ></div>
       </div>
     </div>
   `;
+}
+
+// 分類細節嘅雷達圖：8條分類（或者有幾多條算幾多條）做幾隻角，
+// match% 做半徑，連成一個多邊形。每隻角嘅標籤用返嗰分類自己嘅顏色。
+// 少於3條分類冚埋都畫唔成一個像樣嘅形狀，呢種情況由 caller 揀返用返長條圖。
+function radarChartHtml(byCategory) {
+  const cats = CATEGORY_ORDER.filter((c) => byCategory[c]);
+
+  if (cats.length < 3) return "";
+
+  // 幾個數字keep到分類標籤（最長5隻字）連埋百分比都唔會伸出SVG範圍以外，
+  // 唔係嘅話標籤會被SVG自己嘅viewBox裁走一截，CSS scale落嚟都救唔返。
+  const svgW = 480;
+  const svgH = 440;
+  const cx = svgW / 2;
+  const cy = svgH / 2 - 10;
+  const maxR = 88;
+  const n = cats.length;
+  const angleStep = (Math.PI * 2) / n;
+
+  const pointFor = (i, rate) => {
+    const angle = -Math.PI / 2 + i * angleStep;
+    const r = (rate / 100) * maxR;
+    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+  };
+
+  const ringPoints = (frac) =>
+    cats
+      .map((_, i) => {
+        const angle = -Math.PI / 2 + i * angleStep;
+        const r = frac * maxR;
+        return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
+      })
+      .join(" ");
+
+  const dataPoints = cats.map((c, i) => pointFor(i, byCategory[c].rate));
+  const dataPolyStr = dataPoints.map((p) => p.join(",")).join(" ");
+
+  let svg = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;max-width:400px;display:block;margin:0 auto">`;
+
+  [0.25, 0.5, 0.75, 1].forEach((f) => {
+    svg += `<polygon points="${ringPoints(f)}" fill="none" stroke="#e2e4ea" stroke-width="1"/>`;
+  });
+
+  cats.forEach((c, i) => {
+    const [x, y] = pointFor(i, 100);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#e2e4ea" stroke-width="1"/>`;
+  });
+
+  svg += `<polygon points="${dataPolyStr}" fill="#929FC1" fill-opacity="0.35" stroke="#68779f" stroke-width="2.5"/>`;
+
+  cats.forEach((c, i) => {
+    const [x, y] = dataPoints[i];
+    svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="${categoryColor(c)}" stroke="#fff" stroke-width="1.5"/>`;
+  });
+
+  cats.forEach((c, i) => {
+    const angle = -Math.PI / 2 + i * angleStep;
+    const cosA = Math.cos(angle);
+    const lx = cx + (maxR + 42) * cosA;
+    const ly = cy + (maxR + 42) * Math.sin(angle);
+    const anchor = cosA > 0.35 ? "start" : cosA < -0.35 ? "end" : "middle";
+    const color = categoryColor(c);
+    const rate = byCategory[c].rate;
+
+    svg += `
+      <text x="${lx}" y="${ly - 4}" text-anchor="${anchor}" font-size="11" font-weight="900" fill="${color}">${esc(c)}</text>
+      <text x="${lx}" y="${ly + 10}" text-anchor="${anchor}" font-size="10" font-weight="700" fill="${color}" opacity="0.75">${rate}%</text>
+    `;
+  });
+
+  svg += `</svg>`;
+
+  return svg;
 }
 
 /* =========================
