@@ -31,7 +31,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef0f3;
 .eyebrow{font-size:12px;letter-spacing:.18em;font-weight:900;opacity:.65}
 .hero h1,.section-head h2,.room-form h2,.about-card h2{font-family:"Fredoka",sans-serif;font-weight:700;line-height:.9;letter-spacing:-.03em}
 .hero h1{font-size:clamp(64px,8vw,112px);margin:20px 0}
-.hero h1 span,.section-head h2 span,.room-form h2 span,.about-card h2 span{color:var(--blue-dark)}
+.hero h1 span,.section-head h2 span,.room-form h2 span,.about-card h2 span,.title span{color:var(--blue-dark)}
+.title{font-family:"Fredoka",sans-serif;font-weight:700;font-size:32px;line-height:1.1;letter-spacing:-.02em;margin:0 0 10px}
 .hero-copy p{font-size:18px;max-width:550px;line-height:1.7}
 .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
 .btn{border:0;border-radius:18px;padding:15px 22px;font-weight:900;letter-spacing:.04em;box-shadow:0 10px 20px rgba(35,45,75,.12)}
@@ -146,6 +147,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .vote-bars{display:grid;gap:10px;margin:18px 0}.bar-row{display:grid;grid-template-columns:60px 1fr 48px;align-items:center;gap:8px}.bar{height:14px;border-radius:999px;background:#e6e7eb;overflow:hidden}.bar-fill{height:100%;background:var(--blue)}.bar-fill.winner{background:var(--yellow-deep)}
 .chat-log{height:300px;overflow:auto;background:#fbfbf6;border-radius:18px;padding:14px}.chat-msg{margin-bottom:9px}.chat-msg b{color:var(--blue-dark)}
 .result-banner{padding:24px;border-radius:24px;background:var(--yellow);font-family:"Fredoka";font-size:32px}
+.result{padding:16px 20px;border-radius:14px;background:var(--yellow);color:var(--ink);font-weight:900;font-size:14px;line-height:1.6}
 .choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.choice-btn{padding:16px;border-radius:18px;border:2px solid #e7e9ee;background:var(--pure);font-weight:900}.choice-btn:hover{border-color:var(--blue)}
 .role-card{padding:20px;border-radius:22px;background:var(--blue);color:#fff}.role-card.truth{background:var(--yellow);color:var(--ink)}.role-card.bluffer{background:var(--ink);color:#fff}
 .notice{font-size:13px;line-height:1.7;color:#606a80}
@@ -155,7 +157,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 @media (max-width:900px){.hero{grid-template-columns:1fr}.hero-art{min-height:420px}.game-grid,.room-panel,.sync-room{grid-template-columns:1fr}.room-visual{min-height:280px}.steps{grid-template-columns:1fr}}
 @media (max-width:620px){.site-nav nav{display:none}.site-nav{padding:14px 18px}.section{padding:60px 18px}.game-card h3{font-size:38px}.room-form{padding:26px}.option-grid,.choice-grid{grid-template-columns:1fr}.game-title{font-size:42px}.question-box{font-size:24px}.timer{font-size:42px}}
 
-..btn-green {
+.btn-green {
   background: #53c878;
   color: #fff;
 }
