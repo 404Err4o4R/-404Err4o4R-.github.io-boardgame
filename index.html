@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <link
-    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Baloo+2:wght@700;800&display=swap"
     rel="stylesheet"
   >
 
@@ -214,6 +214,42 @@
 
       </article>
 
+
+      <article class="game-card coral-card">
+
+        <div class="sticker">
+          03
+        </div>
+
+        <div class="game-icon">
+          💘
+        </div>
+
+        <h3>
+          He/She's<br>
+          a 10
+        </h3>
+
+        <p>
+          唔設情境，自由發揮。
+          莊家輪流做，憑心水數字睇下大家有幾了解你。
+        </p>
+
+        <div class="tag-row">
+          <span>RATE</span>
+          <span>FREE STYLE</span>
+          <span>2–6</span>
+        </div>
+
+        <button
+          class="btn btn-light"
+          data-start="game3"
+        >
+          PLAY THIS GAME
+        </button>
+
+      </article>
+
     </div>
 
   </section>
@@ -224,22 +260,7 @@
 
     <div class="room-panel">
 
-      <div class="room-visual">
-
-        <div class="mini-card">
-          WEBSOCKET
-        </div>
-
-        <div class="mini-card yellow">
-          SERVER SYNC
-        </div>
-
-        <div class="mini-card blue">
-          2–6 PLAYERS
-        </div>
-
-        <div class="orbit"></div>
-
+      <div class="room-visual" id="roomVisual">
       </div>
 
 
@@ -301,6 +322,10 @@
 
               <option value="game2">
                 9upper 瞎掰王
+              </option>
+
+              <option value="game3">
+                He/She's a 10
               </option>
 
             </select>
