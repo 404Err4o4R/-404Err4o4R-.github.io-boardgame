@@ -141,6 +141,15 @@ function filterChipStyle(category, active) {
 }
 
 function renderCategories() {
+  const catSection = $("#catSection");
+
+  if (S.selectedGame === "game3") {
+    if (catSection) catSection.style.display = "none";
+    return;
+  }
+
+  if (catSection) catSection.style.display = "";
+
   if (!S.questions) return;
 
   const categories =
@@ -271,10 +280,22 @@ const ROOM_COVERS = {
   `
 };
 
+const GAME_ACCENTS = {
+  game1: "#68779f",
+  game2: "#004643",
+  game3: "#F2795F"
+};
+
 function renderRoomVisual() {
   const el = $("#roomVisual");
-  if (!el) return;
-  el.innerHTML = ROOM_COVERS[S.selectedGame] || ROOM_COVERS.game1;
+  if (el) {
+    el.innerHTML = ROOM_COVERS[S.selectedGame] || ROOM_COVERS.game1;
+  }
+
+  document.documentElement.style.setProperty(
+    "--game-accent",
+    GAME_ACCENTS[S.selectedGame] || GAME_ACCENTS.game1
+  );
 }
 
 renderRoomVisual();
