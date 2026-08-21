@@ -230,6 +230,55 @@ document.querySelectorAll("[data-tab]").forEach((tab) => {
   });
 });
 
+const ROOM_COVERS = {
+  game1: `
+    <div class="game-cover cover-g1">
+      <div class="gc-dot"></div>
+      <div class="gc-icon top">
+        <svg viewBox="0 0 24 24"><path d="M4 5 H20 V15 H10 L6 19 V15 H4 Z" fill="#FEFEF2"/></svg>
+      </div>
+      <div class="gc-icon bottom">
+        <svg viewBox="0 0 24 24"><path d="M4 5 H20 V15 H10 L6 19 V15 H4 Z" fill="#FEFEF2"/></svg>
+      </div>
+      <div class="gc-label eyebrow">TWO CHOICES</div>
+      <div class="gc-label bottom">2–6 PLAYERS</div>
+    </div>
+  `,
+  game2: `
+    <div class="game-cover cover-g2">
+      <div class="gc-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 9 Q4 5 12 5 Q20 5 20 9 Q20 15 15 15 Q13 15 12 17 Q11 15 9 15 Q4 15 4 9Z" fill="#F0EDE5"/>
+          <circle cx="9" cy="9.5" r="1.3" fill="#004643"/>
+          <circle cx="15" cy="9.5" r="1.3" fill="#004643"/>
+        </svg>
+      </div>
+      <div class="gc-label eyebrow">BLUFF</div>
+      <div class="gc-label mid">GUESS RIGHT</div>
+      <div class="gc-label bottom">2–6 PLAYERS</div>
+    </div>
+  `,
+  game3: `
+    <div class="game-cover cover-g3">
+      <div class="gc-number">10</div>
+      <div class="gc-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 21C7 17 3 13.5 3 9.5C3 6.9 5 5 7.5 5C9.5 5 11 6.2 12 7.8C13 6.2 14.5 5 16.5 5C19 5 21 6.9 21 9.5C21 13.5 17 17 12 21Z" fill="#fff"/></svg>
+      </div>
+      <div class="gc-label rate">RATE FREELY</div>
+      <div class="gc-label script">NO SCRIPT</div>
+      <div class="gc-label bottom">2–6 PLAYERS</div>
+    </div>
+  `
+};
+
+function renderRoomVisual() {
+  const el = $("#roomVisual");
+  if (!el) return;
+  el.innerHTML = ROOM_COVERS[S.selectedGame] || ROOM_COVERS.game1;
+}
+
+renderRoomVisual();
+
 document.querySelectorAll("[data-start]").forEach((button) => {
   button.addEventListener("click", () => {
     S.selectedGame = button.dataset.start;
@@ -243,6 +292,7 @@ document.querySelectorAll("[data-start]").forEach((button) => {
     S.filters = [];
 
     renderCategories();
+    renderRoomVisual();
 
     document
       .querySelector('[data-tab="create"]')
@@ -258,6 +308,7 @@ $("#gameSelect")?.addEventListener("change", () => {
   S.selectedGame = $("#gameSelect").value;
   S.filters = [];
   renderCategories();
+  renderRoomVisual();
 });
 
 $("#toggleCats")?.addEventListener("click", () => {
@@ -720,7 +771,9 @@ function renderRoom() {
           ${
             room.game === "game1"
               ? "心有靈犀一點通"
-              : "9upper瞎掰王"
+              : room.game === "game2"
+              ? "9upper瞎掰王"
+              : "He/She's a 10"
           }
         </b>
       </div>
@@ -748,7 +801,7 @@ function renderRoom() {
           <div>
             ${
               player.host
-                ? "👑 "
+                ? `<span class="host-crown"><svg viewBox="0 0 24 24"><path d="M3 9 L7 12 L12 6 L17 12 L21 9 L19 16 L5 16 Z" fill="#F2D965"/><circle cx="3" cy="9" r="1.4" fill="#1f2740"/><circle cx="12" cy="6" r="1.4" fill="#1f2740"/><circle cx="21" cy="9" r="1.4" fill="#1f2740"/></svg></span>`
                 : ""
             }
 
