@@ -21,7 +21,7 @@ const G2_JUDGE_MS = 120000;
 
 const G3_WRITE_MS = 50000;
 const G3_SCORE_MS = 18000;
-const G3_REVEAL_MS = 6000;
+const G3_REVEAL_MS = 10000;
 
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
@@ -377,7 +377,8 @@ results:g.results||null
         target:r.target,
         score:r.score,
         diff:r.diff,
-        roundPoints:r.roundPoints
+        roundPoints:r.roundPoints,
+        text:r.text||""
       }));
       base3.isFinalRound = g.round>=g.totalRounds;
     }
@@ -1420,7 +1421,7 @@ async onG1Next(playerId){
       const p=this.room.players.find(x=>x.id===playerId);
       if(p) p.score=(p.score||0)+roundPoints;
 
-      return {playerId,target,score,diff,roundPoints};
+      return {playerId,target,score,diff,roundPoints,text:g.answers[playerId]||""};
     }).sort((a,b)=>a.diff-b.diff);
 
     g.phase="reveal";
