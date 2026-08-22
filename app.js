@@ -1059,6 +1059,7 @@ function renderScoreboard(room) {
   if (!roomPanel) return;
 
   const raterId = room.gameState?.raterId || null;
+  const nextRaterId = room.gameState?.nextRaterId || null;
 
   const sorted = [...room.players].sort(
     (a, b) => (b.score || 0) - (a.score || 0)
@@ -1075,6 +1076,7 @@ function renderScoreboard(room) {
         .map((p) => {
           const isHost = p.id === room.hostId;
           const isRater = raterId && p.id === raterId;
+          const isNextRater = nextRaterId && p.id === nextRaterId;
 
           return `
             <div class="player ${isHost ? "host" : ""}" style="opacity:${p.connected ? "1" : ".5"}">
@@ -1086,6 +1088,7 @@ function renderScoreboard(room) {
                 }
                 ${esc(p.nickname)}
                 ${isRater ? '<span class="notice" style="margin:0">（莊家）</span>' : ""}
+                ${isNextRater ? '<span class="notice" style="margin:0;color:var(--game-accent)">（下一位莊家）</span>' : ""}
               </div>
               <b>${p.score || 0}</b>
             </div>
@@ -2280,6 +2283,14 @@ function renderGame3Writing(game) {
   if (S.g3RenderKey === renderKey && $("#g3AnswerBox")) {
     const counter = $("#g3SubmitCount");
     if (counter) counter.textContent = `已交：${game.submittedCount} / ${game.totalToSubmit}`;
+
+    const btn = document.querySelector('[onclick="g3Submit()"]');
+    if (btn && game.mySubmitted && btn.dataset.submitted !== "1") {
+      btn.dataset.submitted = "1";
+      btn.textContent = "✓ 你已交題";
+      btn.classList.remove("btn-yellow");
+      btn.classList.add("btn-green");
+    }
     return;
   }
   S.g3RenderKey = renderKey;
@@ -2334,11 +2345,11 @@ function renderGame3Writing(game) {
       </p>
 
       <button
-        class="btn btn-yellow wide"
+        class="btn ${game.mySubmitted ? "btn-green" : "btn-yellow"} wide"
         onclick="g3Submit()"
-        ${game.mySubmitted ? "disabled" : ""}
+        data-submitted="${game.mySubmitted ? "1" : "0"}"
       >
-        ${game.mySubmitted ? "已交，等緊其他人" : "交題"}
+        ${game.mySubmitted ? "✓ 你已交題" : "交題"}
       </button>
     `;
   }
@@ -2354,6 +2365,13 @@ function g3UpdateCount() {
 }
 
 window.g3Submit = async () => {
+  const btn = document.querySelector('[onclick="g3Submit()"]');
+
+  if (btn?.dataset.submitted === "1") {
+    flash("你已交題！");
+    return;
+  }
+
   const box = $("#g3AnswerBox");
   if (!box) return;
   const text = box.value.trim();
