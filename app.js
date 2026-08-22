@@ -542,6 +542,7 @@ async function connectRoom(code, mode, saved = null) {
   S.explanation = null;
   S.myVote = undefined;
   S.g1SelectedPair = undefined;
+  S.g3RenderKey = null;
 
   $("#roomPanel").innerHTML = "";
   $("#gamePanel").innerHTML = `
@@ -1022,6 +1023,8 @@ function renderGame() {
 
   if (S.room.game === "game1") {
     renderGame1(game);
+  } else if (S.room.game === "game3") {
+    renderGame3(game);
   } else {
     renderGame2(game);
   }
@@ -2147,6 +2150,273 @@ window.next2 = () => {
     type: "g2:next"
   });
 };
+
+/* =========================
+   Game 3 · He/She's a 10
+========================= */
+
+function renderGame3(game) {
+  if (game.phase === "writing") return renderGame3Writing(game);
+  if (game.phase === "rating") return renderGame3Rating(game);
+  if (game.phase === "reveal") return renderGame3Reveal(game);
+  if (game.phase === "gameover") return renderGame3Gameover(game);
+}
+
+function renderGame3Writing(game) {
+  const renderKey = `writing-${game.round}`;
+
+  // 淨係第一次入呢個phase先重畫成個畫面（等textarea唔會俾其他人交題觸發嘅
+  // state 廣播打斷）；之後淨係update進度/timer呢啲細位。
+  if (S.g3RenderKey === renderKey && $("#g3AnswerBox")) {
+    const counter = $("#g3SubmitCount");
+    if (counter) counter.textContent = `已交：${game.submittedCount} / ${game.totalToSubmit}`;
+    return;
+  }
+  S.g3RenderKey = renderKey;
+
+  if (game.isRater) {
+    $("#gamePanel").innerHTML = `
+      <div class="row" style="justify-content:space-between;align-items:end">
+        <div>
+          <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+          <h2 class="title">He/She's<br><span>a 10.</span></h2>
+        </div>
+        <div id="time" class="timer"></div>
+      </div>
+
+      <p class="notice">
+        今輪你係莊家，唔使寫嘢。等緊其他人交題…
+        <span id="g3SubmitCount">已交：${game.submittedCount} / ${game.totalToSubmit}</span>
+      </p>
+    `;
+  } else {
+    $("#gamePanel").innerHTML = `
+      <div class="row" style="justify-content:space-between;align-items:end">
+        <div>
+          <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+          <h2 class="title">He/She's<br><span>a 10.</span></h2>
+        </div>
+        <div id="time" class="timer"></div>
+      </div>
+
+      <p class="notice">莊家：${esc(game.raterNickname)}</p>
+
+      <div class="question">
+        你嘅心水數字係
+        <b style="color:var(--game-accent,#F2795F);font-size:1.3em">${game.myTarget}</b>
+        分。寫一句「佢係十分，但係___」，等莊家憑感情觀估返你個心水數字。
+      </div>
+
+      <div class="answerbox">
+        <textarea
+          id="g3AnswerBox"
+          maxlength="25"
+          placeholder="佢係十分，但係……"
+          oninput="g3UpdateCount()"
+          ${game.mySubmitted ? "disabled" : ""}
+        ></textarea>
+      </div>
+
+      <p class="notice">
+        <span id="g3SubmitCount">已交：${game.submittedCount} / ${game.totalToSubmit}</span>
+        ·
+        <span id="g3CharCount">0 / 25</span>
+      </p>
+
+      <button
+        class="btn btn-yellow wide"
+        onclick="g3Submit()"
+        ${game.mySubmitted ? "disabled" : ""}
+      >
+        ${game.mySubmitted ? "已交，等緊其他人" : "交題"}
+      </button>
+    `;
+  }
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
+
+function g3UpdateCount() {
+  const box = $("#g3AnswerBox");
+  const el = $("#g3CharCount");
+  if (!box || !el) return;
+  el.textContent = `${box.value.length} / 25`;
+}
+
+window.g3Submit = () => {
+  const box = $("#g3AnswerBox");
+  if (!box) return;
+  const text = box.value.trim();
+  if (!text) return;
+  send({ type: "g3:submit", text });
+  box.disabled = true;
+};
+
+function renderGame3Rating(game) {
+  const renderKey = `rating-${game.round}-${game.ratingStage}-${game.currentRatingIndex ?? 0}`;
+  if (S.g3RenderKey === renderKey) return;
+  S.g3RenderKey = renderKey;
+
+  if (!game.isRater) {
+    $("#gamePanel").innerHTML = `
+      <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+      <h2 class="title">He/She's<br><span>a 10.</span></h2>
+      <p class="notice">
+        莊家 ${esc(game.raterNickname)} 評緊分……
+        (${(game.currentRatingIndex ?? 0)} / ${game.totalAnswers})
+      </p>
+    `;
+    return;
+  }
+
+  if (game.ratingStage === "preview") {
+    $("#gamePanel").innerHTML = `
+      <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+      <h2 class="title">評分時間<br><span>睇晒先評分。</span></h2>
+
+      <div class="answers" style="flex-direction:column;gap:10px">
+        ${(game.answers || [])
+          .map(
+            (text) => `
+              <div class="answerbox" style="text-align:left">
+                ${esc(text)}
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+
+      <button class="btn btn-yellow wide" onclick="g3StartRating()">
+        開始逐句評分
+      </button>
+    `;
+    return;
+  }
+
+  // scoring
+  const idx = game.currentRatingIndex ?? 0;
+  const text = (game.answers || [])[idx] || "";
+
+  $("#gamePanel").innerHTML = `
+    <div class="row" style="justify-content:space-between;align-items:end">
+      <div>
+        <div class="eyebrow">評分 ${idx + 1} / ${game.totalAnswers}</div>
+        <h2 class="title">呢句幾多分？</h2>
+      </div>
+      <div id="time" class="timer"></div>
+    </div>
+
+    <div class="question">${esc(text)}</div>
+
+    <div class="scorerow" style="display:flex;align-items:center;gap:12px;margin:16px 0">
+      <input
+        type="range"
+        id="g3ScoreRange"
+        min="1"
+        max="10"
+        value="5"
+        oninput="document.querySelector('#g3ScorePill').textContent=this.value"
+        style="flex:1"
+      >
+      <span id="g3ScorePill" class="scorepill">5</span>
+    </div>
+
+    <button class="btn btn-yellow wide" onclick="g3Score(${idx})">
+      確認評分
+    </button>
+  `;
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
+
+window.g3StartRating = () => {
+  send({ type: "g3:rating-start" });
+};
+
+window.g3Score = (index) => {
+  const range = $("#g3ScoreRange");
+  if (!range) return;
+  send({ type: "g3:score", index, score: Number(range.value) });
+};
+
+function renderGame3Reveal(game) {
+  const renderKey = `reveal-${game.round}`;
+  if (S.g3RenderKey === renderKey) return;
+  S.g3RenderKey = renderKey;
+
+  const results = game.results || [];
+
+  $("#gamePanel").innerHTML = `
+    <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+    <h2 class="title">結果<br><span>揭曉。</span></h2>
+
+    <div id="g3ResultsList"></div>
+  `;
+
+  const list = $("#g3ResultsList");
+
+  results.forEach((r, i) => {
+    const row = document.createElement("div");
+    row.className = "answercard";
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="flex:1">
+          <b>${i === 0 ? "★ " : ""}${esc(r.nickname)}</b>
+          <div class="notice" style="margin:0">心水 ${r.target} 分 · 莊家俾 ${r.score} 分</div>
+        </div>
+        <div class="slotnum" data-target="${r.roundPoints}" style="
+          width:48px;height:48px;border-radius:12px;background:var(--yellow);
+          display:flex;align-items:center;justify-content:center;
+          font-weight:800;font-size:20px;
+        ">–</div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  document.querySelectorAll("#g3ResultsList .slotnum").forEach((el, idx) => {
+    const target = parseInt(el.dataset.target, 10);
+    let ticks = 0;
+    const maxTicks = 12 + idx * 3;
+    const iv = setInterval(() => {
+      ticks++;
+      if (ticks < maxTicks) {
+        el.textContent = "+" + (1 + Math.floor(Math.random() * 10));
+      } else {
+        el.textContent = "+" + target;
+        clearInterval(iv);
+      }
+    }, 70);
+  });
+}
+
+function renderGame3Gameover(game) {
+  const renderKey = "gameover";
+  if (S.g3RenderKey === renderKey) return;
+  S.g3RenderKey = renderKey;
+
+  const ranking = game.finalRanking || [];
+
+  $("#gamePanel").innerHTML = `
+    <div class="eyebrow">GAME OVER</div>
+    <h2 class="title">最終<br><span>排名。</span></h2>
+
+    <div class="players">
+      ${ranking
+        .map(
+          (r, i) => `
+            <div class="player ${i === 0 ? "host" : ""}">
+              <div>${i === 0 ? "👑 " : `${i + 1}. `}${esc(r.nickname)}</div>
+              <b>${r.score} 分</b>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+
+    <p class="notice">感謝大家一齊玩 He/She's a 10！</p>
+  `;
+}
 
 function chatMsgHtml(message) {
   return `
