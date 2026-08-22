@@ -212,6 +212,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
    之前無對應樣式，會顯示成完全冇裝飾嘅純文字／預設按鈕。 */
 .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .question{background:var(--blue);color:#fff;padding:26px;border-radius:26px;font-family:"Fredoka";font-size:28px;line-height:1.15;margin:14px 0 10px}
+.answerbox{background:#fff;border:1px solid #e7e9ee;border-radius:16px;padding:14px;margin:10px 0}
+.answerbox textarea{width:100%;border:none;resize:none;min-height:64px;font-family:"Nunito";font-size:16px;outline:none;background:transparent}
+.answercard{background:#fff;border:1px solid #e7e9ee;border-radius:16px;padding:14px;margin-bottom:10px}
+.scorepill{min-width:34px;text-align:center;background:var(--game-accent,var(--yellow));color:#fff;font-weight:800;border-radius:10px;padding:6px 8px}
 .q-tag{display:inline-block;font-size:13px;font-weight:900;color:var(--blue-dark);margin:0 0 16px}
 .answers{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .bars{display:grid;gap:2px}
