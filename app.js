@@ -377,8 +377,15 @@ $("#roundsBox")?.addEventListener("click", (event) => {
 });
 
 $("#roundsCustom")?.addEventListener("input", () => {
-  const n = Number($("#roundsCustom").value);
-  S.selectedRounds = n >= 2 && n <= 20 ? n : null;
+  const box = $("#roundsCustom");
+  const n = Number(box.value);
+  if (n >= 2 && n <= 50) {
+    S.selectedRounds = n;
+    box.style.borderColor = "";
+  } else {
+    S.selectedRounds = null;
+    box.style.borderColor = box.value ? "var(--yellow-deep)" : "";
+  }
 });
 
 $("#writeTimeBox")?.addEventListener("click", (event) => {
@@ -2305,9 +2312,9 @@ function renderGame3Writing(game) {
       <p class="notice">莊家：${esc(game.raterNickname)}</p>
 
       <div class="question">
-        你嘅心水數字係
+        莊家心水數字係
         <b style="color:#fff;font-size:1.3em">${game.myTarget}</b>
-        分。寫一句「佢係十分，但係___」，等莊家憑感情觀估返你個心水數字。
+        分。寫一句「佢係十分，但係___」，愈貼近呢個分，莊家評分先會愈高。
       </div>
 
       <div class="answerbox">
@@ -2346,11 +2353,17 @@ function g3UpdateCount() {
   el.textContent = `${box.value.length} / 25`;
 }
 
-window.g3Submit = () => {
+window.g3Submit = async () => {
   const box = $("#g3AnswerBox");
   if (!box) return;
   const text = box.value.trim();
   if (!text) return;
+
+  const ok = await askConfirm(
+    `確定要交呢句？交咗就唔可以再改：「${text}」`
+  );
+  if (!ok) return;
+
   send({ type: "g3:submit", text });
   box.disabled = true;
 };
