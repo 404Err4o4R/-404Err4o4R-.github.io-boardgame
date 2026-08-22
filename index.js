@@ -19,9 +19,10 @@ const G2_PICK_MS = 10000;
 const G2_SPEAK_MS = 30000;
 const G2_JUDGE_MS = 120000;
 
-const G3_WRITE_MS = 50000;
+const G3_WRITE_MS_DEFAULT = 60000;
 const G3_SCORE_MS = 18000;
 const G3_REVEAL_MS = 10000;
+const G3_WRITE_OPTIONS = [60000, 90000, 120000];
 
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
@@ -62,6 +63,10 @@ function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
   return Math.min(20, Math.max(2, Math.round(n)));
+}
+function clampWriteMs(v) {
+  const n = Number(v);
+  return G3_WRITE_OPTIONS.includes(n) ? n : G3_WRITE_MS_DEFAULT;
 }
 
 export default {
@@ -174,6 +179,8 @@ export default {
                 body.filters?.categories || [],
               rounds:
                 body.rounds || null,
+              writeMs:
+                body.writeSeconds ? body.writeSeconds*1000 : null,
               roomTtl: ROOM_TTL
             })
           }
@@ -354,7 +361,7 @@ results:g.results||null
       base3.totalToSubmit = writers.length;
       base3.isRater = viewerId===g.raterId;
       if(viewerId && viewerId!==g.raterId){
-        base3.myTarget = g.targets?.[viewerId] ?? null;
+        base3.myTarget = g.target ?? null;
         base3.mySubmitted = (g.submittedIds||[]).includes(viewerId);
       }
     }
@@ -363,9 +370,11 @@ results:g.results||null
       base3.ratingStage = g.ratingStage;
       base3.totalAnswers = (g.ratingOrder||[]).length;
       base3.isRater = viewerId===g.raterId;
+      // 匿名答案（次序已經洗牌，冇附連玩家 id）全部人都見到；
+      // 邊句對邊個要等 reveal 先揭曉。
+      base3.answers = (g.ratingOrder||[]).map(id=>g.answers?.[id] || "");
+      base3.currentRatingIndex = g.currentRatingIndex ?? 0;
       if(viewerId===g.raterId){
-        base3.answers = (g.ratingOrder||[]).map(id=>g.answers?.[id] || "");
-        base3.currentRatingIndex = g.currentRatingIndex ?? 0;
         base3.givenScores = (g.ratingOrder||[]).map(id=>g.scores?.[id] ?? null);
       }
     }
@@ -452,6 +461,7 @@ export class GameRoom extends DurableObject {
         game:body.game,
         filters:this.normalizeFilters(body.game,body.filters||[]),
         rounds:clampRounds(body.rounds),
+        writeMs:clampWriteMs(body.writeMs),
         hostId:null,
         players:[],
         gameState:null,
@@ -1271,12 +1281,7 @@ async onG1Next(playerId){
   async beginRoundGame3(round){
     const order = this.room.g3RaterOrder || [];
     const raterId = order[(round-1) % order.length];
-
-    const targets = {};
-    for(const p of this.room.players){
-      if(p.id===raterId) continue;
-      targets[p.id] = 1 + Math.floor(Math.random()*10);
-    }
+    const writeMs = this.room.writeMs || G3_WRITE_MS_DEFAULT;
 
     this.room.gameState = {
       game:"game3",
@@ -1284,7 +1289,7 @@ async onG1Next(playerId){
       round,
       totalRounds:this.room.g3TotalRounds,
       raterId,
-      targets,
+      target: 1 + Math.floor(Math.random()*10),
       answers:{},
       submittedIds:[],
       ratingOrder:[],
@@ -1292,7 +1297,7 @@ async onG1Next(playerId){
       currentRatingIndex:0,
       scores:{},
       results:null,
-      endsAt:Date.now()+G3_WRITE_MS
+      endsAt:Date.now()+writeMs
     };
 
     await this.save();
@@ -1300,11 +1305,17 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
 
+  writersGame3(){
+    const g=this.room.gameState;
+    if(!g) return [];
+    return this.room.players.filter(p=>p.id!==g.raterId);
+  }
+
   async onG3Submit(playerId,text){
     const g=this.room.gameState;
     if(!g || g.game!=="game3" || g.phase!=="writing") return;
     if(playerId===g.raterId) return;
-    if(!(playerId in g.targets)) return;
+    if(!this.room.players.some(p=>p.id===playerId)) return;
 
     const clean = String(text||"").trim().slice(0,25);
     if(!clean) return;
@@ -1314,9 +1325,7 @@ async onG1Next(playerId){
       g.submittedIds.push(playerId);
     }
 
-    const writers = this.room.players.filter(
-      p=>p.connected && p.id!==g.raterId
-    );
+    const writers = this.writersGame3().filter(p=>p.connected);
     const allSubmitted =
       writers.length>0 &&
       writers.every(p=>g.submittedIds.includes(p.id));
@@ -1335,12 +1344,12 @@ async onG1Next(playerId){
     const g=this.room.gameState;
     if(!g || g.game!=="game3" || g.phase!=="writing") return;
 
-    for(const playerId of Object.keys(g.targets)){
-      if(!g.answers[playerId]){
-        g.answers[playerId]="（未作答）";
+    for(const p of this.writersGame3()){
+      if(!g.answers[p.id]){
+        g.answers[p.id]="（未作答）";
       }
-      if(!g.submittedIds.includes(playerId)){
-        g.submittedIds.push(playerId);
+      if(!g.submittedIds.includes(p.id)){
+        g.submittedIds.push(p.id);
       }
     }
 
@@ -1353,7 +1362,7 @@ async onG1Next(playerId){
 
     g.phase="rating";
     g.ratingStage="preview";
-    g.ratingOrder=shuffle(Object.keys(g.targets));
+    g.ratingOrder=shuffle(this.writersGame3().map(p=>p.id));
     g.currentRatingIndex=0;
     g.endsAt=null;
 
@@ -1412,16 +1421,15 @@ async onG1Next(playerId){
     const g=this.room.gameState;
     if(!g || g.game!=="game3") return;
 
-    const results = Object.keys(g.targets).map(playerId=>{
-      const target=g.targets[playerId];
+    const results = this.writersGame3().map(p=>{
+      const playerId=p.id;
       const score=g.scores[playerId] ?? Math.ceil(Math.random()*10);
-      const diff=Math.abs(target-score);
+      const diff=Math.abs(g.target-score);
       const roundPoints=10-diff;
 
-      const p=this.room.players.find(x=>x.id===playerId);
-      if(p) p.score=(p.score||0)+roundPoints;
+      p.score=(p.score||0)+roundPoints;
 
-      return {playerId,target,score,diff,roundPoints,text:g.answers[playerId]||""};
+      return {playerId,target:g.target,score,diff,roundPoints,text:g.answers[playerId]||""};
     }).sort((a,b)=>a.diff-b.diff);
 
     g.phase="reveal";
