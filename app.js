@@ -1097,15 +1097,35 @@ function renderScoreboard(room) {
         .join("")}
     </div>
 
+    ${
+      S.room?.game === "game3" &&
+      room.hostId === S.playerId &&
+      room.gameState?.phase !== "gameover"
+        ? `<button
+            class="btn btn-outline"
+            style="margin-top:8px;font-size:13px;padding:10px"
+            onclick="g3EndEarly()"
+          >
+            提前結算
+          </button>`
+        : ""
+    }
+
     <button
       class="btn btn-outline"
-      style="margin-top:12px;font-size:13px;padding:10px"
+      style="margin-top:8px;font-size:13px;padding:10px"
       onclick="leaveRoom()"
     >
       LEAVE ROOM
     </button>
   `;
 }
+
+window.g3EndEarly = async () => {
+  const ok = await askConfirm("肯定提前結算？之後就唔可以再繼續呢局。");
+  if (!ok) return;
+  send({ type: "g3:end" });
+};
 
 /* =========================
    Game state
@@ -2290,6 +2310,7 @@ function renderGame3Writing(game) {
       btn.textContent = "✓ 你已交題";
       btn.classList.remove("btn-yellow");
       btn.classList.add("btn-green");
+      btn.disabled = true;
     }
     return;
   }
@@ -2325,7 +2346,7 @@ function renderGame3Writing(game) {
       <div class="question">
         莊家心水數字係
         <b style="color:#fff;font-size:1.3em">${game.myTarget}</b>
-        分。寫一句「佢係十分，但係___」，愈貼近呢個分，莊家評分先會愈高。
+        分。寫一句「佢係十分，但係___」，愈貼近呢個分，你嘅分數先會愈高。
       </div>
 
       <div class="answerbox">
@@ -2348,6 +2369,7 @@ function renderGame3Writing(game) {
         class="btn ${game.mySubmitted ? "btn-green" : "btn-yellow"} wide"
         onclick="g3Submit()"
         data-submitted="${game.mySubmitted ? "1" : "0"}"
+        ${game.mySubmitted ? "disabled" : ""}
       >
         ${game.mySubmitted ? "✓ 你已交題" : "交題"}
       </button>
@@ -2368,7 +2390,6 @@ window.g3Submit = async () => {
   const btn = document.querySelector('[onclick="g3Submit()"]');
 
   if (btn?.dataset.submitted === "1") {
-    flash("你已交題！");
     return;
   }
 
@@ -2387,21 +2408,20 @@ window.g3Submit = async () => {
 };
 
 function renderGame3Rating(game) {
-  const renderKey = `rating-${game.round}-${game.ratingStage}-${game.currentRatingIndex ?? 0}`;
-  if (S.g3RenderKey === renderKey) return;
-  S.g3RenderKey = renderKey;
-
   if (!game.isRater) {
     const idx = game.currentRatingIndex ?? 0;
 
     $("#gamePanel").innerHTML = `
       <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
       <h2 class="title">He/She's<br><span>a 10.</span></h2>
-      <p class="notice">
-        莊家 ${esc(game.raterNickname)} 評緊分……
-        （匿名答案，評完先開估邊句係邊個）
-        ${game.ratingStage === "scoring" ? `(${idx + 1} / ${game.totalAnswers})` : ""}
-      </p>
+
+      ${
+        game.ratingStage === "preview"
+          ? `<p class="notice">莊家未開始評分，投一票你覺得最WTF嗰句：</p>`
+          : `<p class="notice">
+              莊家 ${esc(game.raterNickname)} 評緊分…… (${idx + 1} / ${game.totalAnswers})
+            </p>`
+      }
 
       <div class="answers" style="flex-direction:column;gap:10px">
         ${(game.answers || [])
@@ -2409,13 +2429,28 @@ function renderGame3Rating(game) {
             (text, i) => `
               <div
                 class="answerbox"
-                style="text-align:left;${
+                style="text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;${
                   game.ratingStage === "scoring" && i === idx
                     ? "border:2px solid var(--game-accent,#F2795F)"
                     : ""
                 }"
               >
-                ${esc(text)}
+                <span>${esc(text)}</span>
+                ${
+                  game.ratingStage === "preview"
+                    ? `<button
+                        class="btn btn-outline"
+                        style="padding:6px 10px;font-size:13px;flex-shrink:0;${
+                          game.myWtfVote === i
+                            ? "background:var(--game-accent);color:#fff;border-color:var(--game-accent)"
+                            : ""
+                        }"
+                        onclick="g3Wtf(${i})"
+                      >
+                        ${game.myWtfVote === i ? "✓ 最WTF" : "投WTF"}
+                      </button>`
+                    : ""
+                }
               </div>
             `
           )
@@ -2424,6 +2459,10 @@ function renderGame3Rating(game) {
     `;
     return;
   }
+
+  const renderKey = `rating-${game.round}-${game.ratingStage}-${game.currentRatingIndex ?? 0}`;
+  if (S.g3RenderKey === renderKey) return;
+  S.g3RenderKey = renderKey;
 
   if (game.ratingStage === "preview") {
     $("#gamePanel").innerHTML = `
@@ -2489,6 +2528,10 @@ window.g3StartRating = () => {
   send({ type: "g3:rating-start" });
 };
 
+window.g3Wtf = (index) => {
+  send({ type: "g3:wtf", index });
+};
+
 window.g3Score = (index) => {
   const range = $("#g3ScoreRange");
   if (!range) return;
@@ -2503,11 +2546,24 @@ function renderGame3Reveal(game) {
   const results = game.results || [];
 
   $("#gamePanel").innerHTML = `
-    <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
-    <h2 class="title">結果<br><span>揭曉。</span></h2>
+    <div class="row" style="justify-content:space-between;align-items:end">
+      <div>
+        <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+        <h2 class="title">結果<br><span>揭曉。</span></h2>
+      </div>
+      <div id="time" class="timer"></div>
+    </div>
 
     <div id="g3ResultsList"></div>
+
+    ${
+      game.isFinalRound
+        ? `<p class="notice">最後一round！結算緊……</p>`
+        : `<p class="notice">下一round就快開始……</p>`
+    }
   `;
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
 
   const list = $("#g3ResultsList");
 
@@ -2518,8 +2574,25 @@ function renderGame3Reveal(game) {
       <div style="display:flex;align-items:center;gap:12px">
         <div style="flex:1">
           <b>${i === 0 ? "★ " : ""}${esc(r.nickname)}</b>
+          ${game.wtfWinnerId === r.playerId ? '<span class="notice" style="margin:0 0 0 6px">🤯 全場最WTF</span>' : ""}
           <div class="notice" style="margin:2px 0">${esc(r.text)}</div>
           <div class="notice" style="margin:0">心水 ${r.target} 分 · 莊家俾 ${r.score} 分</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button
+              class="btn btn-outline"
+              style="padding:4px 10px;font-size:12px;${r.myReaction === "up" ? "background:var(--game-accent);color:#fff;border-color:var(--game-accent)" : ""}"
+              onclick="g3React('${r.playerId}','up')"
+            >
+              👍 ${r.reactions?.up || 0}
+            </button>
+            <button
+              class="btn btn-outline"
+              style="padding:4px 10px;font-size:12px;${r.myReaction === "down" ? "background:var(--game-accent);color:#fff;border-color:var(--game-accent)" : ""}"
+              onclick="g3React('${r.playerId}','down')"
+            >
+              👎 ${r.reactions?.down || 0}
+            </button>
+          </div>
         </div>
         <div class="slotnum" data-target="${r.roundPoints}" style="
           width:48px;height:48px;border-radius:12px;background:var(--yellow);
@@ -2547,18 +2620,47 @@ function renderGame3Reveal(game) {
   });
 }
 
+window.g3React = (targetPlayerId, reaction) => {
+  send({ type: "g3:react", playerId: targetPlayerId, reaction });
+};
+
 function renderGame3Gameover(game) {
   const renderKey = "gameover";
   if (S.g3RenderKey === renderKey) return;
   S.g3RenderKey = renderKey;
 
   const ranking = game.finalRanking || [];
+  const history = game.history || [];
+  const champion = game.champion;
+  const wtfChampion = game.wtfChampion;
+
+  S.g3HistoryIndex = history.length ? history.length - 1 : 0;
 
   $("#gamePanel").innerHTML = `
     <div class="eyebrow">GAME OVER</div>
-    <h2 class="title">最終<br><span>排名。</span></h2>
+    <h2 class="title">結算<br><span>He/She's a 10.</span></h2>
 
-    <div class="players">
+    ${
+      champion
+        ? `<div class="question" style="text-align:center">
+            <div style="font-size:13px;opacity:.85">十分知己</div>
+            <div style="font-family:'Fredoka';font-size:28px">${esc(champion.nickname)}</div>
+            <div style="font-size:13px;opacity:.85">總分 ${champion.score} 分</div>
+          </div>`
+        : ""
+    }
+
+    <div class="answerbox" style="text-align:center;margin-top:10px">
+      <div style="font-size:13px;color:var(--game-accent)">全場最WTF</div>
+      ${
+        wtfChampion
+          ? `<div style="font-family:'Fredoka';font-size:22px">${esc(wtfChampion.nickname)}</div>
+             <div class="notice" style="margin:0">攞咗 ${wtfChampion.wtfCount} 次最WTF</div>`
+          : `<div class="notice" style="margin:6px 0 0">本局沒人玩WTF</div>`
+      }
+    </div>
+
+    <div class="players" style="margin-top:16px">
       ${ranking
         .map(
           (r, i) => `
@@ -2571,9 +2673,79 @@ function renderGame3Gameover(game) {
         .join("")}
     </div>
 
-    <p class="notice">感謝大家一齊玩 He/She's a 10！</p>
+    ${
+      history.length
+        ? `
+          <div class="eyebrow" style="margin-top:20px">逐ROUND回顧</div>
+
+          <div class="tabs" style="margin:8px 0" id="g3HistoryTabs">
+            ${history
+              .map(
+                (h, i) => `
+                  <button
+                    type="button"
+                    class="filter-chip ${i === S.g3HistoryIndex ? "active" : ""}"
+                    onclick="g3ShowHistory(${i})"
+                  >
+                    ROUND ${h.round}
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+
+          <div id="g3HistoryDetail"></div>
+        `
+        : ""
+    }
+  `;
+
+  if (history.length) {
+    S.g3HistoryData = history;
+    renderGame3HistoryDetail(S.g3HistoryIndex);
+  }
+}
+
+function renderGame3HistoryDetail(index) {
+  const history = S.g3HistoryData || [];
+  const h = history[index];
+  const detail = $("#g3HistoryDetail");
+  if (!h || !detail) return;
+
+  detail.innerHTML = `
+    <p class="notice">莊家：${esc(h.raterNickname)} · 心水數字 ${h.target} 分</p>
+
+    ${h.results
+      .map(
+        (r) => `
+          <div class="answercard">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="flex:1">
+                <b>${esc(r.nickname)}</b>
+                ${h.wtfWinnerId === r.playerId ? '<span class="notice" style="margin:0 0 0 6px">🤯 最WTF</span>' : ""}
+                <div class="notice" style="margin:2px 0">${esc(r.text)}</div>
+                <div class="notice" style="margin:0">
+                  莊家俾 ${r.score} 分 · 貼近度 +${r.roundPoints}
+                  · 👍 ${r.reactions?.up || 0} 👎 ${r.reactions?.down || 0}
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      )
+      .join("")}
   `;
 }
+
+window.g3ShowHistory = (index) => {
+  S.g3HistoryIndex = index;
+
+  document
+    .querySelectorAll("#g3HistoryTabs .filter-chip")
+    .forEach((el, i) => el.classList.toggle("active", i === index));
+
+  renderGame3HistoryDetail(index);
+};
 
 function chatMsgHtml(message) {
   return `
