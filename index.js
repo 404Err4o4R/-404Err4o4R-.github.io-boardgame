@@ -19,6 +19,10 @@ const G2_PICK_MS = 10000;
 const G2_SPEAK_MS = 30000;
 const G2_JUDGE_MS = 120000;
 
+const G3_WRITE_MS = 50000;
+const G3_SCORE_MS = 18000;
+const G3_REVEAL_MS = 6000;
+
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -53,7 +57,12 @@ function shuffle(a) {
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3"; }
+function clampRounds(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(20, Math.max(2, Math.round(n)));
+}
 
 export default {
   async fetch(request, env) {
@@ -98,7 +107,11 @@ export default {
       }
 
       const categories =
-        game === "game1" ? GAME1_CATEGORIES : GAME2_CATEGORIES;
+        game === "game1"
+          ? GAME1_CATEGORIES
+          : game === "game2"
+            ? GAME2_CATEGORIES
+            : [];
 
       return json(
         { ok: true, categories },
@@ -159,6 +172,8 @@ export default {
               game: body.game,
               filters:
                 body.filters?.categories || [],
+              rounds:
+                body.rounds || null,
               roomTtl: ROOM_TTL
             })
           }
@@ -323,6 +338,59 @@ results:g.results||null
     };
   }
 
+  if(room.game==="game3") {
+    const base3={
+      phase:g.phase,
+      round:g.round,
+      totalRounds:g.totalRounds,
+      raterId:g.raterId||null,
+      raterNickname:room.players.find(p=>p.id===g.raterId)?.nickname || "",
+      endsAt:g.endsAt||null
+    };
+
+    if(g.phase==="writing") {
+      const writers = room.players.filter(p=>p.id!==g.raterId);
+      base3.submittedCount = (g.submittedIds||[]).length;
+      base3.totalToSubmit = writers.length;
+      base3.isRater = viewerId===g.raterId;
+      if(viewerId && viewerId!==g.raterId){
+        base3.myTarget = g.targets?.[viewerId] ?? null;
+        base3.mySubmitted = (g.submittedIds||[]).includes(viewerId);
+      }
+    }
+
+    if(g.phase==="rating") {
+      base3.ratingStage = g.ratingStage;
+      base3.totalAnswers = (g.ratingOrder||[]).length;
+      base3.isRater = viewerId===g.raterId;
+      if(viewerId===g.raterId){
+        base3.answers = (g.ratingOrder||[]).map(id=>g.answers?.[id] || "");
+        base3.currentRatingIndex = g.currentRatingIndex ?? 0;
+        base3.givenScores = (g.ratingOrder||[]).map(id=>g.scores?.[id] ?? null);
+      }
+    }
+
+    if(g.phase==="reveal" || g.phase==="gameover") {
+      base3.results = (g.results||[]).map(r=>({
+        playerId:r.playerId,
+        nickname:room.players.find(p=>p.id===r.playerId)?.nickname || "",
+        target:r.target,
+        score:r.score,
+        diff:r.diff,
+        roundPoints:r.roundPoints
+      }));
+      base3.isFinalRound = g.round>=g.totalRounds;
+    }
+
+    if(g.phase==="gameover") {
+      base3.finalRanking = [...room.players]
+        .sort((a,b)=>(b.score||0)-(a.score||0))
+        .map(p=>({playerId:p.id,nickname:p.nickname,score:p.score||0}));
+    }
+
+    return base3;
+  }
+
   const base={
     phase:g.phase, round:g.round, term:g.term || null,
     endsAt:g.endsAt||null, judgeId:g.judgeId||null,
@@ -382,6 +450,7 @@ export class GameRoom extends DurableObject {
         code:body.roomCode,
         game:body.game,
         filters:this.normalizeFilters(body.game,body.filters||[]),
+        rounds:clampRounds(body.rounds),
         hostId:null,
         players:[],
         gameState:null,
@@ -426,6 +495,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
+    if(game==="game3") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -468,6 +538,9 @@ export class GameRoom extends DurableObject {
       case "g2:chat": return this.onChat(session.playerId,msg.text,"speaking");
       case "g2:judge": return this.onG2Judge(session.playerId,msg.targetId);
       case "g2:next": return this.onG2Next(session.playerId);
+      case "g3:submit": return this.onG3Submit(session.playerId,msg.text);
+      case "g3:rating-start": return this.onG3RatingStart(session.playerId);
+      case "g3:score": return this.onG3Score(session.playerId,msg.index,msg.score);
       case "reconnect": return this.onReconnect(ws,session.playerId);
       default: return this.safeSend(ws,{type:"error",message:"未知操作。"});
     }
@@ -632,6 +705,7 @@ if (notReady.length > 0) {
       return this.errorPlayer(playerId,"遊戲已開始。");
     }
     if(this.room.game==="game1") await this.startGame1();
+    else if(this.room.game==="game3") await this.startGame3();
     else await this.startGame2();
   }
 
@@ -1173,6 +1247,206 @@ async onG1Next(playerId){
     await this.startGame2();
   }
 
+  /* =========================
+     Game 3 · He/She's a 10
+  ========================= */
+
+  async startGame3(){
+    const players = shuffle(
+      this.room.players.filter(p=>p.connected)
+    );
+
+    const totalRounds =
+      this.room.rounds || players.length;
+
+    this.room.g3RaterOrder = players.map(p=>p.id);
+    this.room.g3TotalRounds = totalRounds;
+
+    for(const p of this.room.players) p.score=0;
+
+    await this.beginRoundGame3(1);
+  }
+
+  async beginRoundGame3(round){
+    const order = this.room.g3RaterOrder || [];
+    const raterId = order[(round-1) % order.length];
+
+    const targets = {};
+    for(const p of this.room.players){
+      if(p.id===raterId) continue;
+      targets[p.id] = 1 + Math.floor(Math.random()*10);
+    }
+
+    this.room.gameState = {
+      game:"game3",
+      phase:"writing",
+      round,
+      totalRounds:this.room.g3TotalRounds,
+      raterId,
+      targets,
+      answers:{},
+      submittedIds:[],
+      ratingOrder:[],
+      ratingStage:null,
+      currentRatingIndex:0,
+      scores:{},
+      results:null,
+      endsAt:Date.now()+G3_WRITE_MS
+    };
+
+    await this.save();
+    await this.ctx.storage.setAlarm(this.room.gameState.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async onG3Submit(playerId,text){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game3" || g.phase!=="writing") return;
+    if(playerId===g.raterId) return;
+    if(!(playerId in g.targets)) return;
+
+    const clean = String(text||"").trim().slice(0,25);
+    if(!clean) return;
+
+    g.answers[playerId]=clean;
+    if(!g.submittedIds.includes(playerId)){
+      g.submittedIds.push(playerId);
+    }
+
+    const writers = this.room.players.filter(
+      p=>p.connected && p.id!==g.raterId
+    );
+    const allSubmitted =
+      writers.length>0 &&
+      writers.every(p=>g.submittedIds.includes(p.id));
+
+    if(allSubmitted){
+      await this.startRatingGame3();
+      return;
+    }
+
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  // Writing 時間到，未交嘅人自動填「（未作答）」，等評分流程可以繼續。
+  async forceCloseWritingGame3(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game3" || g.phase!=="writing") return;
+
+    for(const playerId of Object.keys(g.targets)){
+      if(!g.answers[playerId]){
+        g.answers[playerId]="（未作答）";
+      }
+      if(!g.submittedIds.includes(playerId)){
+        g.submittedIds.push(playerId);
+      }
+    }
+
+    await this.startRatingGame3();
+  }
+
+  async startRatingGame3(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game3") return;
+
+    g.phase="rating";
+    g.ratingStage="preview";
+    g.ratingOrder=shuffle(Object.keys(g.targets));
+    g.currentRatingIndex=0;
+    g.endsAt=null;
+
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async onG3RatingStart(playerId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game3" || g.phase!=="rating") return;
+    if(g.ratingStage!=="preview" || playerId!==g.raterId) return;
+
+    g.ratingStage="scoring";
+    g.currentRatingIndex=0;
+    g.endsAt=Date.now()+G3_SCORE_MS;
+
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async onG3Score(playerId,index,score){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game3" || g.phase!=="rating") return;
+    if(g.ratingStage!=="scoring" || playerId!==g.raterId) return;
+    if(index!==g.currentRatingIndex) return;
+
+    const n = Math.round(Number(score));
+    if(!Number.isFinite(n) || n<1 || n>10) return;
+
+    await this.advanceRatingGame3(n);
+  }
+
+  // 評分,自動入下一句;冇下一句就結算。手動評分同timeout自動評分都經呢個function。
+  async advanceRatingGame3(score){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game3") return;
+
+    const targetId = g.ratingOrder[g.currentRatingIndex];
+    if(targetId) g.scores[targetId]=score;
+
+    g.currentRatingIndex += 1;
+
+    if(g.currentRatingIndex >= g.ratingOrder.length){
+      await this.startRevealGame3();
+      return;
+    }
+
+    g.endsAt=Date.now()+G3_SCORE_MS;
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async startRevealGame3(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game3") return;
+
+    const results = Object.keys(g.targets).map(playerId=>{
+      const target=g.targets[playerId];
+      const score=g.scores[playerId] ?? Math.ceil(Math.random()*10);
+      const diff=Math.abs(target-score);
+      const roundPoints=10-diff;
+
+      const p=this.room.players.find(x=>x.id===playerId);
+      if(p) p.score=(p.score||0)+roundPoints;
+
+      return {playerId,target,score,diff,roundPoints};
+    }).sort((a,b)=>a.diff-b.diff);
+
+    g.phase="reveal";
+    g.results=results;
+    g.endsAt=Date.now()+G3_REVEAL_MS;
+
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async advanceAfterRevealGame3(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game3" || g.phase!=="reveal") return;
+
+    if(g.round >= g.totalRounds){
+      g.phase="gameover";
+      g.endsAt=null;
+      await this.save();
+      await this.broadcastRoom();
+      return;
+    }
+
+    await this.beginRoundGame3(g.round+1);
+  }
+
   async errorPlayer(playerId,message){
     this.sendToPlayer(playerId,{type:"error",message});
   }
@@ -1272,7 +1546,23 @@ async onG1Next(playerId){
       return;
     }
 
-    if(this.room.players.every(x=>!x.connected) && (!g || g.phase==="waiting" || g.phase==="result")){
+    if(g?.game==="game3" && g.phase==="writing" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.forceCloseWritingGame3();
+      return;
+    }
+
+    if(g?.game==="game3" && g.phase==="rating" && g.ratingStage==="scoring" && g.endsAt && Date.now()+50>=g.endsAt){
+      // 莊家冇及時評分，用隨機分數頂住，等遊戲繼續行落去。
+      await this.advanceRatingGame3(1 + Math.floor(Math.random()*10));
+      return;
+    }
+
+    if(g?.game==="game3" && g.phase==="reveal" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.advanceAfterRevealGame3();
+      return;
+    }
+
+    if(this.room.players.every(x=>!x.connected) && (!g || g.phase==="waiting" || g.phase==="result" || g.phase==="gameover")){
       await this.ctx.storage.deleteAll();
     }
   }
