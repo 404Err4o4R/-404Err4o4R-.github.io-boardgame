@@ -346,12 +346,19 @@ results:g.results||null
   }
 
   if(room.game==="game3") {
+    const order = room.g3RaterOrder || [];
+    const nextRaterId =
+      g.phase && g.phase!=="gameover" && order.length
+        ? order[g.round % order.length]
+        : null;
+
     const base3={
       phase:g.phase,
       round:g.round,
       totalRounds:g.totalRounds,
       raterId:g.raterId||null,
       raterNickname:room.players.find(p=>p.id===g.raterId)?.nickname || "",
+      nextRaterId,
       endsAt:g.endsAt||null
     };
 
