@@ -381,6 +381,18 @@ $("#roundsCustom")?.addEventListener("input", () => {
   S.selectedRounds = n >= 2 && n <= 20 ? n : null;
 });
 
+$("#writeTimeBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".write-chip");
+  if (!chip) return;
+
+  document
+    .querySelectorAll("#writeTimeBox .write-chip")
+    .forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+
+  S.selectedWriteSeconds = Number(chip.dataset.write) || 60;
+});
+
 /* =========================
    房間
 ========================= */
@@ -423,7 +435,8 @@ async function createRoom() {
       body: JSON.stringify({
         game: S.selectedGame,
         filters: { categories: S.filters },
-        rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null
+        rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
+        writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null
       })
     }).then((r) => r.json());
 
@@ -2293,7 +2306,7 @@ function renderGame3Writing(game) {
 
       <div class="question">
         你嘅心水數字係
-        <b style="color:var(--game-accent,#F2795F);font-size:1.3em">${game.myTarget}</b>
+        <b style="color:#fff;font-size:1.3em">${game.myTarget}</b>
         分。寫一句「佢係十分，但係___」，等莊家憑感情觀估返你個心水數字。
       </div>
 
@@ -2348,13 +2361,35 @@ function renderGame3Rating(game) {
   S.g3RenderKey = renderKey;
 
   if (!game.isRater) {
+    const idx = game.currentRatingIndex ?? 0;
+
     $("#gamePanel").innerHTML = `
       <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
       <h2 class="title">He/She's<br><span>a 10.</span></h2>
       <p class="notice">
         莊家 ${esc(game.raterNickname)} 評緊分……
-        (${(game.currentRatingIndex ?? 0)} / ${game.totalAnswers})
+        （匿名答案，評完先開估邊句係邊個）
+        ${game.ratingStage === "scoring" ? `(${idx + 1} / ${game.totalAnswers})` : ""}
       </p>
+
+      <div class="answers" style="flex-direction:column;gap:10px">
+        ${(game.answers || [])
+          .map(
+            (text, i) => `
+              <div
+                class="answerbox"
+                style="text-align:left;${
+                  game.ratingStage === "scoring" && i === idx
+                    ? "border:2px solid var(--game-accent,#F2795F)"
+                    : ""
+                }"
+              >
+                ${esc(text)}
+              </div>
+            `
+          )
+          .join("")}
+      </div>
     `;
     return;
   }
