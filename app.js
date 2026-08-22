@@ -142,13 +142,16 @@ function filterChipStyle(category, active) {
 
 function renderCategories() {
   const catSection = $("#catSection");
+  const roundsSection = $("#roundsSection");
 
   if (S.selectedGame === "game3") {
     if (catSection) catSection.style.display = "none";
+    if (roundsSection) roundsSection.classList.remove("hidden");
     return;
   }
 
   if (catSection) catSection.style.display = "";
+  if (roundsSection) roundsSection.classList.add("hidden");
 
   if (!S.questions) return;
 
@@ -352,6 +355,32 @@ $("#toggleCats")?.addEventListener("click", () => {
     : buttons.map((button) => button.dataset.category);
 });
 
+$("#roundsBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".rounds-chip");
+  if (!chip) return;
+
+  document
+    .querySelectorAll("#roundsBox .rounds-chip")
+    .forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+
+  const customInput = $("#roundsCustom");
+
+  if (chip.dataset.rounds === "custom") {
+    customInput?.classList.remove("hidden");
+    customInput?.focus();
+    S.selectedRounds = null;
+  } else {
+    customInput?.classList.add("hidden");
+    S.selectedRounds = Number(chip.dataset.rounds) || null;
+  }
+});
+
+$("#roundsCustom")?.addEventListener("input", () => {
+  const n = Number($("#roundsCustom").value);
+  S.selectedRounds = n >= 2 && n <= 20 ? n : null;
+});
+
 /* =========================
    房間
 ========================= */
@@ -393,7 +422,8 @@ async function createRoom() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         game: S.selectedGame,
-        filters: { categories: S.filters }
+        filters: { categories: S.filters },
+        rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null
       })
     }).then((r) => r.json());
 
@@ -544,6 +574,11 @@ async function connectRoom(code, mode, saved = null) {
   S.g1SelectedPair = undefined;
   S.g3RenderKey = null;
 
+  document.documentElement.style.setProperty(
+    "--game-accent",
+    GAME_ACCENTS[S.selectedGame] || GAME_ACCENTS.game1
+  );
+
   $("#roomPanel").innerHTML = "";
   $("#gamePanel").innerHTML = `
     <div class="eyebrow">
@@ -583,6 +618,11 @@ function handleServerMessage(message) {
     S.chat = message.room?.chat || [];
 
     saveSession();
+
+    document.documentElement.style.setProperty(
+      "--game-accent",
+      GAME_ACCENTS[message.room?.game] || GAME_ACCENTS.game1
+    );
 
     setConnectionStatus(
       "CONNECTED",
@@ -754,16 +794,14 @@ function renderRoom() {
 
   const roomPanel = $("#roomPanel");
 
-  // 遊戲開始咗之後（唔係 waiting 大堂），成個 ROOM CODE + 玩家清單嗰塊冇乜用，
-  // 房號同連線狀態頂欄本身已經有,呢度就唔使再佔位。
   const isPlaying =
     room.gameState &&
     room.gameState.phase &&
     room.gameState.phase !== "waiting";
 
   if (isPlaying) {
-    roomPanel.innerHTML = "";
-    roomPanel.classList.add("hidden");
+    roomPanel.classList.remove("hidden");
+    renderScoreboard(room);
     return;
   }
 
@@ -795,7 +833,9 @@ function renderRoom() {
               ? "心有靈犀一點通"
               : room.game === "game2"
               ? "9upper瞎掰王"
-              : "He/She's a 10"
+              : room.game === "game3"
+              ? "He/She's a 10"
+              : "未知遊戲"
           }
         </b>
       </div>
@@ -992,6 +1032,56 @@ $("#leaveBtn")?.addEventListener(
   "click",
   leaveRoom
 );
+}
+
+function renderScoreboard(room) {
+  const roomPanel = $("#roomPanel");
+  if (!roomPanel) return;
+
+  const raterId = room.gameState?.raterId || null;
+
+  const sorted = [...room.players].sort(
+    (a, b) => (b.score || 0) - (a.score || 0)
+  );
+
+  roomPanel.innerHTML = `
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="eyebrow">SCOREBOARD</div>
+      <div class="eyebrow">${esc(room.code)}</div>
+    </div>
+
+    <div class="players">
+      ${sorted
+        .map((p) => {
+          const isHost = p.id === room.hostId;
+          const isRater = raterId && p.id === raterId;
+
+          return `
+            <div class="player ${isHost ? "host" : ""}" style="opacity:${p.connected ? "1" : ".5"}">
+              <div>
+                ${
+                  isHost
+                    ? `<span class="host-crown"><svg viewBox="0 0 24 24"><path d="M3 9 L7 12 L12 6 L17 12 L21 9 L19 16 L5 16 Z" fill="#F2D965"/><circle cx="3" cy="9" r="1.4" fill="#1f2740"/><circle cx="12" cy="6" r="1.4" fill="#1f2740"/><circle cx="21" cy="9" r="1.4" fill="#1f2740"/></svg></span>`
+                    : ""
+                }
+                ${esc(p.nickname)}
+                ${isRater ? '<span class="notice" style="margin:0">（莊家）</span>' : ""}
+              </div>
+              <b>${p.score || 0}</b>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+
+    <button
+      class="btn btn-outline"
+      style="margin-top:12px;font-size:13px;padding:10px"
+      onclick="leaveRoom()"
+    >
+      LEAVE ROOM
+    </button>
+  `;
 }
 
 /* =========================
@@ -2362,12 +2452,13 @@ function renderGame3Reveal(game) {
       <div style="display:flex;align-items:center;gap:12px">
         <div style="flex:1">
           <b>${i === 0 ? "★ " : ""}${esc(r.nickname)}</b>
+          <div class="notice" style="margin:2px 0">${esc(r.text)}</div>
           <div class="notice" style="margin:0">心水 ${r.target} 分 · 莊家俾 ${r.score} 分</div>
         </div>
         <div class="slotnum" data-target="${r.roundPoints}" style="
           width:48px;height:48px;border-radius:12px;background:var(--yellow);
           display:flex;align-items:center;justify-content:center;
-          font-weight:800;font-size:20px;
+          font-weight:800;font-size:20px;flex-shrink:0;
         ">–</div>
       </div>
     `;
