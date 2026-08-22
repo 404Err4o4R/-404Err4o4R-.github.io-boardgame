@@ -62,7 +62,7 @@ function validGame(v) { return v==="game1" || v==="game2" || v==="game3"; }
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
-  return Math.min(20, Math.max(2, Math.round(n)));
+  return Math.min(50, Math.max(2, Math.round(n)));
 }
 function clampWriteMs(v) {
   const n = Number(v);
