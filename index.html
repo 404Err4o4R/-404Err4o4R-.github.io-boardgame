@@ -375,19 +375,22 @@
               id="roundsBox"
               class="filter-box"
             >
-              <button type="button" class="filter-chip rounds-chip active" data-rounds="0">人人做一次莊家</button>
               <button type="button" class="filter-chip rounds-chip" data-rounds="3">3輪</button>
               <button type="button" class="filter-chip rounds-chip" data-rounds="5">5輪</button>
               <button type="button" class="filter-chip rounds-chip" data-rounds="8">8輪</button>
               <button type="button" class="filter-chip rounds-chip" data-rounds="custom">自訂</button>
             </div>
 
+            <p class="notice" style="margin:6px 0 0">
+              預設：每人輪流做一次莊家
+            </p>
+
             <input
               id="roundsCustom"
               type="number"
               min="2"
-              max="20"
-              placeholder="輸入回合數（2-20）"
+              max="50"
+              placeholder="輸入回合數（2-50）"
               class="hidden"
               style="margin-top:8px"
             >
@@ -635,7 +638,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=14" defer></script>
+<script src="./app.js?v=16" defer></script>
 
 </body>
 </html>
