@@ -4,7 +4,7 @@ import {
   GAME2_QUESTIONS,
   GAME1_CATEGORIES,
   GAME2_CATEGORIES
-} from "./question-bank.js";
+} from "./question-bank/loader.js";
 
 const MAX_PLAYERS = 6;
 const MIN_PLAYERS = 2;
