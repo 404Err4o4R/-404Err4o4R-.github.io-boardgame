@@ -181,6 +181,8 @@ export default {
                 body.rounds || null,
               writeMs:
                 body.writeSeconds ? body.writeSeconds*1000 : null,
+              language:
+                body.language === "zh" ? "zh" : "yue",
               roomTtl: ROOM_TTL
             })
           }
@@ -307,12 +309,18 @@ function publicGameState(room, viewerId=null) {
   if(!g) return {phase:"waiting"};
 
   if(room.game==="game1") {
+    const lang = room.language==="zh" ? "zh" : "yue";
+    const q = g.question;
+    const localizedQuestion = q ? {
+      id:q.id,
+      category:q.category,
+      question:q.text?.[lang]?.question || q.question,
+      options:q.text?.[lang]?.options || q.options
+    } : null;
+
     return {
       phase:g.phase, round:g.round, endsAt:g.endsAt||null,
-      question:g.question ? {
-        id:g.question.id, category:g.question.category,
-        question:g.question.question, options:g.question.options
-      } : null,
+      question:localizedQuestion,
       votes:g.phase==="vote" ? {
   0:Object.values(g.votes||{}).filter(v=>v===0).length,
   1:Object.values(g.votes||{}).filter(v=>v===1).length
@@ -488,6 +496,7 @@ export class GameRoom extends DurableObject {
         filters:this.normalizeFilters(body.game,body.filters||[]),
         rounds:clampRounds(body.rounds),
         writeMs:clampWriteMs(body.writeMs),
+        language:body.language==="zh"?"zh":"yue",
         hostId:null,
         players:[],
         gameState:null,
@@ -879,11 +888,12 @@ async onG1Next(playerId){
     const winner=counts[0]===counts[1]?null:(counts[0]>counts[1]?0:1);
     g.phase="chat";g.endsAt=null;g.voteCounts=counts;g.winner=winner;
 
+    const lang=this.room.language==="zh"?"zh":"yue";
     this.room.g1History=this.room.g1History||[];
     this.room.g1History.push({
       category:g.question?.category||"未分類",
-      question:g.question?.question||"",
-      options:g.question?.options||[],
+      question:g.question?.text?.[lang]?.question || g.question?.question || "",
+      options:g.question?.text?.[lang]?.options || g.question?.options || [],
       votes:{...g.votes}
     });
     // 派對局唔會玩到幾百題，呢個上限純粹防止極端情況下房間狀態無限脹大。
