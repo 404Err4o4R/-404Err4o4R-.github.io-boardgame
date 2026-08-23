@@ -34,12 +34,14 @@ const S = {
 const CATEGORY_COLORS = {
   "哲學題": "#5f76c2",
   "社交題": "#e2884a",
-  "飲食習慣題": "#2f9e8f",
+  "食物題": "#2f9e8f",
   "價值觀題": "#d9ab2e",
   "戀愛題": "#c46fa3",
   "情境題": "#5fa151",
   "個人愛好題": "#8272cc",
-  "十八禁題": "#d16b63"
+  "十八禁題": "#d16b63",
+  "生活習慣題": "#b8794a",
+  "殘酷二選一": "#6a4c93"
 };
 
 const CATEGORY_ORDER = Object.keys(CATEGORY_COLORS);
