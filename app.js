@@ -145,15 +145,21 @@ function filterChipStyle(category, active) {
 function renderCategories() {
   const catSection = $("#catSection");
   const roundsSection = $("#roundsSection");
+  const langSection = $("#langSection");
 
   if (S.selectedGame === "game3") {
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.remove("hidden");
+    if (langSection) langSection.classList.add("hidden");
     return;
   }
 
   if (catSection) catSection.style.display = "";
   if (roundsSection) roundsSection.classList.add("hidden");
+
+  if (langSection) {
+    langSection.classList.toggle("hidden", S.selectedGame !== "game1");
+  }
 
   if (!S.questions) return;
 
@@ -390,6 +396,18 @@ $("#roundsCustom")?.addEventListener("input", () => {
   }
 });
 
+$("#langBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".lang-chip");
+  if (!chip) return;
+
+  document
+    .querySelectorAll("#langBox .lang-chip")
+    .forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+
+  S.selectedLanguage = chip.dataset.lang || "yue";
+});
+
 $("#writeTimeBox")?.addEventListener("click", (event) => {
   const chip = event.target.closest(".write-chip");
   if (!chip) return;
@@ -445,7 +463,8 @@ async function createRoom() {
         game: S.selectedGame,
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
-        writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null
+        writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
+        language: S.selectedGame === "game1" ? (S.selectedLanguage || "yue") : null
       })
     }).then((r) => r.json());
 
