@@ -355,7 +355,12 @@ $("#toggleCats")?.addEventListener("click", () => {
     );
 
   buttons.forEach((button) => {
-    button.classList.toggle("active", !allSelected);
+    const nextActive = !allSelected;
+    button.classList.toggle("active", nextActive);
+    button.setAttribute(
+      "style",
+      filterChipStyle(button.dataset.category, nextActive)
+    );
   });
 
   S.filters = allSelected
