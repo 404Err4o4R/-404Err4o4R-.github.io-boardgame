@@ -1,644 +1,299 @@
+昨日 上午1:47
+我現在需要你修改其他的東西 附圖是當進入網站時會看到的 但我不喜歡這個熊的設計 你覺得可以替換成什麼？不用生成圖像 先提供一些可行方案
+
+
+
+這是一些我喜歡的網頁設計參考圖 請你參考他們的設計 並使用我的網站原本已有的元素、顏色等 以簡約、明亮、有趣的風格設計出三個設計方案圖 
+
+
+
+編輯
+
+你比較想先把 方案 1 做成更有復古像素桌遊感，還是把 方案 2 做成更像拼貼雜誌版面的資訊圖形風格？
+
+
+這張參考圖的網頁設計結構是主題橫幅+說明文字+補充 我希望你參考這個網頁結構 套用到我的網頁會變成：主題橫幅+開房界面（直接保留目前已有的界面，封面圖改成P2那樣）+補充說明
+
+主題橫幅需要突出這是一個聯機派對遊戲網站  無需指向網站內的遊戲
+視覺：以不規則的軟身blob做底 加上波點、氣泡、圖案、虛線等元素 不需要文字或角色
+風格：簡約、明亮
+
+生成圖像或html檔 讓我能看到更新後的視覺效果會是怎麼樣
+
+
+
+編輯
+
+你希望我下一版把主題橫幅做成「更大型、更有層次的 blob 桌遊構圖」，還是「更留白、只保留少量漂浮桌遊元素」？
+非常好，你可以準備生成檔案了
+不過有一點在這張圖無法看見，我需要先提醒你：當房主切換遊戲的時候，左邊的豎版封面也會跟著變成遊戲對應的封面，而JOIN字也會改為遊戲對應的主題色
+已經準備好。我做成了一個可互動的 HTML 視覺 mockup，保留你目前網站的整體風格與色票，並特別把你剛提醒的行為做進去：
+切換 Game 1 / Game 2 / Game 3 時：
+
+左側豎版封面會跟著切換
+JOIN. 主題色會跟著遊戲切換
+Game 1 → 藍／黃
+Game 2 → 深綠／米白、神秘問號
+Game 3 → 珊瑚／暖米色、10＋愛心
+上方主題橫幅維持「PLAY TOGETHER」平台視覺，不綁定單一遊戲
+查看／下載互動式 Homepage Mockup 
+
+
+play_together_homepage_dynamic_mockup.html
+HTML
+
+為什麼生成出來和你提供的這張圖效果不一樣？我需要的是上面這個bubble橫幅
+開房界面的視覺效果麻煩你保留成原本那樣不變 不需要你做任何改動 只需要改這個橫幅就可以了
+最底部的補充說明沒有問題 你在這次更新可以保留
+你說得對，上一版的問題是我把「開房界面」也重新設計了；這次我已經改成只替換上方 Bubble 主題橫幅，下面的開房區域與最底部補充說明都保留原本的視覺邏輯。
+新版重點：
+
+上方使用你指定的 不規則 soft blob
+加入少量波點、氣泡、圓點、虛線、骰子等桌遊元素
+維持目前網站的藍／黃／珊瑚等色票
+不放人物
+不放遊戲專屬文字
+開房區域維持原本的 CREATE OR JOIN 結構
+底部三個補充說明保留
+整體更接近你最後提供的 Bubble Banner 參考圖
+查看新版 Bubble Banner Homepage Mockup 
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#FEFEF2">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PLAY TOGETHER · Bubble Hero Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pure:#FEFEF2;
+  --blue:#929FC1;
+  --blue-dark:#68779f;
+  --blue-pale:#e4e8f2;
+  --yellow:#F2D965;
+  --yellow-deep:#d7b921;
+  --ink:#1f2740;
+  --white:#fff;
+  --g1-a:#7a89ae;
+  --g1-b:#F2D965;
+  --g2-a:#004643;
+  --g2-b:#F0EDE5;
+  --g3-a:#F2795F;
+  --g3-b:#F2D9C4;
+  --shadow:0 20px 60px rgba(50,60,100,.12);
+  --radius-xl:34px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--pure);color:var(--ink);font-family:"Nunito",system-ui,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.site-nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:18px 5vw;background:rgba(254,254,242,.88);backdrop-filter:blur(16px);border-bottom:1px solid rgba(146,159,193,.14)}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Fredoka",sans-serif;font-weight:700;line-height:.9;font-size:14px}
+.brand-mark{width:36px;height:36px;border-radius:12px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:20px;font-weight:900}
+.site-nav nav{display:flex;gap:28px;font-weight:800;font-size:14px}
+.site-nav nav a{text-decoration:none;color:inherit;opacity:.75}
+.nav-cta{border:0;background:var(--yellow);padding:10px 18px;border-radius:999px;box-shadow:0 6px 0 var(--yellow-deep);font-weight:900;color:var(--ink)}
+.section{max-width:1180px;margin:0 auto;padding:72px 24px}
 
-  <title>PLAY TOGETHER · 聯機桌遊</title>
+/* Bubble hero only */
+.hero{position:relative;min-height:455px;display:grid;grid-template-columns:1.0fr 1.25fr;align-items:center;gap:24px;overflow:hidden}
+.hero-copy{position:relative;z-index:2;max-width:510px}
+.eyebrow{font-size:12px;letter-spacing:.18em;font-weight:900;opacity:.65}
+.hero h1{font-family:"Fredoka",sans-serif;font-weight:700;font-size:clamp(64px,8vw,112px);line-height:.88;letter-spacing:-.03em;margin:18px 0}
+.hero h1 span{color:var(--blue-dark)}
+.hero-copy p{font-size:18px;line-height:1.7;max-width:540px;margin:0}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+.btn{border:0;border-radius:18px;padding:14px 20px;font-weight:900;letter-spacing:.04em}
+.btn-yellow{background:var(--yellow);color:var(--ink);box-shadow:0 8px 0 var(--yellow-deep)}
+.btn-outline{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+.hero-note{margin-top:16px;font-size:12px;opacity:.55;font-weight:800}
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+/* Large soft blob: deliberately the visual focus, no words or characters */
+.hero-art{position:relative;min-height:360px}
+.blob{position:absolute;inset:5% -6% 6% -4%;border-radius:49% 51% 44% 56% / 39% 46% 54% 61%;background:#dbe2f0;transform:rotate(-2deg)}
+.blob2{position:absolute;right:-1%;top:8%;width:38%;height:42%;border-radius:58% 42% 62% 38%;background:#cdd6ea;opacity:.9}
+.blob3{position:absolute;left:4%;bottom:0;width:31%;height:35%;border-radius:36% 64% 43% 57%;background:#e7e9f1}
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Baloo+2:wght@700;800&display=swap"
-    rel="stylesheet"
-  >
+.dots{position:absolute;width:92px;height:92px;background-image:radial-gradient(circle,#7f8eb2 3px,transparent 3px);background-size:18px 18px;opacity:.75}
+.dots.top{right:11%;top:12%}
+.dots.bottom{left:6%;bottom:12%;background-image:radial-gradient(circle,#f2795f 3px,transparent 3px);background-size:16px 16px;opacity:.65;width:78px;height:78px}
+.dash{position:absolute;border-top:4px dashed rgba(31,39,64,.58);border-radius:50%;width:340px;height:170px}
+.dash.one{left:8%;top:7%;transform:rotate(-5deg)}
+.dash.two{right:2%;bottom:7%;width:230px;height:125px;transform:rotate(-8deg)}
+.orb{position:absolute;border-radius:50%;box-shadow:0 8px 12px rgba(50,60,100,.12)}
+.orb.a{width:62px;height:62px;left:14%;top:18%;background:var(--yellow)}
+.orb.b{width:48px;height:48px;right:17%;top:14%;background:var(--g3-a)}
+.orb.c{width:34px;height:34px;left:44%;bottom:12%;background:var(--blue-dark)}
+.orb.ring{width:38px;height:38px;left:26%;bottom:22%;border:5px solid var(--blue-dark);box-shadow:none;background:transparent}
+.dice{position:absolute;right:11%;bottom:21%;width:58px;height:58px;border-radius:15px;background:#fff;transform:rotate(14deg);box-shadow:0 12px 20px rgba(50,60,100,.1);display:grid;place-items:center}
+.dice::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--ink);box-shadow:18px 18px 0 var(--ink),-18px -18px 0 var(--ink),18px -18px 0 var(--ink),-18px 18px 0 var(--ink)}
+.tiny-card{position:absolute;width:84px;height:104px;border-radius:16px;background:#fff;box-shadow:0 16px 22px rgba(50,60,100,.12);transform:rotate(-9deg);left:31%;top:14%}
+.tiny-card::before{content:"";position:absolute;inset:13px;border:2px solid #dbe0ec;border-radius:11px}
+.tiny-card.yellow{left:auto;right:32%;top:37%;background:var(--yellow);transform:rotate(8deg)}
+.speech{position:absolute;left:17%;bottom:31%;width:64px;height:46px;border-radius:50%;background:rgba(255,255,255,.82)}
+.speech:after{content:"";position:absolute;left:12px;bottom:-5px;width:18px;height:13px;background:rgba(255,255,255,.82);transform:skewX(-22deg)}
+.speech span,.speech span:before,.speech span:after{position:absolute;top:19px;width:7px;height:7px;border-radius:50%;background:var(--blue);content:""}
+.speech span{left:17px}.speech span:before{left:14px}.speech span:after{left:28px}
+.spark{position:absolute;color:#fff;font-size:24px}
+.spark.one{left:23%;top:28%}.spark.two{right:24%;bottom:29%}.spark.three{right:8%;top:31%;color:var(--yellow)}
+.heart-mini{position:absolute;left:47%;bottom:4%;color:var(--g3-a);font-size:27px}
 
-  <link rel="stylesheet" href="./style.css">
+/* Original room interface visual structure */
+.room-section{padding-top:20px}
+.room-panel{display:grid;grid-template-columns:.8fr 1.2fr;gap:0;background:#fff;border-radius:34px;overflow:hidden;box-shadow:var(--shadow)}
+.room-visual{min-height:620px;background:var(--blue);position:relative;overflow:hidden}
+.mini-card{position:absolute;padding:12px 16px;background:var(--pure);border-radius:16px;font-family:"Fredoka";font-size:18px;transform:rotate(-8deg);left:30px;top:70px;box-shadow:0 12px 20px rgba(0,0,0,.08)}
+.mini-card.yellow{left:auto;right:26px;top:140px;background:var(--yellow);transform:rotate(6deg)}
+.mini-card.blue{left:25px;top:auto;bottom:90px;background:var(--ink);color:#fff;transform:rotate(4deg)}
+.orbit{width:340px;height:340px;border:2px solid rgba(255,255,255,.4);border-radius:50%;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.orbit:before,.orbit:after{content:"";position:absolute;border-radius:50%;background:var(--yellow)}
+.orbit:before{width:38px;height:38px;right:45px;top:32px}.orbit:after{width:24px;height:24px;left:30px;bottom:60px}
+.room-form{padding:44px}
+.room-form h2{font-family:"Fredoka",sans-serif;font-size:68px;line-height:.9;letter-spacing:-.03em;margin:14px 0}
+.room-form h2 span{color:var(--blue-dark)}
+.tabs{display:flex;gap:10px;margin:24px 0}
+.tab{border:0;padding:10px 14px;border-radius:999px;background:#eef0f4;font-weight:900}.tab.active{background:var(--ink);color:#fff}
+.form-grid{display:grid;gap:16px}
+label{font-size:13px;font-weight:900}
+input,select{width:100%;margin-top:6px;border:2px solid #e7e9ee;background:#fbfbf6;border-radius:14px;padding:12px 14px;outline:none;color:var(--ink)}
+.label-row{display:flex;justify-content:space-between;align-items:center}
+.text-btn{border:0;background:none;font-weight:900;color:var(--blue-dark)}
+.filter-box{display:flex;flex-wrap:wrap;gap:8px;max-height:150px;overflow:auto;padding:4px}
+.filter-chip{border:2px solid #e7e9ee;border-radius:999px;padding:7px 10px;background:#fff;font-size:12px;font-weight:900}
+.filter-chip.active{background:var(--yellow);border-color:var(--yellow-deep)}
+.create-button{width:100%;border:0;border-radius:18px;padding:15px 22px;font-weight:900;background:var(--yellow);color:var(--ink);box-shadow:0 8px 0 var(--yellow-deep);margin-top:10px}
+.notice{font-size:13px;line-height:1.6;color:#68708a;margin:8px 0 0}
+
+/* Existing bottom explanation kept as-is in spirit */
+.extras{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}
+.extra{padding:24px;border-radius:22px;background:#fff;box-shadow:var(--shadow)}
+.extra-icon{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--blue-pale);font-size:22px}
+.extra:nth-child(2) .extra-icon{background:#fff2bb}.extra:nth-child(3) .extra-icon{background:#f8dbce}
+.extra h3{font-family:"Fredoka";font-size:25px;margin:14px 0 8px}.extra p{margin:0;color:#69718a;line-height:1.65;font-size:14px}
+
+@media(max-width:900px){
+  .site-nav nav{display:none}
+  .hero{grid-template-columns:1fr;min-height:auto}
+  .hero-art{min-height:310px}
+  .room-panel{grid-template-columns:1fr}
+  .room-visual{min-height:350px}
+  .extras{grid-template-columns:1fr}
+}
+</style>
 </head>
-
 <body>
 
 <header class="site-nav">
-  <a class="brand" href="#top" aria-label="Play Together">
+  <a class="brand" href="#">
     <span class="brand-mark">P</span>
     <span>PLAY<br>TOGETHER</span>
   </a>
-
-  <nav>
-    <a href="#games">Games</a>
-    <a href="#how">How to play</a>
-    <a href="#about">About</a>
-  </nav>
-
-  <button class="nav-cta" data-scroll="#room">
-    PLAY
-  </button>
+  <nav><a href="#">Games</a><a href="#">How to play</a><a href="#">About</a></nav>
+  <button class="nav-cta">PLAY</button>
 </header>
 
-<main id="landing">
-
-  <!-- HERO -->
-  <section class="hero section">
-
+<main>
+  <section class="section hero">
     <div class="hero-copy">
-
-      <div class="eyebrow">
-        LET THE GAMES BEGIN
-      </div>
-
-      <h1>
-        PLAY<br>
-        <span>TOGETHER.</span>
-      </h1>
-
-      <p>
-        兩款為朋友聚會設計的派對桌遊。
-        無需註冊，輸入暱稱和 6 位房間號，
-        直接透過 Cloudflare WebSocket 聯機。
-      </p>
-
+      <div class="eyebrow">LET THE GAMES BEGIN</div>
+      <h1>PLAY<br><span>TOGETHER.</span></h1>
+      <p>兩款為朋友聚會設計的派對桌遊。無需註冊，輸入暱稱和 6 位房間號，直接透過 Cloudflare WebSocket 聯機。</p>
       <div class="hero-actions">
-
-        <button
-          class="btn btn-yellow"
-          data-scroll="#room"
-        >
-          CREATE A ROOM
-        </button>
-
-        <button
-          class="btn btn-outline"
-          data-scroll="#games"
-        >
-          EXPLORE GAMES
-        </button>
-
+        <button class="btn btn-yellow">CREATE A ROOM</button>
+        <button class="btn btn-outline">EXPLORE GAMES</button>
       </div>
-
-      <div class="hero-note">
-        GitHub Pages · Cloudflare Durable Objects · WebSocket
-      </div>
-
+      <div class="hero-note">GitHub Pages · Cloudflare Durable Objects · WebSocket</div>
     </div>
 
     <div class="hero-art" aria-hidden="true">
-
-      <div class="character">
-        <div class="ear left"></div>
-        <div class="ear right"></div>
-
-        <div class="head">
-          <span class="eye e1"></span>
-          <span class="eye e2"></span>
-          <span class="mouth"></span>
-          <span class="star">★</span>
-        </div>
-
-        <div class="body"></div>
-
-        <div class="arm arm-l"></div>
-        <div class="arm arm-r"></div>
-
-        <div class="leg leg-l"></div>
-        <div class="leg leg-r"></div>
-      </div>
-
-      <div class="speech-card">
-        <span>2–6 PLAYERS</span>
-        <strong>
-          ONE ROOM.<br>
-          LOTS OF CHAOS.
-        </strong>
-      </div>
-
+      <div class="blob"></div><div class="blob2"></div><div class="blob3"></div>
+      <div class="dots top"></div><div class="dots bottom"></div>
+      <div class="dash one"></div><div class="dash two"></div>
+      <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div><div class="orb ring"></div>
+      <div class="tiny-card"></div><div class="tiny-card yellow"></div>
+      <div class="dice"></div>
+      <div class="speech"><span></span></div>
+      <div class="spark one">✦</div><div class="spark two">✦</div><div class="spark three">✦</div>
+      <div class="heart-mini">♥</div>
     </div>
-
   </section>
 
-
-  <!-- GAMES -->
-  <section id="games" class="section game-section">
-
-    <div class="section-head">
-
-      <div class="eyebrow">
-        CHOOSE YOUR GAME
-      </div>
-
-      <h2>
-        MEET THE <span>GAMES.</span>
-      </h2>
-
-      <p>
-        先選一款遊戲，再建立房間。
-        題庫會直接從 GitHub Pages 上的
-        <code>questions.json</code> 載入。
-      </p>
-
-    </div>
-
-
-    <div class="game-grid">
-
-      <article class="game-card blue-card">
-
-        <div class="sticker">
-          01
-        </div>
-
-        <div class="game-icon">
-          💭
-        </div>
-
-        <h3>
-          心有靈犀<br>
-          一點通
-        </h3>
-
-        <p>
-          二選一投票＋聊天。
-          十秒做決定，再看看大家真正怎麼想。
-        </p>
-
-        <div class="tag-row">
-          <span>VOTE</span>
-          <span>TALK</span>
-          <span>2–6</span>
-        </div>
-
-        <button
-          class="btn btn-light"
-          data-start="game1"
-        >
-          PLAY THIS GAME
-        </button>
-
-      </article>
-
-
-      <article class="game-card yellow-card">
-
-        <div class="sticker">
-          02
-        </div>
-
-        <div class="game-icon">
-          🎭
-        </div>
-
-        <h3>
-          9upper<br>
-          瞎掰王
-        </h3>
-
-        <p>
-          諗樣、老實人、9upper。
-          大家一齊解釋同一個詞，
-          得一個人知道真相。
-        </p>
-
-        <div class="tag-row">
-          <span>BLUFF</span>
-          <span>JUDGE</span>
-          <span>2–6</span>
-        </div>
-
-        <button
-          class="btn btn-dark"
-          data-start="game2"
-        >
-          PLAY THIS GAME
-        </button>
-
-      </article>
-
-
-      <article class="game-card coral-card">
-
-        <div class="sticker">
-          03
-        </div>
-
-        <div class="game-icon">
-          💘
-        </div>
-
-        <h3>
-          He/She's<br>
-          a 10
-        </h3>
-
-        <p>
-          唔設情境，自由發揮。
-          莊家輪流做，憑心水數字睇下大家有幾了解你。
-        </p>
-
-        <div class="tag-row">
-          <span>RATE</span>
-          <span>FREE STYLE</span>
-          <span>2–6</span>
-        </div>
-
-        <button
-          class="btn btn-light"
-          data-start="game3"
-        >
-          PLAY THIS GAME
-        </button>
-
-      </article>
-
-    </div>
-
-  </section>
-
-
-  <!-- ROOM -->
-  <section id="room" class="section room-section">
-
+  <section class="section room-section">
     <div class="room-panel">
-
       <div class="room-visual" id="roomVisual">
+        <div class="mini-card">A / B</div>
+        <div class="mini-card yellow">?</div>
+        <div class="mini-card blue">10</div>
+        <div class="orbit"></div>
       </div>
-
 
       <div class="room-form">
-
-        <div class="eyebrow">
-          LET'S GET STARTED
-        </div>
-
-        <h2>
-          CREATE OR <span>JOIN.</span>
-        </h2>
-
-
+        <div class="eyebrow">LET'S GET STARTED</div>
+        <h2>CREATE OR <span>JOIN.</span></h2>
         <div class="tabs">
-
-          <button
-            class="tab active"
-            data-tab="create"
-          >
-            CREATE ROOM
-          </button>
-
-          <button
-            class="tab"
-            data-tab="join"
-          >
-            JOIN ROOM
-          </button>
-
+          <button class="tab active">CREATE ROOM</button>
+          <button class="tab">JOIN ROOM</button>
         </div>
 
-
-        <!-- CREATE -->
-        <div
-          id="createTab"
-          class="tab-panel active"
-        >
-
-          <label>
-            你的暱稱
-
-            <input
-              id="createName"
-              maxlength="20"
-              placeholder="例如：小米"
-            >
-          </label>
-
-
-          <label>
-            遊戲
-
-            <select id="gameSelect">
-
-              <option value="game1">
-                心有靈犀一點通
-              </option>
-
-              <option value="game2">
-                9upper 瞎掰王
-              </option>
-
-              <option value="game3">
-                He/She's a 10
-              </option>
-
+        <div class="form-grid">
+          <label>你的暱稱<input placeholder="例如：小米"></label>
+          <label>遊戲
+            <select>
+              <option>心有靈犀一點通</option>
+              <option>9upper 瞎掰王</option>
+              <option>He/She's a 10</option>
             </select>
-
           </label>
-
-
-          <div
-            id="catSection"
-          >
-
+          <div>
             <div class="label-row">
-
-              <span>
-                題庫分類
-              </span>
-
-              <button
-                id="toggleCats"
-                class="text-btn"
-                type="button"
-              >
-                全選 / 取消全選
-              </button>
-
+              <span style="font-size:13px;font-weight:900">題庫分類</span>
+              <button class="text-btn">全選 / 取消全選</button>
             </div>
-
-
-            <div
-              id="catBox"
-              class="filter-box"
-            ></div>
-
+            <div class="filter-box">
+              <button class="filter-chip active">個人愛好題</button>
+              <button class="filter-chip active">飲食習慣題</button>
+              <button class="filter-chip active">社交題</button>
+              <button class="filter-chip active">情境題</button>
+              <button class="filter-chip active">價值觀題</button>
+              <button class="filter-chip active">戀愛題</button>
+              <button class="filter-chip active">哲學題</button>
+              <button class="filter-chip active">十八禁題</button>
+            </div>
           </div>
-
-
-          <div
-            id="roundsSection"
-            class="hidden"
-          >
-
-            <div class="label-row">
-              <span>回合數</span>
-            </div>
-
-            <div
-              id="roundsBox"
-              class="filter-box"
-            >
-              <button type="button" class="filter-chip rounds-chip" data-rounds="3">3輪</button>
-              <button type="button" class="filter-chip rounds-chip" data-rounds="5">5輪</button>
-              <button type="button" class="filter-chip rounds-chip" data-rounds="8">8輪</button>
-              <button type="button" class="filter-chip rounds-chip" data-rounds="custom">自訂</button>
-            </div>
-
-            <p class="notice" style="margin:6px 0 0">
-              預設：每人輪流做一次莊家
-            </p>
-
-            <input
-              id="roundsCustom"
-              type="number"
-              min="2"
-              max="50"
-              placeholder="輸入回合數（2-50）"
-              class="hidden"
-              style="margin-top:8px"
-            >
-
-            <div class="label-row" style="margin-top:14px">
-              <span>打字時間</span>
-            </div>
-
-            <div
-              id="writeTimeBox"
-              class="filter-box"
-            >
-              <button type="button" class="filter-chip write-chip active" data-write="60">1分鐘</button>
-              <button type="button" class="filter-chip write-chip" data-write="90">1分半鐘</button>
-              <button type="button" class="filter-chip write-chip" data-write="120">2分鐘</button>
-            </div>
-
-          </div>
-
-
-          <button
-            id="createBtn"
-            class="btn btn-yellow wide"
-          >
-            CREATE ROOM
-          </button>
-
+          <button class="create-button">CREATE ROOM</button>
         </div>
-
-
-        <!-- JOIN -->
-        <div
-          id="joinTab"
-          class="tab-panel"
-        >
-
-          <label>
-            你的暱稱
-
-            <input
-              id="joinName"
-              maxlength="20"
-              placeholder="例如：阿哲"
-            >
-          </label>
-
-
-          <label>
-            房間號
-
-            <input
-              id="joinCode"
-              maxlength="6"
-              placeholder="例如：A7K9P2"
-              autocomplete="off"
-            >
-          </label>
-
-
-          <button
-            id="joinBtn"
-            class="btn btn-blue wide"
-          >
-            JOIN ROOM
-          </button>
-
-
-          <p class="notice">
-            只需要 6 位房間號。
-            不需要邀請資料、不需要 Answer。
-          </p>
-
-        </div>
-
-
-        <div
-          id="lobbyError"
-          class="status hidden"
-        ></div>
-
       </div>
-
     </div>
 
+    <div class="extras">
+      <article class="extra">
+        <div class="extra-icon">●●</div>
+        <h3>線上同樂，隨時開局</h3>
+        <p>無需下載，揪朋友就能馬上開玩，2–6 人都能一起聚在其中！</p>
+      </article>
+      <article class="extra">
+        <div class="extra-icon">•••</div>
+        <h3>多種主題，樂趣無限</h3>
+        <p>豐富題庫分類，從日常到深度話題，發現彼此更多有趣的想法！</p>
+      </article>
+      <article class="extra">
+        <div class="extra-icon">♥</div>
+        <h3>聊天互動，感情升溫</h3>
+        <p>邊玩邊聊，分享觀點與故事，讓每一局都變成更靠近彼此的時刻！</p>
+      </article>
+    </div>
   </section>
-
-
-  <!-- HOW -->
-  <section
-    id="how"
-    class="section how-section"
-  >
-
-    <div class="section-head">
-
-      <div class="eyebrow">
-        HOW IT WORKS
-      </div>
-
-      <h2>
-        THREE STEPS.<br>
-        <span>THAT'S IT.</span>
-      </h2>
-
-    </div>
-
-
-    <div class="steps">
-
-      <div class="step">
-        <b>01</b>
-        <h3>CHOOSE</h3>
-        <p>
-          選遊戲與題庫分類。
-        </p>
-      </div>
-
-      <div class="step">
-        <b>02</b>
-        <h3>ROOM CODE</h3>
-        <p>
-          房主建立房間，
-          玩家輸入同一個 6 位房間號。
-        </p>
-      </div>
-
-      <div class="step">
-        <b>03</b>
-        <h3>PLAY</h3>
-        <p>
-          Cloudflare Durable Object
-          管理房間、身份與倒計時。
-        </p>
-      </div>
-
-    </div>
-
-  </section>
-
-
-  <!-- ABOUT -->
-  <section
-    id="about"
-    class="section about-section"
-  >
-
-    <div class="about-card">
-
-      <div class="eyebrow">
-        ABOUT
-      </div>
-
-      <h2>
-        PURE LIGHT.<br>
-        <span>GOOD VIBES.</span>
-      </h2>
-
-      <p>
-        Pure Light 作為底色，
-        Serenity Blue 與 Golden Custard
-        作為主要視覺點綴。
-      </p>
-
-      <div class="palette">
-
-        <span style="--c:#FEFEF2">
-          Pure Light
-        </span>
-
-        <span style="--c:#929FC1">
-          Serenity Blue
-        </span>
-
-        <span style="--c:#F2D965">
-          Golden Custard
-        </span>
-
-      </div>
-
-    </div>
-
-  </section>
-
 </main>
-
-
-<!-- GAME ROOM -->
-<section
-  id="gameShell"
-  class="game-shell hidden"
->
-
-  <div class="game-topbar">
-
-    <button
-      id="closeGame"
-      class="icon-btn"
-    >
-      ←
-    </button>
-
-    <div>
-
-      <span class="eyebrow">
-        ROOM
-      </span>
-
-      <strong id="roomLabel">
-        ------
-      </strong>
-
-    </div>
-
-    <div class="top-spacer"></div>
-
-    <div
-      class="peer-status"
-      id="connBadge"
-    >
-      CONNECTING
-    </div>
-
-  </div>
-
-
-  <div class="game-content">
-
-    <div
-      id="roomPanel"
-      class="panel"
-    ></div>
-
-    <div
-      id="gamePanel"
-      class="panel"
-    ></div>
-
-  </div>
-
-</section>
-
-
-<!-- VERY IMPORTANT:
-     config.js must load BEFORE app.js
--->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./config.js"></script>
-<script src="./app.js?v=19" defer></script>
-
 </body>
 </html>
+
+play_together_bubble_banner_only.html
+HTML
+
+
+
+
+
+
