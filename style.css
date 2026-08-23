@@ -115,7 +115,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef0f3;
 .hero-note{margin-top:16px;font-size:12px;opacity:.55;font-weight:800}
 
 /* Full-width SVG wave banner (below hero-copy) */
-.hero-banner{position:relative;width:100%;height:280px;margin-top:36px;overflow:hidden}
+.hero-banner{position:relative;width:100%;height:280px;margin-bottom:16px;overflow:hidden}
 .hero-banner .blob{position:absolute;inset:0}
 .hero-banner .blob svg{width:100%;height:100%;display:block}
 .hb-wave{position:absolute;left:17%;top:28px;width:43%;height:150px;border-top:4px dashed rgba(31,39,64,.62);border-radius:50%;transform:rotate(-5deg)}
@@ -255,7 +255,37 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 @media (max-width:620px){.answers{grid-template-columns:1fr}}
 
 @media (max-width:1100px) and (min-width:901px){.game-grid{grid-template-columns:1fr 1fr}}
-@media (max-width:900px){.hero-banner{height:280px}.game-grid,.room-panel,.sync-room{grid-template-columns:1fr}.room-visual{min-height:280px}.steps{grid-template-columns:1fr}.extras{grid-template-columns:1fr}}
+@media (max-width:900px){
+  .hero-banner{height:230px}
+  .hb-wave{height:82px}
+  .hb-wave.two{height:70px}
+  .hb-dots{width:44px;height:44px;background-size:11px 11px}
+  .hb-dots.left{width:38px;height:38px;background-size:9px 9px}
+  .hb-orb.o1{width:32px;height:32px}
+  .hb-orb.o2{width:14px;height:14px}
+  .hb-orb.o3{width:17px;height:17px}
+  .hb-orb.o4{width:30px;height:30px}
+  .hb-orb.o5{width:14px;height:14px}
+  .hb-ring{width:20px;height:20px;border-width:3px}
+  .hb-circle-yellow{width:24px;height:24px}
+  .hb-circle-yellow:after{inset:5px;border-width:3px}
+  .hb-die{width:30px;height:30px;border-radius:9px}
+  .hb-die:before{width:5px;height:5px;box-shadow:9px 9px 0 var(--ink),-9px -9px 0 var(--ink),9px -9px 0 var(--ink),-9px 9px 0 var(--ink)}
+  .hb-card{width:44px;height:55px;border-radius:11px}
+  .hb-card.one:before{font-size:18px}
+  .hb-card.two:before{inset:7px;border-width:1.5px}
+  .hb-speech{width:36px;height:26px}
+  .hb-speech:after{left:7px;width:9px;height:7px}
+  .hb-speech span,.hb-speech span:before,.hb-speech span:after{width:3.5px;height:3.5px;top:11px}
+  .hb-speech span{left:9px}.hb-speech span:before{left:6px}.hb-speech span:after{left:13px}
+  .hb-symbol{width:32px;height:32px;font-size:17px}
+  .hb-star{font-size:13px}
+  .hb-heart{font-size:15px}
+  .game-grid,.room-panel,.sync-room{grid-template-columns:1fr}
+  .room-visual{min-height:280px}
+  .steps{grid-template-columns:1fr}
+  .extras{grid-template-columns:1fr}
+}
 @media (max-width:620px){.site-nav nav{display:none}.site-nav{padding:14px 18px}.section{padding:60px 18px}.game-card h3{font-size:38px}.room-form{padding:26px}.option-grid,.choice-grid{grid-template-columns:1fr}.game-title{font-size:42px}.question-box{font-size:24px}.timer{font-size:42px}}
 
 .btn-green {
