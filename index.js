@@ -3,11 +3,13 @@ import {
   GAME1_QUESTIONS,
   GAME2_QUESTIONS,
   GAME1_CATEGORIES,
-  GAME2_CATEGORIES
+  GAME2_CATEGORIES,
+  GAME4_QUESTIONS
 } from "./question-bank/loader.js";
 
 const MAX_PLAYERS = 6;
 const MIN_PLAYERS = 2;
+const MIN_PLAYERS_GAME4 = 3;
 const ROOM_TTL = 1000 * 60 * 60 * 6;
 const MAX_MESSAGE = 12_000;
 const MAX_CHAT_HISTORY = 100;
@@ -23,6 +25,10 @@ const G3_WRITE_MS_DEFAULT = 60000;
 const G3_SCORE_MS = 18000;
 const G3_REVEAL_MS = 10000;
 const G3_WRITE_OPTIONS = [60000, 90000, 120000];
+
+const G4_VOTE_MS = 15000;
+const G4_REVEAL_MS = 10000;
+const G4_ROUND_OPTIONS = [20, 50, 100];
 
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
@@ -58,7 +64,7 @@ function shuffle(a) {
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2" || v==="game3"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4"; }
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
@@ -67,6 +73,10 @@ function clampRounds(v) {
 function clampWriteMs(v) {
   const n = Number(v);
   return G3_WRITE_OPTIONS.includes(n) ? n : G3_WRITE_MS_DEFAULT;
+}
+function clampG4Rounds(v) {
+  const n = Number(v);
+  return G4_ROUND_OPTIONS.includes(n) ? n : G4_ROUND_OPTIONS[0];
 }
 
 export default {
@@ -183,6 +193,10 @@ export default {
                 body.writeSeconds ? body.writeSeconds*1000 : null,
               language:
                 body.language === "zh" ? "zh" : "yue",
+              g4Rounds:
+                body.g4Rounds || null,
+              g4Anonymous:
+                body.g4Anonymous !== false,
               roomTtl: ROOM_TTL
             })
           }
@@ -435,6 +449,57 @@ results:g.results||null
     return base3;
   }
 
+  if(room.game==="game4") {
+    const base4={
+      phase:g.phase,
+      round:g.round,
+      totalRounds:g.totalRounds,
+      question:g.question?.question || "",
+      endsAt:g.endsAt||null
+    };
+
+    if(g.phase==="voting") {
+      const connected=room.players.filter(p=>p.connected);
+      base4.votedCount=Object.keys(g.votes||{}).length;
+      base4.totalToVote=connected.length;
+      base4.myVote = viewerId ? (g.votes?.[viewerId] || null) : null;
+    }
+
+    if(g.phase==="reveal" || g.phase==="gameover") {
+      const r=g.results||{};
+      const anonymous = r.anonymous!==false;
+      base4.results = {
+        anonymous,
+        everyoneCount:r.everyoneCount||0,
+        abstainCount:r.abstainCount||0,
+        winnerId:r.winnerId||null,
+        winnerNickname:r.winnerId ? (room.players.find(p=>p.id===r.winnerId)?.nickname||"") : "",
+        maxVotes:r.maxVotes||0,
+        tally: Object.entries(r.tally||{}).map(([playerId,count])=>({
+          playerId,
+          nickname:room.players.find(p=>p.id===playerId)?.nickname||"",
+          count
+        })).sort((a,b)=>b.count-a.count),
+        // 唔匿名嘅話，額外俾埋邊個投俾邊個嘅明細。
+        voteLog: anonymous ? null : Object.entries(g.votes||{}).map(([voterId,target])=>({
+          voterNickname:room.players.find(p=>p.id===voterId)?.nickname||"",
+          targetLabel: target==="everyone" ? "大家都有可能" : target==="abstain" ? "棄權" : (room.players.find(p=>p.id===target)?.nickname||"")
+        }))
+      };
+    }
+
+    if(g.phase==="gameover") {
+      const ranking=[...room.players]
+        .sort((a,b)=>(b.score||0)-(a.score||0))
+        .map(p=>({playerId:p.id,nickname:p.nickname,score:p.score||0,signature:p.g4SignatureRound||null}));
+      base4.finalRanking=ranking;
+      base4.champion=ranking[0]||null;
+      base4.history=room.g4History||[];
+    }
+
+    return base4;
+  }
+
   const base={
     phase:g.phase, round:g.round, term:g.term || null,
     endsAt:g.endsAt||null, judgeId:g.judgeId||null,
@@ -497,6 +562,8 @@ export class GameRoom extends DurableObject {
         rounds:clampRounds(body.rounds),
         writeMs:clampWriteMs(body.writeMs),
         language:body.language==="zh"?"zh":"yue",
+        g4Rounds:clampG4Rounds(body.g4Rounds),
+        g4Anonymous:body.g4Anonymous!==false,
         hostId:null,
         players:[],
         gameState:null,
@@ -541,7 +608,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
-    if(game==="game3") return [];
+    if(game==="game3" || game==="game4") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -590,6 +657,8 @@ export class GameRoom extends DurableObject {
       case "g3:wtf": return this.onG3Wtf(session.playerId,msg.index);
       case "g3:react": return this.onG3React(session.playerId,msg.playerId,msg.reaction);
       case "g3:end": return this.onG3End(session.playerId);
+      case "g4:vote": return this.onG4Vote(session.playerId,msg.target);
+      case "g4:end": return this.onG4End(session.playerId);
       case "reconnect": return this.onReconnect(ws,session.playerId);
       default: return this.safeSend(ws,{type:"error",message:"未知操作。"});
     }
@@ -734,8 +803,9 @@ async onReady(playerId, ready){
   async onStart(playerId){
     if(playerId!==this.room.hostId) return this.errorPlayer(playerId,"只有房主可以開始。");
     const connected=this.room.players.filter(p=>p.connected);
-    if(connected.length<MIN_PLAYERS || connected.length>MAX_PLAYERS){
-      return this.errorPlayer(playerId,"需要2-6位已連線玩家。");
+    const minRequired = this.room.game==="game4" ? MIN_PLAYERS_GAME4 : MIN_PLAYERS;
+    if(connected.length<minRequired || connected.length>MAX_PLAYERS){
+      return this.errorPlayer(playerId,`需要${minRequired}-6位已連線玩家。`);
     }
     const notReady =
   connected.filter(
@@ -755,6 +825,7 @@ if (notReady.length > 0) {
     }
     if(this.room.game==="game1") await this.startGame1();
     else if(this.room.game==="game3") await this.startGame3();
+    else if(this.room.game==="game4") await this.startGame4();
     else await this.startGame2();
   }
 
@@ -1593,6 +1664,172 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
 
+  /* =========================
+     Game 4 · 誰最有可能
+  ========================= */
+
+  async startGame4(){
+    const players = shuffle(
+      this.room.players.filter(p=>p.connected)
+    );
+
+    this.room.g4Order = players.map(p=>p.id);
+    this.room.g4History = [];
+
+    for(const p of this.room.players){
+      p.score=0;
+      p.g4SignatureRound=null; // 呢個玩家攞最高票嗰round嘅資料
+    }
+
+    await this.beginRoundGame4(1);
+  }
+
+  async beginRoundGame4(round){
+    const pool = GAME4_QUESTIONS;
+    const usedIds = this.room.g4UsedIds || [];
+    let available = pool.filter(q=>!usedIds.includes(q.id));
+    if(available.length===0){
+      available = pool;
+      this.room.g4UsedIds = [];
+    }
+    const q = available[Math.floor(Math.random()*available.length)];
+    this.room.g4UsedIds = [...(this.room.g4UsedIds||[]), q.id];
+
+    this.room.gameState = {
+      game:"game4",
+      phase:"voting",
+      round,
+      totalRounds:this.room.g4Rounds,
+      question:{id:q.id,question:q.question},
+      votes:{}, // voterId -> targetId | "everyone" | "abstain"
+      results:null,
+      endsAt:Date.now()+G4_VOTE_MS
+    };
+
+    await this.save();
+    await this.ctx.storage.setAlarm(this.room.gameState.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async onG4Vote(playerId,target){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game4" || g.phase!=="voting") return;
+    if(!this.room.players.some(p=>p.id===playerId && p.connected)) return;
+
+    const validTarget =
+      target==="everyone" || target==="abstain" ||
+      this.room.players.some(p=>p.id===target);
+    if(!validTarget) return;
+
+    g.votes[playerId]=target;
+
+    const connected = this.room.players.filter(p=>p.connected);
+    const allVoted = connected.length>0 && connected.every(p=>g.votes[p.id]);
+
+    if(allVoted){
+      await this.startRevealGame4();
+      return;
+    }
+
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async forceCloseVotingGame4(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game4" || g.phase!=="voting") return;
+    // 未投嘅人自動當棄權。
+    for(const p of this.room.players){
+      if(p.connected && !g.votes[p.id]) g.votes[p.id]="abstain";
+    }
+    await this.startRevealGame4();
+  }
+
+  async startRevealGame4(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game4") return;
+
+    const tally={}; // playerId -> count
+    let everyoneCount=0, abstainCount=0;
+    for(const target of Object.values(g.votes)){
+      if(target==="everyone") everyoneCount++;
+      else if(target==="abstain") abstainCount++;
+      else tally[target]=(tally[target]||0)+1;
+    }
+
+    const entries=Object.entries(tally);
+    const maxVotes = entries.length ? Math.max(...entries.map(([,c])=>c)) : 0;
+    const winners = entries.filter(([,c])=>c===maxVotes).map(([id])=>id);
+    const winnerId = (winners.length===1 && maxVotes>0) ? winners[0] : null;
+
+    if(winnerId){
+      const p=this.room.players.find(x=>x.id===winnerId);
+      if(p){
+        p.score=(p.score||0)+1;
+        // 記低呢位玩家自己「代表作」— 攞過最高單輪票數嗰題。
+        if(!p.g4SignatureRound || maxVotes>p.g4SignatureRound.votes){
+          p.g4SignatureRound={
+            question:g.question.question,
+            votes:maxVotes,
+            round:g.round
+          };
+        }
+      }
+    }
+
+    g.phase="reveal";
+    g.results={
+      tally,
+      everyoneCount,
+      abstainCount,
+      winnerId,
+      maxVotes,
+      anonymous:this.room.g4Anonymous!==false
+    };
+    g.endsAt=Date.now()+G4_REVEAL_MS;
+
+    this.room.g4History=this.room.g4History||[];
+    this.room.g4History.push({
+      round:g.round,
+      question:g.question.question,
+      winnerId,
+      winnerNickname:winnerId ? (this.room.players.find(p=>p.id===winnerId)?.nickname||"") : "",
+      maxVotes,
+      everyoneCount,
+      abstainCount
+    });
+
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async advanceAfterRevealGame4(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game4" || g.phase!=="reveal") return;
+
+    if(g.round >= g.totalRounds){
+      g.phase="gameover";
+      g.endsAt=null;
+      await this.save();
+      await this.broadcastRoom();
+      return;
+    }
+
+    await this.beginRoundGame4(g.round+1);
+  }
+
+  // 房主可以隨時提前結算。
+  async onG4End(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game4" || g.phase==="gameover") return;
+    g.phase="gameover";
+    g.endsAt=null;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
   async errorPlayer(playerId,message){
     this.sendToPlayer(playerId,{type:"error",message});
   }
@@ -1705,6 +1942,16 @@ async onG1Next(playerId){
 
     if(g?.game==="game3" && g.phase==="reveal" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.advanceAfterRevealGame3();
+      return;
+    }
+
+    if(g?.game==="game4" && g.phase==="voting" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.forceCloseVotingGame4();
+      return;
+    }
+
+    if(g?.game==="game4" && g.phase==="reveal" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.advanceAfterRevealGame4();
       return;
     }
 
