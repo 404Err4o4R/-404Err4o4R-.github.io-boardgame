@@ -256,14 +256,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .g4-avatar-btn{background:#fff;border:2px solid #e7e9ee;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:10px 6px;box-shadow:0 4px 0 #e7e9ee;transition:transform .1s}
 .g4-avatar-btn:active{transform:translateY(2px)}
 .g4-avatar-btn:disabled{cursor:default}
-.g4-avatar-btn.picked{border-color:var(--game-accent);box-shadow:0 4px 0 var(--game-accent)}
+.g4-avatar-btn.picked{border-color:var(--game-accent);box-shadow:0 4px 0 var(--game-accent);background:var(--yellow)}
+.g4-special-btn.active{background:var(--yellow)!important;border-color:var(--yellow-deep)!important;color:var(--ink)!important}
 .g4-avatar{position:relative;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .g4-avatar svg{width:24px;height:24px}
 .g4-avatar-check{position:absolute;right:-4px;bottom:-4px;width:18px;height:18px;border-radius:50%;background:var(--game-accent);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
 .g4-avatar-name{font-size:12px;font-weight:800;color:var(--ink);max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .g4-special-row{display:flex;gap:10px;margin-bottom:14px}
 .g4-special-btn{flex:1;padding:12px;font-size:13px}
-.g4-special-btn.active{background:var(--game-accent);color:#fff;border-color:var(--game-accent)}
 .g4-voted-banner{background:var(--game-accent);color:#fff;text-align:center;font-weight:800;font-size:13px;border-radius:12px;padding:10px;margin-bottom:4px}
 .g4-bar-list{display:flex;flex-direction:column;gap:12px;margin:12px 0}
 .g4-bar-row-wrap{display:flex;flex-direction:column;gap:4px}
