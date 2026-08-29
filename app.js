@@ -864,8 +864,13 @@ function flash(text) {
 
   panel.insertAdjacentHTML(
     "afterbegin",
-    `<div class="status error">${esc(text)}</div>`
+    `<div class="status error g4-flash">${esc(text)}</div>`
   );
+
+  const el = panel.querySelector(".g4-flash");
+  if (el) {
+    setTimeout(() => el.remove(), 2000);
+  }
 }
 
 function send(message) {
@@ -2962,6 +2967,12 @@ function renderGame4Voting(game) {
 window.g4Vote = async (target, label) => {
   if (S.g4Voting) return;
 
+  const alreadyVoted = !!S.room?.gameState?.myVote;
+  if (alreadyVoted) {
+    flash("你已投票！");
+    return;
+  }
+
   const ok = await askConfirm(`確定要投「${label}」？投咗就唔可以再改。`);
   if (!ok) return;
 
@@ -2984,18 +2995,21 @@ function renderGame4Reveal(game) {
     return `<div class="g4-bar-voters">${names.map(esc).join("、")}</div>`;
   }
 
-  const bars = tally.map((t) => `
+  const bars = tally.map((t) => {
+    const isWinner = t.playerId === r.winnerId;
+    return `
     <div class="g4-bar-row-wrap">
       <div class="g4-bar-row">
-        <div class="g4-bar-label">${t.playerId === r.winnerId ? "★ " : ""}${esc(t.nickname)}</div>
+        <div class="g4-bar-label">${isWinner ? "★ " : ""}${esc(t.nickname)}</div>
         <div class="g4-bar-track">
-          <div class="g4-bar-fill" style="width:${(t.count / maxCount) * 100}%;background:var(--game-accent)"></div>
+          <div class="g4-bar-fill" style="width:${(t.count / maxCount) * 100}%;background:${isWinner ? "var(--yellow)" : "var(--game-accent)"}"></div>
         </div>
         <div class="g4-bar-count">${t.count}</div>
       </div>
       ${voterLine(t.voters)}
     </div>
-  `).join("");
+  `;
+  }).join("");
 
   const everyoneRow = r.everyoneCount ? `
     <div class="g4-bar-row-wrap">
