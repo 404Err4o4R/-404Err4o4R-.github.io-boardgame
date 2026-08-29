@@ -478,13 +478,15 @@ results:g.results||null
         tally: Object.entries(r.tally||{}).map(([playerId,count])=>({
           playerId,
           nickname:room.players.find(p=>p.id===playerId)?.nickname||"",
-          count
+          count,
+          // 唔匿名先夾埋邊班人投俾佢。
+          voters: anonymous ? null : Object.entries(g.votes||{})
+            .filter(([,target])=>target===playerId)
+            .map(([voterId])=>room.players.find(p=>p.id===voterId)?.nickname||"")
         })).sort((a,b)=>b.count-a.count),
-        // 唔匿名嘅話，額外俾埋邊個投俾邊個嘅明細。
-        voteLog: anonymous ? null : Object.entries(g.votes||{}).map(([voterId,target])=>({
-          voterNickname:room.players.find(p=>p.id===voterId)?.nickname||"",
-          targetLabel: target==="everyone" ? "大家都有可能" : target==="abstain" ? "棄權" : (room.players.find(p=>p.id===target)?.nickname||"")
-        }))
+        everyoneVoters: anonymous ? null : Object.entries(g.votes||{})
+          .filter(([,target])=>target==="everyone")
+          .map(([voterId])=>room.players.find(p=>p.id===voterId)?.nickname||"")
       };
     }
 
@@ -1715,6 +1717,7 @@ async onG1Next(playerId){
     const g=this.room.gameState;
     if(!g || g.game!=="game4" || g.phase!=="voting") return;
     if(!this.room.players.some(p=>p.id===playerId && p.connected)) return;
+    if(g.votes[playerId]) return; // 已經投過票，唔可以再改。
 
     const validTarget =
       target==="everyone" || target==="abstain" ||
