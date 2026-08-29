@@ -933,6 +933,8 @@ function renderRoom() {
               ? "9upper瞎掰王"
               : room.game === "game3"
               ? "He/She's a 10"
+              : room.game === "game4"
+              ? "Most Likely To 邊個至似"
               : "未知遊戲"
           }
         </b>
@@ -1189,6 +1191,20 @@ function renderScoreboard(room) {
         : ""
     }
 
+    ${
+      S.room?.game === "game4" &&
+      room.hostId === S.playerId &&
+      room.gameState?.phase !== "gameover"
+        ? `<button
+            class="btn btn-outline"
+            style="margin-top:8px;font-size:13px;padding:10px"
+            onclick="g4EndEarly()"
+          >
+            提前結算
+          </button>`
+        : ""
+    }
+
     <button
       class="btn btn-outline"
       style="margin-top:8px;font-size:13px;padding:10px"
@@ -1203,6 +1219,12 @@ window.g3EndEarly = async () => {
   const ok = await askConfirm("肯定提前結算？之後就唔可以再繼續呢局。");
   if (!ok) return;
   send({ type: "g3:end" });
+};
+
+window.g4EndEarly = async () => {
+  const ok = await askConfirm("肯定提前結算？之後就唔可以再繼續呢局。");
+  if (!ok) return;
+  send({ type: "g4:end" });
 };
 
 /* =========================
@@ -2858,7 +2880,18 @@ function renderGame4(game) {
 }
 
 function renderGame4Voting(game) {
+  // 如果自己已經投咗，就唔重畫成個畫面（避免其他人陸續投票觸發嘅
+  // state 廣播打斷咗你嘅畫面），淨係update「已投」人數。
+  const renderKey = `g4-voting-${game.round}`;
+  if (S.g4RenderKey === renderKey && game.myVote) {
+    const counter = $("#g4VotedCount");
+    if (counter) counter.textContent = `已投：${game.votedCount} / ${game.totalToVote}`;
+    return;
+  }
+  S.g4RenderKey = renderKey;
+
   const players = S.room.players || [];
+  const voted = !!game.myVote;
 
   const avatarButtons = players.map((p) => {
     const { svg, bg } = g4AvatarSvg(p.seat);
@@ -2866,15 +2899,14 @@ function renderGame4Voting(game) {
     return `
       <button
         type="button"
-        class="g4-avatar-btn"
+        class="g4-avatar-btn ${isMine ? "picked" : ""}"
         style="opacity:${p.connected ? "1" : ".45"}"
-        onclick="g4Vote('${p.id}')"
+        onclick="g4Vote('${p.id}', '${esc(p.nickname)}')"
+        ${voted ? "disabled" : ""}
       >
-        <span
-          class="g4-avatar"
-          style="background:${bg};${isMine ? "box-shadow:0 0 0 3px var(--game-accent)" : ""}"
-        >
+        <span class="g4-avatar" style="background:${bg}">
           <svg viewBox="0 0 24 24">${svg}</svg>
+          ${isMine ? '<span class="g4-avatar-check">✓</span>' : ""}
         </span>
         <span class="g4-avatar-name">${esc(p.nickname)}</span>
       </button>
@@ -2892,6 +2924,12 @@ function renderGame4Voting(game) {
 
     <div class="question">${esc(game.question)}</div>
 
+    ${
+      voted
+        ? `<div class="g4-voted-banner">✓ 你已投票，等緊其他人</div>`
+        : `<p class="notice" style="font-weight:800">👇 撳頭像投俾你覺得最似嘅人</p>`
+    }
+
     <div class="g4-avatar-grid">
       ${avatarButtons}
     </div>
@@ -2900,26 +2938,34 @@ function renderGame4Voting(game) {
       <button
         type="button"
         class="btn btn-outline g4-special-btn ${game.myVote === "everyone" ? "active" : ""}"
-        onclick="g4Vote('everyone')"
+        onclick="g4Vote('everyone', '大家都有可能')"
+        ${voted ? "disabled" : ""}
       >
         大家都有可能
       </button>
       <button
         type="button"
         class="btn btn-outline g4-special-btn ${game.myVote === "abstain" ? "active" : ""}"
-        onclick="g4Vote('abstain')"
+        onclick="g4Vote('abstain', '棄權')"
+        ${voted ? "disabled" : ""}
       >
         棄權
       </button>
     </div>
 
-    <p class="notice">已投：${game.votedCount} / ${game.totalToVote}</p>
+    <p class="notice" id="g4VotedCount">已投：${game.votedCount} / ${game.totalToVote}</p>
   `;
 
   if (game.endsAt) startTimer($("#time"), game.endsAt);
 }
 
-window.g4Vote = (target) => {
+window.g4Vote = async (target, label) => {
+  if (S.g4Voting) return;
+
+  const ok = await askConfirm(`確定要投「${label}」？投咗就唔可以再改。`);
+  if (!ok) return;
+
+  S.g4Voting = true;
   send({ type: "g4:vote", target });
 };
 
@@ -2927,23 +2973,32 @@ function renderGame4Reveal(game) {
   const renderKey = `g4-reveal-${game.round}`;
   if (S.g4RenderKey === renderKey) return;
   S.g4RenderKey = renderKey;
+  S.g4Voting = false;
 
   const r = game.results || {};
   const tally = r.tally || [];
   const maxCount = Math.max(1, ...tally.map((t) => t.count), r.everyoneCount || 0);
 
+  function voterLine(names) {
+    if (!names || !names.length) return "";
+    return `<div class="g4-bar-voters">${names.map(esc).join("、")}</div>`;
+  }
+
   const bars = tally.map((t) => `
-    <div class="g4-bar-row">
-      <div class="g4-bar-label">${t.playerId === r.winnerId ? "★ " : ""}${esc(t.nickname)}</div>
-      <div class="g4-bar-track">
-        <div class="g4-bar-fill" style="width:${(t.count / maxCount) * 100}%;background:var(--game-accent)"></div>
+    <div class="g4-bar-row-wrap">
+      <div class="g4-bar-row">
+        <div class="g4-bar-label">${t.playerId === r.winnerId ? "★ " : ""}${esc(t.nickname)}</div>
+        <div class="g4-bar-track">
+          <div class="g4-bar-fill" style="width:${(t.count / maxCount) * 100}%;background:var(--game-accent)"></div>
+        </div>
+        <div class="g4-bar-count">${t.count}</div>
       </div>
-      <div class="g4-bar-count">${t.count}</div>
+      ${voterLine(t.voters)}
     </div>
   `).join("");
 
-  const extraRows = `
-    ${r.everyoneCount ? `
+  const everyoneRow = r.everyoneCount ? `
+    <div class="g4-bar-row-wrap">
       <div class="g4-bar-row">
         <div class="g4-bar-label">大家都有可能</div>
         <div class="g4-bar-track">
@@ -2951,13 +3006,7 @@ function renderGame4Reveal(game) {
         </div>
         <div class="g4-bar-count">${r.everyoneCount}</div>
       </div>
-    ` : ""}
-    ${r.abstainCount ? `<p class="notice">棄權：${r.abstainCount} 人</p>` : ""}
-  `;
-
-  const voteLogHtml = r.voteLog ? `
-    <div class="g4-vote-log">
-      ${r.voteLog.map((v) => `<div class="notice" style="margin:2px 0">${esc(v.voterNickname)} → ${esc(v.targetLabel)}</div>`).join("")}
+      ${voterLine(r.everyoneVoters)}
     </div>
   ` : "";
 
@@ -2974,10 +3023,9 @@ function renderGame4Reveal(game) {
 
     <div class="g4-bar-list">
       ${bars || '<p class="notice">呢輪冇人俾人投中。</p>'}
-      ${extraRows}
+      ${everyoneRow}
+      ${r.abstainCount ? `<p class="notice">棄權：${r.abstainCount} 人</p>` : ""}
     </div>
-
-    ${voteLogHtml}
 
     <p class="notice">下一round就快開始……</p>
   `;
