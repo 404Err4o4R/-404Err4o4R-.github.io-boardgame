@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=5">
+  <link rel="stylesheet" href="./style.css?v=6">
 </head>
 
 <body>
@@ -229,6 +229,10 @@
                 He/She's a 10
               </option>
 
+              <option value="game4">
+                誰最有可能
+              </option>
+
             </select>
 
           </label>
@@ -328,6 +332,43 @@
               <button type="button" class="filter-chip write-chip" data-write="90">1分半鐘</button>
               <button type="button" class="filter-chip write-chip" data-write="120">2分鐘</button>
             </div>
+
+          </div>
+
+
+          <div
+            id="g4Section"
+            class="hidden"
+          >
+
+            <div class="label-row">
+              <span>回合數</span>
+            </div>
+
+            <div
+              id="g4RoundsBox"
+              class="filter-box"
+            >
+              <button type="button" class="filter-chip g4-rounds-chip active" data-rounds="20">20輪</button>
+              <button type="button" class="filter-chip g4-rounds-chip" data-rounds="50">50輪</button>
+              <button type="button" class="filter-chip g4-rounds-chip" data-rounds="100">100輪</button>
+            </div>
+
+            <div class="label-row" style="margin-top:14px">
+              <span>投票方式</span>
+            </div>
+
+            <div
+              id="g4AnonBox"
+              class="filter-box"
+            >
+              <button type="button" class="filter-chip g4-anon-chip active" data-anon="1">匿名投票</button>
+              <button type="button" class="filter-chip g4-anon-chip" data-anon="0">公開投票</button>
+            </div>
+
+            <p class="notice" style="margin:6px 0 0">
+              最少 3 人先可以開始遊戲
+            </p>
 
           </div>
 
@@ -562,6 +603,42 @@
 
       </article>
 
+
+      <article class="game-card purple-card">
+
+        <div class="sticker">
+          04
+        </div>
+
+        <div class="game-icon">
+          🔍
+        </div>
+
+        <h3>
+          誰最有<br>
+          可能
+        </h3>
+
+        <p>
+          出一條情境，全部人投邊個朋友最似。
+          匿名揭曉，睇下大家點睇你。
+        </p>
+
+        <div class="tag-row">
+          <span>VOTE</span>
+          <span>CALL OUT</span>
+          <span>3–6</span>
+        </div>
+
+        <button
+          class="btn btn-light"
+          data-start="game4"
+        >
+          PLAY THIS GAME
+        </button>
+
+      </article>
+
     </div>
 
   </section>
@@ -683,7 +760,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=22" defer></script>
+<script src="./app.js?v=23" defer></script>
 
 </body>
 </html>
