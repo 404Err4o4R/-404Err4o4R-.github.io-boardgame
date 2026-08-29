@@ -146,16 +146,27 @@ function renderCategories() {
   const catSection = $("#catSection");
   const roundsSection = $("#roundsSection");
   const langSection = $("#langSection");
+  const g4Section = $("#g4Section");
 
   if (S.selectedGame === "game3") {
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.remove("hidden");
     if (langSection) langSection.classList.add("hidden");
+    if (g4Section) g4Section.classList.add("hidden");
+    return;
+  }
+
+  if (S.selectedGame === "game4") {
+    if (catSection) catSection.style.display = "none";
+    if (roundsSection) roundsSection.classList.add("hidden");
+    if (langSection) langSection.classList.add("hidden");
+    if (g4Section) g4Section.classList.remove("hidden");
     return;
   }
 
   if (catSection) catSection.style.display = "";
   if (roundsSection) roundsSection.classList.add("hidden");
+  if (g4Section) g4Section.classList.add("hidden");
 
   if (langSection) {
     langSection.classList.toggle("hidden", S.selectedGame !== "game1");
@@ -288,13 +299,27 @@ const ROOM_COVERS = {
       <div class="gc-label script">NO SCRIPT</div>
       <div class="gc-label bottom">2–6 PLAYERS</div>
     </div>
+  `,
+  game4: `
+    <div class="game-cover cover-g4">
+      <div class="gc-icon">
+        <svg viewBox="0 0 24 24">
+          <circle cx="9" cy="9" r="6" fill="none" stroke="#FFD166" stroke-width="2.5"/>
+          <line x1="14" y1="14" x2="20" y2="20" stroke="#FFD166" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="9" cy="9" r="2.5" fill="#fff" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="gc-label eyebrow">MOST LIKELY TO</div>
+      <div class="gc-label bottom">3–6 PLAYERS</div>
+    </div>
   `
 };
 
 const GAME_ACCENTS = {
   game1: "#68779f",
   game2: "#004643",
-  game3: "#F2795F"
+  game3: "#F2795F",
+  game4: "#7B57CE"
 };
 
 function renderRoomVisual() {
@@ -425,6 +450,30 @@ $("#writeTimeBox")?.addEventListener("click", (event) => {
   S.selectedWriteSeconds = Number(chip.dataset.write) || 60;
 });
 
+$("#g4RoundsBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g4-rounds-chip");
+  if (!chip) return;
+
+  document
+    .querySelectorAll("#g4RoundsBox .g4-rounds-chip")
+    .forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+
+  S.selectedG4Rounds = Number(chip.dataset.rounds) || 20;
+});
+
+$("#g4AnonBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g4-anon-chip");
+  if (!chip) return;
+
+  document
+    .querySelectorAll("#g4AnonBox .g4-anon-chip")
+    .forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+
+  S.selectedG4Anonymous = chip.dataset.anon === "1";
+});
+
 /* =========================
    房間
 ========================= */
@@ -469,7 +518,9 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: S.selectedGame === "game1" ? (S.selectedLanguage || "yue") : null
+        language: S.selectedGame === "game1" ? (S.selectedLanguage || "yue") : null,
+        g4Rounds: S.selectedGame === "game4" ? (S.selectedG4Rounds || 20) : null,
+        g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null
       })
     }).then((r) => r.json());
 
@@ -619,6 +670,7 @@ async function connectRoom(code, mode, saved = null) {
   S.myVote = undefined;
   S.g1SelectedPair = undefined;
   S.g3RenderKey = null;
+  S.g4RenderKey = null;
 
   document.documentElement.style.setProperty(
     "--game-accent",
@@ -1184,6 +1236,8 @@ function renderGame() {
     renderGame1(game);
   } else if (S.room.game === "game3") {
     renderGame3(game);
+  } else if (S.room.game === "game4") {
+    renderGame4(game);
   } else {
     renderGame2(game);
   }
@@ -2772,6 +2826,210 @@ window.g3ShowHistory = (index) => {
 
   renderGame3HistoryDetail(index);
 };
+
+/* =========================
+   Game 4 · 誰最有可能
+========================= */
+
+const G4_AVATAR_SHAPES = [
+  (c) => `<circle cx="8" cy="8" r="3" fill="${c}"/><circle cx="16" cy="16" r="3" fill="${c}" opacity=".55"/>`,
+  (c) => `<path d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z" fill="${c}"/>`,
+  (c) => `<rect x="5" y="5" width="6" height="6" rx="2" fill="${c}"/><rect x="13" y="13" width="6" height="6" rx="2" fill="${c}" opacity=".55"/>`,
+  (c) => `<path d="M12 20C7 16 3 12.5 3 8.8C3 6.4 5 4.5 7.3 4.5C9.1 4.5 10.5 5.6 12 7.2C13.5 5.6 14.9 4.5 16.7 4.5C19 4.5 21 6.4 21 8.8C21 12.5 17 16 12 20Z" fill="${c}"/>`,
+  (c) => `<polygon points="12,3 21,20 3,20" fill="${c}"/>`,
+  (c) => `<circle cx="12" cy="12" r="8" fill="none" stroke="${c}" stroke-width="3"/>`
+];
+
+const G4_AVATAR_COLORS = [
+  "#929FC1", "#F2D965", "#004643", "#F2795F",
+  "#7B57CE", "#58a04f", "#c46fa3", "#e2884a"
+];
+
+function g4AvatarSvg(seat) {
+  const shapeFn = G4_AVATAR_SHAPES[(seat || 0) % G4_AVATAR_SHAPES.length];
+  const color = G4_AVATAR_COLORS[(seat || 0) % G4_AVATAR_COLORS.length];
+  return { svg: shapeFn("#fff"), bg: color };
+}
+
+function renderGame4(game) {
+  if (game.phase === "voting") return renderGame4Voting(game);
+  if (game.phase === "reveal") return renderGame4Reveal(game);
+  if (game.phase === "gameover") return renderGame4Gameover(game);
+}
+
+function renderGame4Voting(game) {
+  const players = S.room.players || [];
+
+  const avatarButtons = players.map((p) => {
+    const { svg, bg } = g4AvatarSvg(p.seat);
+    const isMine = game.myVote === p.id;
+    return `
+      <button
+        type="button"
+        class="g4-avatar-btn"
+        style="opacity:${p.connected ? "1" : ".45"}"
+        onclick="g4Vote('${p.id}')"
+      >
+        <span
+          class="g4-avatar"
+          style="background:${bg};${isMine ? "box-shadow:0 0 0 3px var(--game-accent)" : ""}"
+        >
+          <svg viewBox="0 0 24 24">${svg}</svg>
+        </span>
+        <span class="g4-avatar-name">${esc(p.nickname)}</span>
+      </button>
+    `;
+  }).join("");
+
+  $("#gamePanel").innerHTML = `
+    <div class="row" style="justify-content:space-between;align-items:end">
+      <div>
+        <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+        <h2 class="title">誰最有<br><span>可能……</span></h2>
+      </div>
+      <div id="time" class="timer"></div>
+    </div>
+
+    <div class="question">${esc(game.question)}</div>
+
+    <div class="g4-avatar-grid">
+      ${avatarButtons}
+    </div>
+
+    <div class="g4-special-row">
+      <button
+        type="button"
+        class="btn btn-outline g4-special-btn ${game.myVote === "everyone" ? "active" : ""}"
+        onclick="g4Vote('everyone')"
+      >
+        大家都有可能
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline g4-special-btn ${game.myVote === "abstain" ? "active" : ""}"
+        onclick="g4Vote('abstain')"
+      >
+        棄權
+      </button>
+    </div>
+
+    <p class="notice">已投：${game.votedCount} / ${game.totalToVote}</p>
+  `;
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
+
+window.g4Vote = (target) => {
+  send({ type: "g4:vote", target });
+};
+
+function renderGame4Reveal(game) {
+  const renderKey = `g4-reveal-${game.round}`;
+  if (S.g4RenderKey === renderKey) return;
+  S.g4RenderKey = renderKey;
+
+  const r = game.results || {};
+  const tally = r.tally || [];
+  const maxCount = Math.max(1, ...tally.map((t) => t.count), r.everyoneCount || 0);
+
+  const bars = tally.map((t) => `
+    <div class="g4-bar-row">
+      <div class="g4-bar-label">${t.playerId === r.winnerId ? "★ " : ""}${esc(t.nickname)}</div>
+      <div class="g4-bar-track">
+        <div class="g4-bar-fill" style="width:${(t.count / maxCount) * 100}%;background:var(--game-accent)"></div>
+      </div>
+      <div class="g4-bar-count">${t.count}</div>
+    </div>
+  `).join("");
+
+  const extraRows = `
+    ${r.everyoneCount ? `
+      <div class="g4-bar-row">
+        <div class="g4-bar-label">大家都有可能</div>
+        <div class="g4-bar-track">
+          <div class="g4-bar-fill" style="width:${(r.everyoneCount / maxCount) * 100}%;background:#aaa"></div>
+        </div>
+        <div class="g4-bar-count">${r.everyoneCount}</div>
+      </div>
+    ` : ""}
+    ${r.abstainCount ? `<p class="notice">棄權：${r.abstainCount} 人</p>` : ""}
+  `;
+
+  const voteLogHtml = r.voteLog ? `
+    <div class="g4-vote-log">
+      ${r.voteLog.map((v) => `<div class="notice" style="margin:2px 0">${esc(v.voterNickname)} → ${esc(v.targetLabel)}</div>`).join("")}
+    </div>
+  ` : "";
+
+  $("#gamePanel").innerHTML = `
+    <div class="row" style="justify-content:space-between;align-items:end">
+      <div>
+        <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+        <h2 class="title">結果<br><span>揭曉。</span></h2>
+      </div>
+      <div id="time" class="timer"></div>
+    </div>
+
+    <div class="question">${esc(game.question)}</div>
+
+    <div class="g4-bar-list">
+      ${bars || '<p class="notice">呢輪冇人俾人投中。</p>'}
+      ${extraRows}
+    </div>
+
+    ${voteLogHtml}
+
+    <p class="notice">下一round就快開始……</p>
+  `;
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
+
+function renderGame4Gameover(game) {
+  const renderKey = "g4-gameover";
+  if (S.g4RenderKey === renderKey) return;
+  S.g4RenderKey = renderKey;
+
+  const ranking = game.finalRanking || [];
+  const champion = game.champion;
+  const maxScore = Math.max(1, ...ranking.map((r) => r.score));
+
+  $("#gamePanel").innerHTML = `
+    <div class="eyebrow">GAME OVER</div>
+    <h2 class="title">結算<br><span>誰最有可能。</span></h2>
+
+    ${champion ? `
+      <div class="question" style="text-align:center">
+        <div style="font-size:13px;opacity:.85">全場總冠軍</div>
+        <div style="font-family:'Fredoka';font-size:26px">${esc(champion.nickname)}</div>
+        <div style="font-size:13px;opacity:.85">俾人投中 ${champion.score} 次</div>
+      </div>
+    ` : ""}
+
+    <div class="g4-bar-list" style="margin-top:16px">
+      ${ranking.map((r) => `
+        <div class="g4-bar-row">
+          <div class="g4-bar-label">${esc(r.nickname)}</div>
+          <div class="g4-bar-track">
+            <div class="g4-bar-fill" style="width:${(r.score / maxScore) * 100}%;background:var(--game-accent)"></div>
+          </div>
+          <div class="g4-bar-count">${r.score}</div>
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="eyebrow" style="margin-top:20px">各人嘅代表作</div>
+    <div style="margin-top:8px">
+      ${ranking.filter((r) => r.signature).map((r) => `
+        <div class="answercard">
+          <b>${esc(r.nickname)}</b>
+          <div class="notice" style="margin:2px 0">${esc(r.signature.question)}</div>
+          <div class="notice" style="margin:0">第 ${r.signature.round} round，${r.signature.votes} 票</div>
+        </div>
+      `).join("") || '<p class="notice">呢局冇乜代表作。</p>'}
+    </div>
+  `;
+}
 
 function chatMsgHtml(message) {
   return `
