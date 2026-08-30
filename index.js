@@ -450,11 +450,12 @@ results:g.results||null
   }
 
   if(room.game==="game4") {
+    const g4lang = room.language==="zh" ? "zh" : "yue";
     const base4={
       phase:g.phase,
       round:g.round,
       totalRounds:g.totalRounds,
-      question:g.question?.question || "",
+      question:g.question?.text?.[g4lang]?.question || g.question?.question || "",
       endsAt:g.endsAt||null
     };
 
@@ -1702,7 +1703,7 @@ async onG1Next(playerId){
       phase:"voting",
       round,
       totalRounds:this.room.g4Rounds,
-      question:{id:q.id,question:q.question},
+      question:{id:q.id,question:q.question,text:q.text},
       votes:{}, // voterId -> targetId | "everyone" | "abstain"
       results:null,
       endsAt:Date.now()+G4_VOTE_MS
