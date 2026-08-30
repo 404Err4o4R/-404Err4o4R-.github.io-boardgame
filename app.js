@@ -159,7 +159,7 @@ function renderCategories() {
   if (S.selectedGame === "game4") {
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.add("hidden");
-    if (langSection) langSection.classList.add("hidden");
+    if (langSection) langSection.classList.remove("hidden");
     if (g4Section) g4Section.classList.remove("hidden");
     return;
   }
@@ -169,7 +169,10 @@ function renderCategories() {
   if (g4Section) g4Section.classList.add("hidden");
 
   if (langSection) {
-    langSection.classList.toggle("hidden", S.selectedGame !== "game1");
+    langSection.classList.toggle(
+      "hidden",
+      S.selectedGame !== "game1" && S.selectedGame !== "game4"
+    );
   }
 
   if (!S.questions) return;
@@ -518,7 +521,7 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: S.selectedGame === "game1" ? (S.selectedLanguage || "yue") : null,
+        language: (S.selectedGame === "game1" || S.selectedGame === "game4") ? (S.selectedLanguage || "yue") : null,
         g4Rounds: S.selectedGame === "game4" ? (S.selectedG4Rounds || 20) : null,
         g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null
       })
