@@ -4,7 +4,8 @@ import {
   GAME2_QUESTIONS,
   GAME1_CATEGORIES,
   GAME2_CATEGORIES,
-  GAME4_QUESTIONS
+  GAME4_QUESTIONS,
+  GAME5_OPENERS
 } from "./question-bank/loader.js";
 
 const MAX_PLAYERS = 6;
@@ -29,6 +30,13 @@ const G3_WRITE_OPTIONS = [60000, 90000, 120000];
 const G4_VOTE_MS = 15000;
 const G4_REVEAL_MS = 10000;
 const G4_ROUND_OPTIONS = [20, 50, 100];
+
+const G5_SENTENCE_WRITE_MS = 30000;
+const G5_CHAR_WRITE_MS = 15000;
+const G5_SENTENCE_MAX_LEN = 15;
+const G5_CHAR_MAX_LEN = 6;
+const G5_SENTENCE_ROUND_OPTIONS = [10, 15, 25];
+const G5_CHAR_ROUND_OPTIONS = [20, 50, 100];
 
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
@@ -64,7 +72,7 @@ function shuffle(a) {
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5"; }
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
@@ -77,6 +85,11 @@ function clampWriteMs(v) {
 function clampG4Rounds(v) {
   const n = Number(v);
   return G4_ROUND_OPTIONS.includes(n) ? n : G4_ROUND_OPTIONS[0];
+}
+function clampG5Rounds(mode, v) {
+  const options = mode==="char" ? G5_CHAR_ROUND_OPTIONS : G5_SENTENCE_ROUND_OPTIONS;
+  const n = Number(v);
+  return options.includes(n) ? n : options[0];
 }
 
 export default {
@@ -197,6 +210,10 @@ export default {
                 body.g4Rounds || null,
               g4Anonymous:
                 body.g4Anonymous !== false,
+              g5Mode:
+                body.g5Mode === "char" ? "char" : "sentence",
+              g5Rounds:
+                body.g5Rounds || null,
               roomTtl: ROOM_TTL
             })
           }
@@ -503,6 +520,32 @@ results:g.results||null
     return base4;
   }
 
+  if(room.game==="game5") {
+    const currentPlayer = room.players.find(p=>p.id===g.currentTurnPlayerId);
+    const base5={
+      phase:g.phase,
+      mode:g.mode,
+      round:g.round,
+      totalRounds:g.totalRounds,
+      story:(g.story||[]).map(s=>({
+        text:s.text,
+        authorNickname:s.authorNickname
+      })),
+      currentTurnPlayerId:g.currentTurnPlayerId||null,
+      currentTurnNickname:currentPlayer?.nickname || "",
+      isMyTurn: viewerId ? viewerId===g.currentTurnPlayerId : false,
+      maxLen: g.mode==="char" ? G5_CHAR_MAX_LEN : G5_SENTENCE_MAX_LEN,
+      endsAt:g.endsAt||null
+    };
+
+    if(g.phase==="gameover") {
+      base5.fullStory = (g.story||[]).map(s=>s.text).join("");
+      base5.endedEarly = !!g.endedEarly;
+    }
+
+    return base5;
+  }
+
   const base={
     phase:g.phase, round:g.round, term:g.term || null,
     endsAt:g.endsAt||null, judgeId:g.judgeId||null,
@@ -567,6 +610,8 @@ export class GameRoom extends DurableObject {
         language:body.language==="zh"?"zh":"yue",
         g4Rounds:clampG4Rounds(body.g4Rounds),
         g4Anonymous:body.g4Anonymous!==false,
+        g5Mode:body.g5Mode==="char"?"char":"sentence",
+        g5Rounds:clampG5Rounds(body.g5Mode,body.g5Rounds),
         hostId:null,
         players:[],
         gameState:null,
@@ -611,7 +656,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
-    if(game==="game3" || game==="game4") return [];
+    if(game==="game3" || game==="game4" || game==="game5") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -662,6 +707,8 @@ export class GameRoom extends DurableObject {
       case "g3:end": return this.onG3End(session.playerId);
       case "g4:vote": return this.onG4Vote(session.playerId,msg.target);
       case "g4:end": return this.onG4End(session.playerId);
+      case "g5:submit": return this.onG5Submit(session.playerId,msg.text);
+      case "g5:end": return this.onG5End(session.playerId);
       case "reconnect": return this.onReconnect(ws,session.playerId);
       default: return this.safeSend(ws,{type:"error",message:"未知操作。"});
     }
@@ -829,6 +876,7 @@ if (notReady.length > 0) {
     if(this.room.game==="game1") await this.startGame1();
     else if(this.room.game==="game3") await this.startGame3();
     else if(this.room.game==="game4") await this.startGame4();
+    else if(this.room.game==="game5") await this.startGame5();
     else await this.startGame2();
   }
 
@@ -1834,6 +1882,98 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
 
+  /* =========================
+     Game 5 · 故事接龍
+  ========================= */
+
+  async startGame5(){
+    const players = shuffle(
+      this.room.players.filter(p=>p.connected)
+    );
+    const order = players.map(p=>p.id);
+    const mode = this.room.g5Mode==="char" ? "char" : "sentence";
+    const lang = this.room.language==="zh" ? "zh" : "yue";
+
+    const opener = GAME5_OPENERS[Math.floor(Math.random()*GAME5_OPENERS.length)];
+    const openerText = opener.text?.[lang]?.question || "";
+
+    this.room.gameState = {
+      game:"game5",
+      mode,
+      phase:"writing",
+      round:1,
+      totalRounds:this.room.g5Rounds,
+      story:[{text:openerText, authorId:null, authorNickname:"系統"}],
+      turnOrder:order,
+      currentTurnPlayerId:order[0],
+      endedEarly:false,
+      endsAt:Date.now()+(mode==="char" ? G5_CHAR_WRITE_MS : G5_SENTENCE_WRITE_MS)
+    };
+
+    await this.save();
+    await this.ctx.storage.setAlarm(this.room.gameState.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async onG5Submit(playerId,text){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game5" || g.phase!=="writing") return;
+    if(playerId!==g.currentTurnPlayerId) return;
+
+    const maxLen = g.mode==="char" ? G5_CHAR_MAX_LEN : G5_SENTENCE_MAX_LEN;
+    const clean = String(text||"").trim().slice(0,maxLen);
+    if(!clean) return;
+
+    await this.advanceGame5(playerId,clean);
+  }
+
+  // 交嘅內容有句號就即刻完結；冇就跟正常回合走，够回合數都完結。
+  // Timeout（冇人交）都會經呢個function，用「……」頂住等遊戲繼續行落去。
+  async advanceGame5(playerId,text){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game5") return;
+
+    const player=this.room.players.find(p=>p.id===playerId);
+    g.story=[...g.story,{
+      text,
+      authorId:playerId,
+      authorNickname:player?.nickname || "玩家"
+    }];
+
+    const hasFullStop = /[。.]/.test(text);
+
+    if(hasFullStop || g.round>=g.totalRounds){
+      g.phase="gameover";
+      g.endsAt=null;
+      await this.save();
+      await this.broadcastRoom();
+      return;
+    }
+
+    const order=g.turnOrder;
+    const nextIndex=(order.indexOf(g.currentTurnPlayerId)+1) % order.length;
+
+    g.round=g.round+1;
+    g.currentTurnPlayerId=order[nextIndex];
+    g.endsAt=Date.now()+(g.mode==="char" ? G5_CHAR_WRITE_MS : G5_SENTENCE_WRITE_MS);
+
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  // 房主提前結算，直接跳去gameover，唔理你差幾多round先完。
+  async onG5End(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game5" || g.phase==="gameover") return;
+    g.phase="gameover";
+    g.endedEarly=true;
+    g.endsAt=null;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
   async errorPlayer(playerId,message){
     this.sendToPlayer(playerId,{type:"error",message});
   }
@@ -1956,6 +2096,11 @@ async onG1Next(playerId){
 
     if(g?.game==="game4" && g.phase==="reveal" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.advanceAfterRevealGame4();
+      return;
+    }
+
+    if(g?.game==="game5" && g.phase==="writing" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.advanceGame5(g.currentTurnPlayerId,"……");
       return;
     }
 
