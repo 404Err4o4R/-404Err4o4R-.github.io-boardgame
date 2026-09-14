@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=8">
+  <link rel="stylesheet" href="./style.css?v=9">
 </head>
 
 <body>
@@ -233,6 +233,10 @@
                 Most Likely To
               </option>
 
+              <option value="game5">
+                故事接龍
+              </option>
+
             </select>
 
           </label>
@@ -368,6 +372,39 @@
 
             <p class="notice" style="margin:6px 0 0">
               最少 3 人先可以開始遊戲
+            </p>
+
+          </div>
+
+
+          <div
+            id="g5Section"
+            class="hidden"
+          >
+
+            <div class="label-row">
+              <span>玩法</span>
+            </div>
+
+            <div
+              id="g5ModeBox"
+              class="filter-box"
+            >
+              <button type="button" class="filter-chip g5-mode-chip active" data-mode="sentence">句子接龍</button>
+              <button type="button" class="filter-chip g5-mode-chip" data-mode="char">接字遊戲</button>
+            </div>
+
+            <div class="label-row" style="margin-top:14px">
+              <span>回合數</span>
+            </div>
+
+            <div
+              id="g5RoundsBox"
+              class="filter-box"
+            ></div>
+
+            <p class="notice" style="margin:6px 0 0">
+              有人交出嘅句子入面有句號，故事就會即刻完結
             </p>
 
           </div>
@@ -639,6 +676,42 @@
 
       </article>
 
+
+      <article class="game-card skyblue-card">
+
+        <div class="sticker">
+          05
+        </div>
+
+        <div class="game-icon">
+          📖
+        </div>
+
+        <h3>
+          故事<br>
+          接龍
+        </h3>
+
+        <p>
+          一句一句接落去，大家一齊砌一個荒謬故事。
+          交嘅句子有句號就即刻完結。
+        </p>
+
+        <div class="tag-row">
+          <span>WRITE</span>
+          <span>CHAIN</span>
+          <span>2–6</span>
+        </div>
+
+        <button
+          class="btn btn-light"
+          data-start="game5"
+        >
+          PLAY THIS GAME
+        </button>
+
+      </article>
+
     </div>
 
   </section>
@@ -760,7 +833,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=27" defer></script>
+<script src="./app.js?v=28" defer></script>
 
 </body>
 </html>
