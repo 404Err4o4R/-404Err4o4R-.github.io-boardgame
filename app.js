@@ -147,12 +147,14 @@ function renderCategories() {
   const roundsSection = $("#roundsSection");
   const langSection = $("#langSection");
   const g4Section = $("#g4Section");
+  const g5Section = $("#g5Section");
 
   if (S.selectedGame === "game3") {
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.remove("hidden");
     if (langSection) langSection.classList.add("hidden");
     if (g4Section) g4Section.classList.add("hidden");
+    if (g5Section) g5Section.classList.add("hidden");
     return;
   }
 
@@ -161,12 +163,24 @@ function renderCategories() {
     if (roundsSection) roundsSection.classList.add("hidden");
     if (langSection) langSection.classList.remove("hidden");
     if (g4Section) g4Section.classList.remove("hidden");
+    if (g5Section) g5Section.classList.add("hidden");
+    return;
+  }
+
+  if (S.selectedGame === "game5") {
+    if (catSection) catSection.style.display = "none";
+    if (roundsSection) roundsSection.classList.add("hidden");
+    if (langSection) langSection.classList.remove("hidden");
+    if (g4Section) g4Section.classList.add("hidden");
+    if (g5Section) g5Section.classList.remove("hidden");
+    renderG5Rounds();
     return;
   }
 
   if (catSection) catSection.style.display = "";
   if (roundsSection) roundsSection.classList.add("hidden");
   if (g4Section) g4Section.classList.add("hidden");
+  if (g5Section) g5Section.classList.add("hidden");
 
   if (langSection) {
     langSection.classList.toggle(
@@ -315,6 +329,19 @@ const ROOM_COVERS = {
       <div class="gc-label eyebrow">MOST LIKELY TO</div>
       <div class="gc-label bottom">3–6 PLAYERS</div>
     </div>
+  `,
+  game5: `
+    <div class="game-cover cover-g5">
+      <div class="gc-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 5 H14 V19 H4 Z" fill="#fff" opacity=".9"/>
+          <path d="M14 5 H20 V19 H14 Z" fill="#AFCBE3"/>
+          <line x1="14" y1="5" x2="14" y2="19" stroke="#2f5a7a" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="gc-label eyebrow">STORY CHAIN</div>
+      <div class="gc-label bottom">2–6 PLAYERS</div>
+    </div>
   `
 };
 
@@ -322,7 +349,8 @@ const GAME_ACCENTS = {
   game1: "#68779f",
   game2: "#004643",
   game3: "#F2795F",
-  game4: "#7B57CE"
+  game4: "#7B57CE",
+  game5: "#5c8fb0"
 };
 
 function renderRoomVisual() {
@@ -477,6 +505,58 @@ $("#g4AnonBox")?.addEventListener("click", (event) => {
   S.selectedG4Anonymous = chip.dataset.anon === "1";
 });
 
+const G5_SENTENCE_ROUNDS = [10, 15, 25];
+const G5_CHAR_ROUNDS = [20, 50, 100];
+
+function renderG5Rounds() {
+  const box = $("#g5RoundsBox");
+  if (!box) return;
+
+  const mode = S.selectedG5Mode || "sentence";
+  const options = mode === "char" ? G5_CHAR_ROUNDS : G5_SENTENCE_ROUNDS;
+
+  box.innerHTML = options
+    .map(
+      (n, i) => `
+        <button
+          type="button"
+          class="filter-chip g5-rounds-chip ${i === 0 ? "active" : ""}"
+          data-rounds="${n}"
+        >
+          ${n}輪
+        </button>
+      `
+    )
+    .join("");
+
+  S.selectedG5Rounds = options[0];
+}
+
+$("#g5ModeBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g5-mode-chip");
+  if (!chip) return;
+
+  document
+    .querySelectorAll("#g5ModeBox .g5-mode-chip")
+    .forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+
+  S.selectedG5Mode = chip.dataset.mode === "char" ? "char" : "sentence";
+  renderG5Rounds();
+});
+
+$("#g5RoundsBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g5-rounds-chip");
+  if (!chip) return;
+
+  document
+    .querySelectorAll("#g5RoundsBox .g5-rounds-chip")
+    .forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+
+  S.selectedG5Rounds = Number(chip.dataset.rounds) || G5_SENTENCE_ROUNDS[0];
+});
+
 /* =========================
    房間
 ========================= */
@@ -521,9 +601,11 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: (S.selectedGame === "game1" || S.selectedGame === "game4") ? (S.selectedLanguage || "yue") : null,
+        language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5") ? (S.selectedLanguage || "yue") : null,
         g4Rounds: S.selectedGame === "game4" ? (S.selectedG4Rounds || 20) : null,
-        g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null
+        g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null,
+        g5Mode: S.selectedGame === "game5" ? (S.selectedG5Mode || "sentence") : null,
+        g5Rounds: S.selectedGame === "game5" ? (S.selectedG5Rounds || null) : null
       })
     }).then((r) => r.json());
 
@@ -674,6 +756,7 @@ async function connectRoom(code, mode, saved = null) {
   S.g1SelectedPair = undefined;
   S.g3RenderKey = null;
   S.g4RenderKey = null;
+  S.g5RenderKey = null;
 
   document.documentElement.style.setProperty(
     "--game-accent",
@@ -943,6 +1026,8 @@ function renderRoom() {
               ? "He/She's a 10"
               : room.game === "game4"
               ? "Most Likely To 邊個至似"
+              : room.game === "game5"
+              ? "故事接龍"
               : "未知遊戲"
           }
         </b>
@@ -1268,6 +1353,8 @@ function renderGame() {
     renderGame3(game);
   } else if (S.room.game === "game4") {
     renderGame4(game);
+  } else if (S.room.game === "game5") {
+    renderGame5(game);
   } else {
     renderGame2(game);
   }
@@ -3095,6 +3182,157 @@ function renderGame4Gameover(game) {
     </div>
   `;
 }
+
+/* =========================
+   Game 5 · 故事接龍
+========================= */
+
+function renderGame5(game) {
+  if (game.phase === "writing") return renderGame5Writing(game);
+  if (game.phase === "gameover") return renderGame5Gameover(game);
+}
+
+function renderGame5Writing(game) {
+  const renderKey = `g5-writing-${game.round}`;
+  if (S.g5RenderKey === renderKey) return;
+  S.g5RenderKey = renderKey;
+
+  const storyHtml = (game.story || [])
+    .map(
+      (s, i) => `
+        <span class="g5-story-part">${esc(s.text)}</span>
+        <span class="g5-story-author">${i === 0 ? "" : `(${esc(s.authorNickname)})`}</span>
+      `
+    )
+    .join(" ");
+
+  if (game.isMyTurn) {
+    $("#gamePanel").innerHTML = `
+      <div class="row" style="justify-content:space-between;align-items:end">
+        <div>
+          <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+          <h2 class="title">輪到<br><span>你接落去。</span></h2>
+        </div>
+        <div id="time" class="timer"></div>
+      </div>
+
+      <div class="question g5-story-box">${storyHtml}</div>
+
+      <div class="answerbox" style="display:flex;align-items:center;gap:8px">
+        <input
+          id="g5Input"
+          type="text"
+          maxlength="${game.maxLen}"
+          placeholder="${game.mode === "char" ? "打一至幾個字……" : "接一句（最多15字）……"}"
+          oninput="g5UpdateCount()"
+          style="flex:1;border:none;outline:none;font-size:16px;background:transparent"
+        >
+        ${
+          game.mode === "char"
+            ? `
+              <button type="button" class="btn btn-outline" style="padding:8px 10px" onclick="g5AddPunct('，')">，</button>
+              <button type="button" class="btn btn-outline" style="padding:8px 10px" onclick="g5AddPunct('。')">。</button>
+            `
+            : ""
+        }
+      </div>
+
+      <p class="notice"><span id="g5Count">0 / ${game.maxLen}</span></p>
+
+      <button class="btn btn-yellow wide" onclick="g5Submit()">交出去</button>
+    `;
+  } else {
+    $("#gamePanel").innerHTML = `
+      <div class="row" style="justify-content:space-between;align-items:end">
+        <div>
+          <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+          <h2 class="title">故事<br><span>接緊龍。</span></h2>
+        </div>
+        <div id="time" class="timer"></div>
+      </div>
+
+      <div class="question g5-story-box">${storyHtml}</div>
+
+      <p class="notice">等緊${esc(game.currentTurnNickname)}接落去……</p>
+    `;
+  }
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
+
+function g5UpdateCount() {
+  const input = $("#g5Input");
+  const el = $("#g5Count");
+  if (!input || !el) return;
+  el.textContent = `${input.value.length} / ${input.maxLength}`;
+}
+
+window.g5AddPunct = (mark) => {
+  const input = $("#g5Input");
+  if (!input) return;
+  if (input.value.length >= input.maxLength) return;
+  input.value += mark;
+  g5UpdateCount();
+};
+
+window.g5Submit = async () => {
+  const input = $("#g5Input");
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  const ok = await askConfirm(`確定要交「${text}」？交咗就唔可以再改。`);
+  if (!ok) return;
+
+  send({ type: "g5:submit", text });
+  input.disabled = true;
+};
+
+window.g5EndEarly = async () => {
+  const ok = await askConfirm("肯定提前結算？故事會就咁停低，之後就唔可以再繼續。");
+  if (!ok) return;
+  send({ type: "g5:end" });
+};
+
+function renderGame5Gameover(game) {
+  const renderKey = "g5-gameover";
+  if (S.g5RenderKey === renderKey) return;
+  S.g5RenderKey = renderKey;
+
+  const storyHtml = (game.story || [])
+    .map(
+      (s, i) => `
+        <span class="g5-story-part">${esc(s.text)}</span>
+        <span class="g5-story-author">${i === 0 ? "" : `(${esc(s.authorNickname)})`}</span>
+      `
+    )
+    .join(" ");
+
+  $("#gamePanel").innerHTML = `
+    <div class="eyebrow">GAME OVER</div>
+    <h2 class="title">故事<br><span>完成喇。</span></h2>
+
+    <div class="question g5-story-box">${storyHtml}</div>
+
+    <button
+      class="btn btn-outline wide"
+      style="margin-top:12px"
+      onclick="g5CopyStory()"
+    >
+      複製成個故事
+    </button>
+  `;
+
+  S.g5FullStory = game.fullStory || "";
+}
+
+window.g5CopyStory = () => {
+  if (!S.g5FullStory) return;
+  navigator.clipboard?.writeText(S.g5FullStory).then(
+    () => flash("已複製到剪貼簿！"),
+    () => flash("複製失敗，麻煩自己手動複製。")
+  );
+};
 
 function chatMsgHtml(message) {
   return `
