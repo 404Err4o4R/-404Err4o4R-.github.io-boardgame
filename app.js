@@ -3192,19 +3192,40 @@ function renderGame5(game) {
   if (game.phase === "gameover") return renderGame5Gameover(game);
 }
 
+const G5_DOT_COLORS = [
+  "#929FC1", "#F2795F", "#58a04f", "#c46fa3",
+  "#e2884a", "#7B57CE", "#004643", "#d16b63"
+];
+
+function g5StoryHtml(story) {
+  return (story || [])
+    .map((s, i) => {
+      if (i === 0) {
+        return `<span class="g5-story-part">${esc(s.text)}</span>`;
+      }
+      const color = G5_DOT_COLORS[i % G5_DOT_COLORS.length];
+      return `
+        <span
+          class="g5-story-part g5-story-tap"
+          data-author="${esc(s.authorNickname)}"
+          onclick="g5ShowAuthor(this)"
+        >${esc(s.text)}<span class="g5-story-dot" style="background:${color}"></span></span>
+      `;
+    })
+    .join(" ");
+}
+
+window.g5ShowAuthor = (el) => {
+  const name = el?.dataset?.author || "";
+  if (name) flash(`呢個係 ${name} 寫嘅`);
+};
+
 function renderGame5Writing(game) {
   const renderKey = `g5-writing-${game.round}`;
   if (S.g5RenderKey === renderKey) return;
   S.g5RenderKey = renderKey;
 
-  const storyHtml = (game.story || [])
-    .map(
-      (s, i) => `
-        <span class="g5-story-part">${esc(s.text)}</span>
-        <span class="g5-story-author">${i === 0 ? "" : `(${esc(s.authorNickname)})`}</span>
-      `
-    )
-    .join(" ");
+  const storyHtml = g5StoryHtml(game.story);
 
   if (game.isMyTurn) {
     $("#gamePanel").innerHTML = `
@@ -3299,14 +3320,7 @@ function renderGame5Gameover(game) {
   if (S.g5RenderKey === renderKey) return;
   S.g5RenderKey = renderKey;
 
-  const storyHtml = (game.story || [])
-    .map(
-      (s, i) => `
-        <span class="g5-story-part">${esc(s.text)}</span>
-        <span class="g5-story-author">${i === 0 ? "" : `(${esc(s.authorNickname)})`}</span>
-      `
-    )
-    .join(" ");
+  const storyHtml = g5StoryHtml(game.story);
 
   $("#gamePanel").innerHTML = `
     <div class="eyebrow">GAME OVER</div>
