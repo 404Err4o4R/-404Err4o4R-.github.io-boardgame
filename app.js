@@ -3756,7 +3756,25 @@ const G6_TEXT = {
     again: "再玩一局",
     lobby: "返大廳",
     waitHost: "等房主決定再玩一局定散 Band",
-    ranking: "總分"
+    ranking: "總分",
+    attemptPill: (a, m) => `第 ${a} / ${m} 次`,
+    historyTitle: "之前估過",
+    attemptN: (a) => `第 ${a} 次`,
+    successTitle: "恭喜！成功 Sync 到",
+    successSub: (a) => `第 ${a} 次就估中`,
+    voidTitle: "呢 round 作廢",
+    voidSub: (m) => `${m} 次都冇人 Sync 到`,
+    nextBtn: "下一 round",
+    lastBtn: "睇結算",
+    nextWait: (a, b) => `${a} / ${b} 人準備好，全部人撳咗就即刻開始`,
+    nextDone: "你準備好喇，等緊其他人",
+    capHint: "可以 cap 圖留念",
+    fastestTitle: "最快一次 Sync",
+    fastestSub: (r, a) => `Round ${r} · 第 ${a} 次`,
+    pairPick: "揀一對睇默契",
+    axes: ["同步率", "一擊即中", "速度", "得分", "效率"],
+    pairRadarTitle: (a, b) => `${a} × ${b} 默契雷達`,
+    roundsUnit: "round"
   },
   zh: {
     answerTitle: "想到什麼，就打什麼！",
@@ -3812,7 +3830,25 @@ const G6_TEXT = {
     again: "再玩一局",
     lobby: "返回大廳",
     waitHost: "等待房主決定是否再玩一局",
-    ranking: "總分"
+    ranking: "總分",
+    attemptPill: (a, m) => `第 ${a} / ${m} 次`,
+    historyTitle: "之前猜過",
+    attemptN: (a) => `第 ${a} 次`,
+    successTitle: "恭喜！成功 Sync",
+    successSub: (a) => `第 ${a} 次就猜中`,
+    voidTitle: "這一回合作廢",
+    voidSub: (m) => `${m} 次都沒有人 Sync`,
+    nextBtn: "下一回合",
+    lastBtn: "看結算",
+    nextWait: (a, b) => `${a} / ${b} 人準備好，全部人按下就立即開始`,
+    nextDone: "你準備好了，等待其他人",
+    capHint: "可以截圖留念",
+    fastestTitle: "最快一次 Sync",
+    fastestSub: (r, a) => `第 ${r} 回合 · 第 ${a} 次`,
+    pairPick: "選一對看默契",
+    axes: ["同步率", "一擊即中", "速度", "得分", "效率"],
+    pairRadarTitle: (a, b) => `${a} × ${b} 默契雷達`,
+    roundsUnit: "回合"
   }
 };
 
@@ -3837,13 +3873,34 @@ function g6CountLabel(text) {
 }
 
 function g6Head(game, extraPill = "") {
+  const t = g6T();
   return `
     <div class="g6-head">
       <div>
         <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
-        ${extraPill}
+        ${extraPill || `<span class="g6-pill-dark">${esc(t.attemptPill(game.attempt || 1, game.maxAttempts || 5))}</span>`}
       </div>
       ${game.endsAt ? `<div id="time" class="timer"></div>` : ""}
+    </div>
+  `;
+}
+
+// 之前幾次估咗咩：新嘅放上面。
+function g6HistoryHtml(game) {
+  const t = g6T();
+  const history = game.history || [];
+  if (!history.length) return "";
+  return `
+    <div class="g6-history">
+      <div class="eyebrow">${esc(t.historyTitle)}</div>
+      ${[...history].reverse().map((h) => `
+        <div class="g6-hist-row">
+          <span class="g6-hist-n">${esc(t.attemptN(h.attempt))}</span>
+          <span class="g6-chips">
+            ${h.entries.map((e) => `<span class="g6-chip ${e.id === S.playerId ? "mine" : ""}">${esc(e.nickname)} · ${esc(e.text)}</span>`).join("")}
+          </span>
+        </div>
+      `).join("")}
     </div>
   `;
 }
@@ -3857,7 +3914,7 @@ function renderGame6(game) {
 
 function renderGame6Answering(game) {
   const t = g6T();
-  const key = `g6-answer-${game.round}-${game.mySubmitted ? "done" : "open"}`;
+  const key = `g6-answer-${game.round}-${game.attempt}-${game.mySubmitted ? "done" : "open"}`;
 
   // 其他人交答案會觸發 state 廣播：只更新人數，唔好重畫，免得洗走你打緊嘅字。
   if (S.g6Key === key) {
@@ -3901,6 +3958,7 @@ function renderGame6Answering(game) {
       <span>${esc(t.answered)}</span>
       <strong id="g6Count">${game.submittedCount} / ${game.totalCount}</strong>
     </div>
+    ${g6HistoryHtml(game)}
   `;
 
   const input = $("#g6Input");
@@ -3940,9 +3998,9 @@ function g6Words(words) {
 function renderGame6Merging(game) {
   const t = g6T();
   S.g6Key = `g6-merge-${game.round}`;
-  if (S.g6PickRound !== game.round) {
+  if (S.g6PickRound !== `${game.round}-${game.attempt}`) {
     S.g6Pick = [];
-    S.g6PickRound = game.round;
+    S.g6PickRound = `${game.round}-${game.attempt}`;
   }
   const groupIds = new Set((game.groups || []).map((g) => g.id));
   S.g6Pick = (S.g6Pick || []).filter((id) => groupIds.has(id));
@@ -4006,6 +4064,7 @@ function renderGame6Merging(game) {
       }
       <small>${esc(t.skipCount(game.skipCount, game.totalCount))}</small>
     </div>
+    ${g6HistoryHtml(game)}
   `;
 
   if (game.endsAt) startTimer($("#time"), game.endsAt);
@@ -4057,6 +4116,7 @@ function renderGame6Pair(game) {
       ${action}
       <div class="g6-pr-count">已投 ${pr.yes + pr.no} / ${pr.eligibleCount} · ${esc(t.pairNote)}</div>
     </div>
+    ${g6HistoryHtml(game)}
   `;
   if (game.endsAt) startTimer($("#time"), game.endsAt);
 }
@@ -4079,45 +4139,50 @@ window.g6Restart = () => {
   send({ type: "g6:restart" });
 };
 
+function g6NextHtml(game) {
+  const t = g6T();
+  const last = game.round >= game.totalRounds;
+  return `
+    <div class="g6-status">
+      ${
+        game.myNext
+          ? `<span>${esc(t.nextDone)}</span>`
+          : `<button type="button" class="btn btn-dark" onclick="g6Next()">${esc(last ? t.lastBtn : t.nextBtn)}</button>`
+      }
+      <small>${esc(t.nextWait(game.nextCount || 0, game.totalCount || 0))}</small>
+    </div>
+  `;
+}
+
+window.g6Next = () => {
+  send({ type: "g6:next" });
+};
+
 function renderGame6Reveal(game) {
   const t = g6T();
-  S.g6Key = `g6-reveal-${game.round}`;
   const result = game.result || { groups: [] };
+
+  if (!result.success) {
+    $("#gamePanel").innerHTML = `
+      ${g6Head(game, `<span class="g6-pill-dark">${esc(t.voidTitle)}</span>`)}
+      <div class="g6-win g6-void">
+        <div class="g6-win-word g6-none">${esc(t.voidTitle)}</div>
+        <p class="g6-sub" style="text-align:center">${esc(t.voidSub(game.maxAttempts || 5))}</p>
+      </div>
+      ${g6NextHtml(game)}
+      ${g6HistoryHtml(game)}
+    `;
+    if (game.endsAt) startTimer($("#time"), game.endsAt);
+    return;
+  }
+
   const winner = result.groups.find((g) => g.id === result.winnerGroupId) || null;
   const winnerIds = new Set(result.winnerIds || []);
-
   const memberChip = (m) => `
     <span class="g6-chip ${m.merged ? "merged" : ""}">
       ${esc(m.nickname)} · ${esc(m.text)} · ${esc(t.sec(m.t))}${m.merged ? ` · ${esc(t.merged)}` : ""}
     </span>
   `;
-
-  const winnerHtml = winner
-    ? `
-      <div class="g6-win">
-        <div class="g6-win-head">
-          <span class="eyebrow">${esc(t.fastest)}</span>
-          <span class="g6-pill-dark">${esc(t.sec(winner.syncAt))}</span>
-        </div>
-        <div class="g6-win-word">${g6Words(winner.words)}</div>
-        <div class="g6-win-pair">
-          ${winner.members.filter((m) => winnerIds.has(m.id)).map((m) => `
-            <div class="g6-win-player">
-              <b>${esc(m.nickname)}</b>
-              <small>${esc(m.text)} · ${esc(t.sec(m.t))}</small>
-              <strong>+${result.points}</strong>
-            </div>
-          `).join("")}
-        </div>
-        ${winner.members.filter((m) => !winnerIds.has(m.id)).map((m) => `
-          <div class="g6-win-extra">
-            <span>${esc(m.nickname)}「${esc(m.text)}」· ${esc(t.sec(m.t))}${m.merged ? ` · ${esc(t.merged)}` : ""} · ${esc(t.later)}</span>
-            <span>${esc(t.sync1)}</span>
-          </div>
-        `).join("")}
-      </div>
-    `
-    : `<div class="g6-win"><div class="g6-win-word g6-none">${esc(t.noSync)}</div></div>`;
 
   const othersHtml = result.groups
     .filter((g) => !winner || g.id !== winner.id)
@@ -4133,11 +4198,31 @@ function renderGame6Reveal(game) {
     `).join("");
 
   $("#gamePanel").innerHTML = `
-    ${g6Head(game, `<span class="g6-pill-dark">${esc(t.reveal)}</span>`)}
-    ${winnerHtml}
+    ${g6Head(game, `<span class="g6-pill-dark">${esc(t.successSub(result.attempt))}</span>`)}
+    <div class="g6-win g6-success">
+      <div class="g6-congrats">${esc(t.successTitle)}</div>
+      <div class="g6-win-word">${g6Words(winner.words)}</div>
+      <div class="g6-win-pair">
+        ${winner.members.filter((m) => winnerIds.has(m.id)).map((m) => `
+          <div class="g6-win-player">
+            <b>${esc(m.nickname)}</b>
+            <small>${esc(m.text)} · ${esc(t.sec(m.t))}</small>
+            <strong>+${result.points}</strong>
+          </div>
+        `).join("")}
+      </div>
+      ${winner.members.filter((m) => !winnerIds.has(m.id)).map((m) => `
+        <div class="g6-win-extra">
+          <span>${esc(m.nickname)}「${esc(m.text)}」· ${esc(t.sec(m.t))}${m.merged ? ` · ${esc(t.merged)}` : ""} · ${esc(t.later)}</span>
+          <span>${esc(t.sync1)}</span>
+        </div>
+      `).join("")}
+      <small class="g6-cap">${esc(t.capHint)} · ${esc(t.sec(winner.syncAt))} Sync</small>
+    </div>
+    ${g6NextHtml(game)}
     ${othersHtml ? `<div class="eyebrow g6-section-label">${esc(t.others)}</div>${othersHtml}` : ""}
     ${result.noAnswer?.length ? `<p class="g6-sub">${esc(t.noAnswer(result.noAnswer.join("、")))}</p>` : ""}
-    <p class="g6-sub">${esc(game.round >= game.totalRounds ? t.lastRound : t.nextRound)}</p>
+    ${(game.history || []).length > 1 ? g6HistoryHtml({ ...game, history: game.history.slice(0, -1) }) : ""}
   `;
 
   if (game.endsAt) startTimer($("#time"), game.endsAt);
@@ -4152,33 +4237,32 @@ function g6PairMap(pairs) {
   return map;
 }
 
-function g6RadarSvg(sel, players, counts, rounds) {
-  const others = players.filter((p) => p.id !== sel.id);
-  const k = others.length;
+// 通用雷達圖：axes = [{label, sub, value(0–1)}]
+function g6RadarSvg(axes, ariaLabel) {
+  const k = axes.length;
   const cx = 165, cy = 135, R = 92;
-  const max = Math.max(1, rounds);
   const pt = (i, f) => {
     const a = (-90 + (360 / k) * i) * Math.PI / 180;
     return [cx + R * f * Math.cos(a), cy + R * f * Math.sin(a)];
   };
-  const ring = (f) => others.map((_, i) => pt(i, f).map((v) => v.toFixed(1)).join(",")).join(" ");
-  const spokes = others.map((_, i) => {
+  const ring = (f) => axes.map((_, i) => pt(i, f).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const spokes = axes.map((_, i) => {
     const [x, y] = pt(i, 1);
     return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"></line>`;
   }).join("");
-  const poly = others.map((p, i) => pt(i, (counts[`${sel.id}|${p.id}`] || 0) / max).map((v) => v.toFixed(1)).join(",")).join(" ");
-  const labels = others.map((p, i) => {
+  const poly = axes.map((ax, i) => pt(i, Math.max(0, Math.min(1, ax.value))).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const labels = axes.map((ax, i) => {
     const a = (-90 + (360 / k) * i) * Math.PI / 180;
     const x = cx + (R + 24) * Math.cos(a);
     const y = cy + (R + 20) * Math.sin(a);
     const anchor = Math.abs(Math.cos(a)) < 0.2 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
     return `
-      <text x="${x.toFixed(1)}" y="${(y - 2).toFixed(1)}" text-anchor="${anchor}" class="g6-rl-name">${esc(p.nickname)}</text>
-      <text x="${x.toFixed(1)}" y="${(y + 13).toFixed(1)}" text-anchor="${anchor}" class="g6-rl-val">${counts[`${sel.id}|${p.id}`] || 0} / ${rounds}</text>
+      <text x="${x.toFixed(1)}" y="${(y - 2).toFixed(1)}" text-anchor="${anchor}" class="g6-rl-name">${esc(ax.label)}</text>
+      <text x="${x.toFixed(1)}" y="${(y + 13).toFixed(1)}" text-anchor="${anchor}" class="g6-rl-val">${esc(ax.sub)}</text>
     `;
   }).join("");
   return `
-    <svg class="g6-radar" viewBox="0 0 330 270" role="img" aria-label="${esc(sel.nickname)} 同其他玩家嘅同步雷達圖">
+    <svg class="g6-radar" viewBox="0 0 330 270" role="img" aria-label="${esc(ariaLabel)}">
       <g class="g6-grid">
         <polygon points="${ring(1)}" class="outer"></polygon>
         <polygon points="${ring(0.75)}"></polygon>
@@ -4192,6 +4276,29 @@ function g6RadarSvg(sel, players, counts, rounds) {
   `;
 }
 
+// 二／三人局：用 5 項默契指標畫一對玩家嘅雷達圖。
+function g6PairAxes(pair, rounds, maxAttempts) {
+  const t = g6T();
+  const r = Math.max(1, rounds);
+  const pct = (v) => `${Math.round(v * 100)}%`;
+  const eff = pair.count ? (maxAttempts + 1 - pair.attemptsAvg) / maxAttempts : 0;
+  const vals = [
+    pair.count / r,
+    pair.first / r,
+    pair.speedAvg,
+    pair.scored / r,
+    eff
+  ];
+  const subs = [
+    `${pair.count} / ${rounds}`,
+    `${pair.first} / ${rounds}`,
+    pct(pair.speedAvg),
+    `${pair.scored} / ${rounds}`,
+    pair.count ? `${pair.attemptsAvg.toFixed(1)} 次` : "—"
+  ];
+  return t.axes.map((label, i) => ({ label, sub: subs[i], value: vals[i] }));
+}
+
 function renderGame6Gameover(game) {
   const t = g6T();
   S.g6Key = "g6-over";
@@ -4202,14 +4309,18 @@ function renderGame6Gameover(game) {
   const counts = g6PairMap(pairs);
   const top = pairs[0] && pairs[0].count > 0 ? pairs[0] : null;
   const isHost = S.room.hostId === S.playerId;
-
-  if (!S.g6RadarSel || !players.some((p) => p.id === S.g6RadarSel)) {
-    S.g6RadarSel = players.some((p) => p.id === S.playerId) ? S.playerId : players[0]?.id;
-  }
-  const sel = players.find((p) => p.id === S.g6RadarSel) || players[0];
+  const maxAttempts = game.maxAttempts || 5;
 
   let chartHtml = "";
-  if (players.length >= 4 && sel) {
+  if (players.length >= 4) {
+    if (!S.g6RadarSel || !players.some((p) => p.id === S.g6RadarSel)) {
+      S.g6RadarSel = players.some((p) => p.id === S.playerId) ? S.playerId : players[0]?.id;
+    }
+    const sel = players.find((p) => p.id === S.g6RadarSel) || players[0];
+    const axes = players.filter((p) => p.id !== sel.id).map((p) => {
+      const c = counts[`${sel.id}|${p.id}`] || 0;
+      return { label: p.nickname, sub: `${c} / ${rounds}`, value: c / rounds };
+    });
     chartHtml = `
       <div class="g6-chart">
         <div class="g6-chart-head">
@@ -4221,43 +4332,46 @@ function renderGame6Gameover(game) {
             <button type="button" class="g6-rchip ${p.id === sel.id ? "active" : ""}" onclick="g6RadarPick('${p.id}')">${esc(p.nickname)}</button>
           `).join("")}
         </div>
-        ${g6RadarSvg(sel, players, counts, rounds)}
+        ${g6RadarSvg(axes, `${sel.nickname} 同其他玩家嘅同步雷達圖`)}
       </div>
     `;
-  } else if (players.length === 3 && sel) {
-    // 3 個人得兩條軸，雷達圖畫唔到形狀，改用橫條。
+  } else if (pairs.length) {
+    const keyOf = (p) => `${p.a}|${p.b}`;
+    if (!S.g6PairSel || !pairs.some((p) => keyOf(p) === S.g6PairSel)) S.g6PairSel = keyOf(pairs[0]);
+    const pair = pairs.find((p) => keyOf(p) === S.g6PairSel) || pairs[0];
     chartHtml = `
       <div class="g6-chart">
         <div class="g6-chart-head">
-          <strong>${esc(t.radarTitle(sel.nickname))}</strong>
-          <small>${esc(t.radarUnit)} / ${rounds}</small>
+          <strong>${esc(t.pairRadarTitle(pair.aNickname, pair.bNickname))}</strong>
+          ${players.length === 2 ? `<small>${esc(t.twoPlayer(Math.round((pair.count / rounds) * 100)))}</small>` : `<small>${esc(t.pairPick)}</small>`}
         </div>
-        <div class="g6-radar-chips">
-          ${players.map((p) => `
-            <button type="button" class="g6-rchip ${p.id === sel.id ? "active" : ""}" onclick="g6RadarPick('${p.id}')">${esc(p.nickname)}</button>
-          `).join("")}
-        </div>
-        ${players.filter((p) => p.id !== sel.id).map((p) => {
-          const c = counts[`${sel.id}|${p.id}`] || 0;
-          return `
-            <div class="g6-bar-row">
-              <span>${esc(p.nickname)}</span>
-              <span class="g6-bar"><span style="width:${Math.round((c / rounds) * 100)}%"></span></span>
-              <b>${c} / ${rounds}</b>
-            </div>
-          `;
-        }).join("")}
-      </div>
-    `;
-  } else if (players.length === 2) {
-    const c = pairs[0]?.count || 0;
-    chartHtml = `
-      <div class="g6-chart g6-duo">
-        <strong>${esc(t.twoPlayer(Math.round((c / rounds) * 100)))}</strong>
-        <small>${esc(t.pairCount(c, rounds))}</small>
+        ${
+          pairs.length > 1
+            ? `<div class="g6-radar-chips">
+                ${pairs.map((p) => `
+                  <button type="button" class="g6-rchip ${keyOf(p) === keyOf(pair) ? "active" : ""}" onclick="g6PairPick('${keyOf(p)}')">${esc(p.aNickname)} × ${esc(p.bNickname)}</button>
+                `).join("")}
+              </div>`
+            : ""
+        }
+        ${g6RadarSvg(g6PairAxes(pair, game.playedRounds || 0, maxAttempts), `${pair.aNickname} 同 ${pair.bNickname} 嘅默契雷達圖`)}
       </div>
     `;
   }
+
+  const fastest = game.fastest;
+  const fastestHtml = fastest
+    ? `
+      <div class="g6-fastest">
+        <div class="eyebrow">${esc(t.fastestTitle)}</div>
+        <div class="g6-fastest-main">
+          <strong>${g6Words(fastest.words)}</strong>
+          <span class="g6-pill-dark">${esc(t.sec(fastest.t))}</span>
+        </div>
+        <small>${esc(fastest.aNickname)} × ${esc(fastest.bNickname)} · ${esc(t.fastestSub(fastest.round, fastest.attempt))}</small>
+      </div>
+    `
+    : "";
 
   $("#gamePanel").innerHTML = `
     <div class="eyebrow">GAME OVER · ${game.playedRounds || 0} ROUNDS${game.endedEarly ? ` · ${esc(t.endedEarly)}` : ""}</div>
@@ -4272,6 +4386,8 @@ function renderGame6Gameover(game) {
         </div>
       `).join("")}
     </div>
+
+    ${fastestHtml}
 
     ${chartHtml}
 
@@ -4301,6 +4417,11 @@ function renderGame6Gameover(game) {
 
 window.g6RadarPick = (id) => {
   S.g6RadarSel = id;
+  if (S.room?.gameState?.phase === "gameover") renderGame6Gameover(S.room.gameState);
+};
+
+window.g6PairPick = (key) => {
+  S.g6PairSel = key;
   if (S.room?.gameState?.phase === "gameover") renderGame6Gameover(S.room.gameState);
 };
 
