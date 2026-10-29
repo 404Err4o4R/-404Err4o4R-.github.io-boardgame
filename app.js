@@ -148,6 +148,18 @@ function renderCategories() {
   const langSection = $("#langSection");
   const g4Section = $("#g4Section");
   const g5Section = $("#g5Section");
+  const g6Section = $("#g6Section");
+
+  if (g6Section) g6Section.classList.toggle("hidden", S.selectedGame !== "game6");
+
+  if (S.selectedGame === "game6") {
+    if (catSection) catSection.style.display = "none";
+    if (roundsSection) roundsSection.classList.add("hidden");
+    if (langSection) langSection.classList.remove("hidden");
+    if (g4Section) g4Section.classList.add("hidden");
+    if (g5Section) g5Section.classList.add("hidden");
+    return;
+  }
 
   if (S.selectedGame === "game3") {
     if (catSection) catSection.style.display = "none";
@@ -342,6 +354,20 @@ const ROOM_COVERS = {
       <div class="gc-label eyebrow">STORY CHAIN</div>
       <div class="gc-label bottom">2–6 PLAYERS</div>
     </div>
+  `,
+  game6: `
+    <div class="game-cover cover-g6">
+      <div class="gc-icon">
+        <svg viewBox="0 0 220 190" aria-hidden="true">
+          <path d="M18 30a22 22 0 0 1 22-22h76a22 22 0 0 1 22 22v44a22 22 0 0 1-22 22H62l-26 22 6-22h-2a22 22 0 0 1-22-22z" fill="#1f2740"/>
+          <path d="M82 92a22 22 0 0 1 22-22h76a22 22 0 0 1 22 22v44a22 22 0 0 1-22 22h-2l6 22-26-22h-54a22 22 0 0 1-22-22z" fill="#FEFEF2" stroke="#1f2740" stroke-width="3"/>
+          <circle cx="146" cy="62" r="21" fill="#F2D965" stroke="#1f2740" stroke-width="3"/>
+          <path d="M136 62l7 7 12-13" fill="none" stroke="#1f2740" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="gc-label eyebrow">WORD SYNC</div>
+      <div class="gc-label bottom">2–6 PLAYERS</div>
+    </div>
   `
 };
 
@@ -350,7 +376,17 @@ const GAME_ACCENTS = {
   game2: "#004643",
   game3: "#F2795F",
   game4: "#7B57CE",
-  game5: "#5c8fb0"
+  game5: "#5c8fb0",
+  game6: "#3C5A1E"
+};
+
+const GAME_NAMES = {
+  game1: "心有靈犀一點通",
+  game2: "9upper瞎掰王",
+  game3: "He/She's a 10",
+  game4: "Most Likely To 邊個至似",
+  game5: "故事接龍",
+  game6: "Sync 唔 Sync"
 };
 
 function renderRoomVisual() {
@@ -557,6 +593,56 @@ $("#g5RoundsBox")?.addEventListener("click", (event) => {
   S.selectedG5Rounds = Number(chip.dataset.rounds) || G5_SENTENCE_ROUNDS[0];
 });
 
+/* Game 6 · Sync 唔 Sync 開房設定 */
+S.g6AnswerSeconds = 20;
+S.g6Rounds = 10;
+S.g6VoteSeconds = 10;
+
+$("#g6TimeBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g6-time-chip");
+  if (!chip) return;
+  document.querySelectorAll("#g6TimeBox .g6-time-chip").forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+  S.g6AnswerSeconds = Number(chip.dataset.sec) || 20;
+});
+
+$("#g6RoundsBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g6-rounds-chip");
+  if (!chip) return;
+  document.querySelectorAll("#g6RoundsBox .g6-rounds-chip").forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+  const custom = $("#g6RoundsCustom");
+  if (chip.dataset.rounds === "custom") {
+    custom?.classList.remove("hidden");
+    custom?.focus();
+    S.g6Rounds = null;
+  } else {
+    custom?.classList.add("hidden");
+    S.g6Rounds = Number(chip.dataset.rounds) || 10;
+  }
+});
+
+$("#g6RoundsCustom")?.addEventListener("input", () => {
+  const box = $("#g6RoundsCustom");
+  const n = Number(box.value);
+  if (Number.isInteger(n) && n >= 3 && n <= 30) {
+    S.g6Rounds = n;
+    box.style.borderColor = "";
+  } else {
+    S.g6Rounds = null;
+    box.style.borderColor = box.value ? "var(--yellow-deep)" : "";
+  }
+});
+
+document.querySelectorAll(".g6-step-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    const next = S.g6VoteSeconds + Number(button.dataset.step || 0);
+    S.g6VoteSeconds = Math.min(30, Math.max(5, next));
+    const label = $("#g6VoteLabel");
+    if (label) label.textContent = `${S.g6VoteSeconds} 秒`;
+  });
+});
+
 /* =========================
    房間
 ========================= */
@@ -593,6 +679,10 @@ async function createRoom() {
 
     S.nickname = $("#createName")?.value.trim() || "玩家";
 
+    if (S.selectedGame === "game6" && !S.g6Rounds) {
+      throw new Error("自定義回合數要喺 3 至 30 之間。");
+    }
+
     const res = await fetch(`${HTTP_BASE}/api/rooms`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -601,7 +691,10 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5") ? (S.selectedLanguage || "yue") : null,
+        language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6") ? (S.selectedLanguage || "yue") : null,
+        g6AnswerSeconds: S.selectedGame === "game6" ? S.g6AnswerSeconds : null,
+        g6Rounds: S.selectedGame === "game6" ? S.g6Rounds : null,
+        g6VoteSeconds: S.selectedGame === "game6" ? S.g6VoteSeconds : null,
         g4Rounds: S.selectedGame === "game4" ? (S.selectedG4Rounds || 20) : null,
         g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null,
         g5Mode: S.selectedGame === "game5" ? (S.selectedG5Mode || "sentence") : null,
@@ -807,6 +900,8 @@ function handleServerMessage(message) {
       "--game-accent",
       GAME_ACCENTS[message.room?.game] || GAME_ACCENTS.game1
     );
+    applyGameTheme(message.room?.game);
+    S.g6Key = null;
 
     setConnectionStatus(
       "CONNECTED",
@@ -904,6 +999,20 @@ function showGame() {
     $("#roomLabel").textContent =
       S.room.code;
   }
+
+  applyGameTheme(S.room?.game);
+}
+
+// 每隻 game 嘅主題色由 #gameShell 嘅 data-game 決定（見 style.css「新版遊戲畫面」）。
+function applyGameTheme(game) {
+  const shell = $("#gameShell");
+  if (shell && game) shell.dataset.game = game;
+
+  const label = $("#gameLabel");
+  if (label) {
+    label.textContent = GAME_NAMES[game] || "";
+    label.classList.toggle("hidden", !GAME_NAMES[game]);
+  }
 }
 
 function leaveRoom() {
@@ -988,6 +1097,8 @@ function renderRoom() {
     room.gameState.phase &&
     room.gameState.phase !== "waiting";
 
+  $("#gameShell")?.classList.toggle("is-playing", !!isPlaying);
+
   if (isPlaying) {
     roomPanel.classList.remove("hidden");
     renderScoreboard(room);
@@ -1017,22 +1128,21 @@ function renderRoom() {
         </div>
 
         <b>
-          ${
-            room.game === "game1"
-              ? "心有靈犀一點通"
-              : room.game === "game2"
-              ? "9upper瞎掰王"
-              : room.game === "game3"
-              ? "He/She's a 10"
-              : room.game === "game4"
-              ? "Most Likely To 邊個至似"
-              : room.game === "game5"
-              ? "故事接龍"
-              : "未知遊戲"
-          }
+          ${GAME_NAMES[room.game] || "未知遊戲"}
         </b>
       </div>
     </div>
+
+    ${
+      room.game === "game6" && room.g6Settings
+        ? `<p class="notice" style="margin:10px 0 0">
+            每 round ${Math.round(room.g6Settings.answerMs / 1000)} 秒 ·
+            ${room.g6Settings.rounds} round ·
+            投票合併 ${Math.round(room.g6Settings.voteMs / 1000)} 秒 ·
+            ${room.language === "zh" ? "台灣版" : "香港版"}
+          </p>`
+        : ""
+    }
 
     <div style="height:14px"></div>
 
@@ -1239,36 +1349,51 @@ function renderScoreboard(room) {
   );
 
   roomPanel.innerHTML = `
-    <div class="row" style="justify-content:space-between;align-items:center">
+    <div class="sb-head">
       <div class="eyebrow">SCOREBOARD</div>
       <div class="eyebrow">${esc(room.code)}</div>
     </div>
 
-    <div class="players">
+    <div class="sb-list">
       ${sorted
-        .map((p) => {
+        .map((p, index) => {
           const isHost = p.id === room.hostId;
           const isRater = raterId && p.id === raterId;
           const isNextRater = nextRaterId && p.id === nextRaterId;
+          const isMe = p.id === S.playerId;
 
           return `
-            <div class="player ${isHost ? "host" : ""}" style="opacity:${p.connected ? "1" : ".5"}">
-              <div>
+            <div class="sb-row ${isMe ? "me" : ""}" style="opacity:${p.connected ? "1" : ".5"}">
+              <span class="sb-rank">${index + 1}</span>
+              <span class="sb-name">
                 ${
                   isHost
                     ? `<span class="host-crown"><svg viewBox="0 0 24 24"><path d="M3 9 L7 12 L12 6 L17 12 L21 9 L19 16 L5 16 Z" fill="#F2D965"/><circle cx="3" cy="9" r="1.4" fill="#1f2740"/><circle cx="12" cy="6" r="1.4" fill="#1f2740"/><circle cx="21" cy="9" r="1.4" fill="#1f2740"/></svg></span>`
                     : ""
-                }
-                ${esc(p.nickname)}
-                ${isRater ? '<span class="notice" style="margin:0">（莊家）</span>' : ""}
-                ${isNextRater ? '<span class="notice" style="margin:0;color:var(--game-accent)">（下一位莊家）</span>' : ""}
-              </div>
-              <b>${p.score || 0}</b>
+                }${esc(p.nickname)}${isMe ? "（你）" : ""}
+                ${isRater ? '<span class="sb-tag">莊家</span>' : ""}
+                ${isNextRater ? '<span class="sb-tag">下一位莊家</span>' : ""}
+              </span>
+              <b class="sb-score">${p.score || 0}</b>
             </div>
           `;
         })
         .join("")}
     </div>
+
+    ${
+      S.room?.game === "game6" &&
+      room.hostId === S.playerId &&
+      room.gameState?.phase !== "gameover"
+        ? `<button
+            class="btn btn-outline"
+            style="margin-top:8px;font-size:13px;padding:10px"
+            onclick="g6EndEarly()"
+          >
+            提前結算
+          </button>`
+        : ""
+    }
 
     ${
       S.room?.game === "game3" &&
@@ -1328,7 +1453,7 @@ function renderGame() {
   const game =
     S.room?.gameState;
 
-  if (!game) {
+  if (!game || game.phase === "waiting") {
     $("#gamePanel").innerHTML = `
       <div class="eyebrow">
         READY
@@ -1355,6 +1480,8 @@ function renderGame() {
     renderGame4(game);
   } else if (S.room.game === "game5") {
     renderGame5(game);
+  } else if (S.room.game === "game6") {
+    renderGame6(game);
   } else {
     renderGame2(game);
   }
@@ -1365,13 +1492,32 @@ function startTimer(element, endsAt) {
 
   if (!element || !endsAt) return;
 
+  // 圓形倒數：第一次見到呢個 endsAt 時嘅剩餘時間當做總長，重畫畫面都唔會由頭開始。
+  S.timerTotals = S.timerTotals || {};
+  if (!S.timerTotals[endsAt]) {
+    S.timerTotals[endsAt] = Math.max(1000, endsAt - Date.now());
+  }
+  const total = S.timerTotals[endsAt];
+  const C = 163.4;
+
+  element.classList.add("timer-ring");
+  element.innerHTML = `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle class="tr-track" cx="32" cy="32" r="26"></circle>
+      <circle class="tr-bar" cx="32" cy="32" r="26" stroke-dasharray="${C}" transform="rotate(-90 32 32)"></circle>
+    </svg>
+    <span class="tr-num"></span>
+  `;
+  const bar = element.querySelector(".tr-bar");
+  const num = element.querySelector(".tr-num");
+
   const update = () => {
     const remaining =
       Math.max(0, endsAt - Date.now());
 
-    element.textContent =
-      (remaining / 1000)
-        .toFixed(1) + "s";
+    num.textContent = String(Math.ceil(remaining / 1000));
+    bar.setAttribute("stroke-dashoffset", String(C * (1 - Math.min(1, remaining / total))));
+    element.setAttribute("aria-label", `剩低 ${Math.ceil(remaining / 1000)} 秒`);
   };
 
   update();
@@ -1476,18 +1622,6 @@ if (game.phase === "intro") {
       ? "selected"
       : ""
   }"
-  style="
-    background:${
-      myVote === index
-        ? "var(--yellow)"
-        : "#fff"
-    };
-    border-color:${
-      myVote === index
-        ? "var(--yellow-deep)"
-        : "#e7e9ee"
-    };
-  "
   ${
     myVote !== undefined
       ? "disabled"
@@ -2542,7 +2676,7 @@ function renderGame3Writing(game) {
 
       <div class="question">
         莊家心水數字係
-        <b style="color:#fff;font-size:1.3em">${game.myTarget}</b>
+        <b class="g3-target">${game.myTarget}</b>
         分。寫一句「佢係十分，但係___」，愈貼近呢個分，你嘅分數先會愈高。
       </div>
 
@@ -3430,3 +3564,558 @@ function askConfirm(message) {
       );
   });
 }
+
+/* =========================
+   Game 6 · Sync 唔 Sync
+   （介面跟房間語言：yue = 香港版廣東話，zh = 台灣版書面語）
+========================= */
+
+const G6_TEXT = {
+  yue: {
+    answerTitle: "諗到咩，打咩！",
+    answerSub: "同其他人撞啱同一個字就 Sync 咗",
+    yourAnswer: "你嘅答案",
+    placeholder: "第一個諗到嘅字",
+    limit: "中文最多 4 字 · 英文最多 8 個字元",
+    lock: "鎖定答案",
+    lockNote: "交咗就唔可以改",
+    locked: "已鎖定",
+    waitOthers: "等緊其他人交答案……",
+    answered: "已作答",
+    tooLong: "太長喇：中文最多 4 字，英文最多 8 個字元",
+    empty: "打個字先",
+    mergeTitle: "有冇答案應該算同一個？",
+    mergeHint: "撳兩個答案就可以提議合併。完全相同嘅已經自動歸埋一齊。",
+    picked: "已揀",
+    mine: "你嘅答案",
+    proposeBy: (n) => `${n} 提議合併`,
+    agree: "算同一個",
+    disagree: "唔算",
+    notEligible: "你答咗其中一個，唔使投",
+    youVoted: (v) => (v ? "你投咗：算同一個" : "你投咗：唔算"),
+    passed: "✓ 已合併",
+    failed: "✗ 唔合併",
+    skip: "冇嘢要合併",
+    skipped: "你揀咗冇嘢要合併",
+    skipCount: (a, b) => `${a} / ${b} 人話冇嘢要合併，全部人撳咗就即刻揭曉`,
+    reveal: "揭曉",
+    fastest: "最快 SYNC",
+    noSync: "今 round 冇人 Sync 到",
+    others: "其他答案",
+    sec: (t) => `${(t / 1000).toFixed(1)} 秒`,
+    slower: "慢咗，冇分",
+    later: "第三個或之後，冇分",
+    merged: "投票合併",
+    sync1: "默契 +1",
+    noAnswer: (names) => `冇作答：${names}`,
+    nextRound: "準備入下一 round",
+    lastRound: "準備結算",
+    bestPair: "最 Sync 拍檔：",
+    noPair: "今局冇人 Sync 過",
+    radarTitle: (n) => `${n} 同邊個最 Sync`,
+    radarUnit: "同步 round 數",
+    pairRank: "最佳拍檔排名",
+    pairCount: (c, r) => `${c} / ${r} round 同步`,
+    twoPlayer: (p) => `你哋嘅默契度：${p}%`,
+    endedEarly: "房主提前結算",
+    again: "再玩一局",
+    lobby: "返大廳",
+    waitHost: "等房主決定再玩一局定散 Band",
+    ranking: "總分"
+  },
+  zh: {
+    answerTitle: "想到什麼，就打什麼！",
+    answerSub: "和其他人寫出同一個詞就 Sync 了",
+    yourAnswer: "你的答案",
+    placeholder: "第一個想到的詞",
+    limit: "中文最多 4 字 · 英文最多 8 個字元",
+    lock: "鎖定答案",
+    lockNote: "送出後就不能修改",
+    locked: "已鎖定",
+    waitOthers: "等待其他人送出答案……",
+    answered: "已作答",
+    tooLong: "太長了：中文最多 4 字，英文最多 8 個字元",
+    empty: "請先輸入",
+    mergeTitle: "有沒有答案應該算同一個？",
+    mergeHint: "點選兩個答案就可以提議合併。完全相同的已自動歸在一起。",
+    picked: "已選",
+    mine: "你的答案",
+    proposeBy: (n) => `${n} 提議合併`,
+    agree: "算同一個",
+    disagree: "不算",
+    notEligible: "你寫了其中一個，不用投票",
+    youVoted: (v) => (v ? "你投了：算同一個" : "你投了：不算"),
+    passed: "✓ 已合併",
+    failed: "✗ 不合併",
+    skip: "沒有要合併",
+    skipped: "你選了沒有要合併",
+    skipCount: (a, b) => `${a} / ${b} 人表示沒有要合併，全部人按下就立即揭曉`,
+    reveal: "揭曉",
+    fastest: "最快 SYNC",
+    noSync: "這一回合沒有人 Sync",
+    others: "其他答案",
+    sec: (t) => `${(t / 1000).toFixed(1)} 秒`,
+    slower: "比較慢，沒有得分",
+    later: "第三位或之後，沒有得分",
+    merged: "投票合併",
+    sync1: "默契 +1",
+    noAnswer: (names) => `沒有作答：${names}`,
+    nextRound: "準備進入下一回合",
+    lastRound: "準備結算",
+    bestPair: "最 Sync 拍檔：",
+    noPair: "這局沒有人 Sync 過",
+    radarTitle: (n) => `${n} 和誰最 Sync`,
+    radarUnit: "同步回合數",
+    pairRank: "最佳拍檔排名",
+    pairCount: (c, r) => `${c} / ${r} 回合同步`,
+    twoPlayer: (p) => `你們的默契度：${p}%`,
+    endedEarly: "房主提前結算",
+    again: "再玩一局",
+    lobby: "返回大廳",
+    waitHost: "等待房主決定是否再玩一局",
+    ranking: "總分"
+  }
+};
+
+function g6T() {
+  return G6_TEXT[S.room?.language === "zh" ? "zh" : "yue"];
+}
+
+// 中文字算 2 個單位、英文字元算 1 個，上限 8 個單位（同伺服器一樣計法）。
+function g6Units(text) {
+  let units = 0;
+  for (const ch of String(text || "").replace(/\s+/g, "")) {
+    units += /[\u0000-ɏ]/.test(ch) ? 1 : 2;
+  }
+  return units;
+}
+
+function g6CountLabel(text) {
+  const clean = String(text || "").replace(/\s+/g, "");
+  const units = g6Units(clean);
+  const hasCjk = [...clean].some((ch) => !/[\u0000-ɏ]/.test(ch));
+  return hasCjk ? `${Math.ceil(units / 2)} / 4` : `${clean.length} / 8`;
+}
+
+function g6Head(game, extraPill = "") {
+  return `
+    <div class="g6-head">
+      <div>
+        <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
+        ${extraPill}
+      </div>
+      ${game.endsAt ? `<div id="time" class="timer"></div>` : ""}
+    </div>
+  `;
+}
+
+function renderGame6(game) {
+  if (game.phase === "answering") return renderGame6Answering(game);
+  if (game.phase === "merging") return renderGame6Merging(game);
+  if (game.phase === "reveal") return renderGame6Reveal(game);
+  if (game.phase === "gameover") return renderGame6Gameover(game);
+}
+
+function renderGame6Answering(game) {
+  const t = g6T();
+  const key = `g6-answer-${game.round}-${game.mySubmitted ? "done" : "open"}`;
+
+  // 其他人交答案會觸發 state 廣播：只更新人數，唔好重畫，免得洗走你打緊嘅字。
+  if (S.g6Key === key) {
+    const count = $("#g6Count");
+    if (count) count.textContent = `${game.submittedCount} / ${game.totalCount}`;
+    return;
+  }
+  S.g6Key = key;
+  S.g6Pick = [];
+
+  $("#gamePanel").innerHTML = `
+    ${g6Head(game)}
+    <h2 class="g6-big">${esc(t.answerTitle)}</h2>
+    <p class="g6-sub">${esc(t.answerSub)}</p>
+
+    ${
+      game.mySubmitted
+        ? `
+          <div class="g6-locked">
+            <span class="g6-locked-label">${esc(t.locked)}</span>
+            <strong>${esc(game.myAnswer || "")}</strong>
+          </div>
+          <p class="g6-sub">${esc(t.waitOthers)}</p>
+        `
+        : `
+          <label class="g6-field">
+            <span>${esc(t.yourAnswer)}</span>
+            <span class="g6-input-row">
+              <input id="g6Input" type="text" maxlength="8" autocomplete="off" placeholder="${esc(t.placeholder)}">
+              <button id="g6Submit" type="button" class="btn btn-dark g6-lock-btn" disabled>${esc(t.lock)}</button>
+            </span>
+            <span class="g6-hint">
+              <span id="g6Limit">${esc(t.limit)} · ${esc(t.lockNote)}</span>
+              <span id="g6Units">0 / 4</span>
+            </span>
+          </label>
+        `
+    }
+
+    <div class="g6-status">
+      <span>${esc(t.answered)}</span>
+      <strong id="g6Count">${game.submittedCount} / ${game.totalCount}</strong>
+    </div>
+  `;
+
+  const input = $("#g6Input");
+  const button = $("#g6Submit");
+  if (input && button) {
+    const update = () => {
+      const clean = input.value.replace(/\s+/g, "");
+      const units = g6Units(clean);
+      const tooLong = units > 8;
+      $("#g6Units").textContent = g6CountLabel(input.value);
+      $("#g6Limit").textContent = tooLong ? t.tooLong : `${t.limit} · ${t.lockNote}`;
+      $("#g6Limit").classList.toggle("g6-warn", tooLong);
+      button.disabled = !clean || tooLong;
+    };
+    const submit = () => {
+      const value = input.value.trim();
+      if (!value) return flash(t.empty);
+      if (g6Units(value) > 8) return flash(t.tooLong);
+      button.disabled = true;
+      send({ type: "g6:submit", text: value });
+    };
+    input.addEventListener("input", update);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.isComposing) submit();
+    });
+    button.addEventListener("click", submit);
+    input.focus();
+  }
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
+
+function g6Words(words) {
+  return (words || []).map(esc).join(" / ");
+}
+
+function renderGame6Merging(game) {
+  const t = g6T();
+  S.g6Key = `g6-merge-${game.round}`;
+  if (S.g6PickRound !== game.round) {
+    S.g6Pick = [];
+    S.g6PickRound = game.round;
+  }
+  const groupIds = new Set((game.groups || []).map((g) => g.id));
+  S.g6Pick = (S.g6Pick || []).filter((id) => groupIds.has(id));
+
+  const groupsHtml = (game.groups || []).map((g) => {
+    const picked = S.g6Pick.includes(g.id);
+    return `
+      <button type="button" class="g6-group ${picked ? "picked" : ""}" onclick="g6PickGroup('${g.id}')">
+        <strong>${g6Words(g.words)}</strong>
+        <span>${g.count} 人${picked ? ` · ${esc(t.picked)}` : ""}${g.id === game.myGroupId ? ` · ${esc(t.mine)}` : ""}</span>
+      </button>
+    `;
+  }).join("");
+
+  const proposalsHtml = (game.proposals || []).map((pr) => {
+    let action = "";
+    if (pr.status === "passed") action = `<p class="g6-pr-result">${esc(t.passed)}</p>`;
+    else if (pr.status === "failed") action = `<p class="g6-pr-result">${esc(t.failed)}</p>`;
+    else if (!pr.myEligible) action = `<p class="g6-pr-note">${esc(t.notEligible)}</p>`;
+    else if (pr.myVote !== null && pr.myVote !== undefined) action = `<p class="g6-pr-note">${esc(t.youVoted(pr.myVote))}</p>`;
+    else action = `
+      <div class="g6-pr-actions">
+        <button type="button" class="btn btn-yellow" onclick="g6VoteMerge('${pr.id}', true)">${esc(t.agree)}</button>
+        <button type="button" class="btn g6-ghost" onclick="g6VoteMerge('${pr.id}', false)">${esc(t.disagree)}</button>
+      </div>
+    `;
+    return `
+      <div class="g6-proposal ${pr.status}">
+        <div class="eyebrow">${esc(t.proposeBy(pr.byNickname))}</div>
+        <div class="g6-pr-words">
+          <span>${g6Words(pr.wordsA)}</span><b>=</b><span>${g6Words(pr.wordsB)}</span><b>？</b>
+        </div>
+        ${action}
+        <div class="g6-pr-count">已投 ${pr.yes + pr.no} / ${pr.eligibleCount}</div>
+      </div>
+    `;
+  }).join("");
+
+  $("#gamePanel").innerHTML = `
+    ${g6Head(game)}
+    <h2 class="g6-mid">${esc(t.mergeTitle)}</h2>
+    <div class="g6-groups">${groupsHtml}</div>
+    <p class="g6-sub">${esc(t.mergeHint)}</p>
+    ${proposalsHtml}
+    <div class="g6-status">
+      ${
+        game.mySkip
+          ? `<span>${esc(t.skipped)}</span>`
+          : `<button type="button" class="btn g6-ghost" onclick="g6Skip()">${esc(t.skip)}</button>`
+      }
+      <small>${esc(t.skipCount(game.skipCount, game.totalCount))}</small>
+    </div>
+  `;
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
+
+window.g6PickGroup = (id) => {
+  const game = S.room?.gameState;
+  if (!game || game.phase !== "merging") return;
+  if (S.g6Pick.includes(id)) {
+    S.g6Pick = S.g6Pick.filter((x) => x !== id);
+  } else {
+    S.g6Pick = [...S.g6Pick, id];
+  }
+  if (S.g6Pick.length === 2) {
+    const [a, b] = S.g6Pick;
+    S.g6Pick = [];
+    send({ type: "g6:propose", a, b });
+  }
+  renderGame6Merging(game);
+};
+
+window.g6VoteMerge = (proposalId, agree) => {
+  send({ type: "g6:vote", proposalId, agree });
+};
+
+window.g6Skip = () => {
+  send({ type: "g6:skip" });
+};
+
+window.g6EndEarly = async () => {
+  const ok = await askConfirm("肯定提前結算？之後就唔可以再繼續呢局。");
+  if (!ok) return;
+  send({ type: "g6:end" });
+};
+
+window.g6Restart = () => {
+  send({ type: "g6:restart" });
+};
+
+function renderGame6Reveal(game) {
+  const t = g6T();
+  S.g6Key = `g6-reveal-${game.round}`;
+  const result = game.result || { groups: [] };
+  const winner = result.groups.find((g) => g.id === result.winnerGroupId) || null;
+  const winnerIds = new Set(result.winnerIds || []);
+
+  const memberChip = (m) => `
+    <span class="g6-chip ${m.merged ? "merged" : ""}">
+      ${esc(m.nickname)} · ${esc(m.text)} · ${esc(t.sec(m.t))}${m.merged ? ` · ${esc(t.merged)}` : ""}
+    </span>
+  `;
+
+  const winnerHtml = winner
+    ? `
+      <div class="g6-win">
+        <div class="g6-win-head">
+          <span class="eyebrow">${esc(t.fastest)}</span>
+          <span class="g6-pill-dark">${esc(t.sec(winner.syncAt))}</span>
+        </div>
+        <div class="g6-win-word">${g6Words(winner.words)}</div>
+        <div class="g6-win-pair">
+          ${winner.members.filter((m) => winnerIds.has(m.id)).map((m) => `
+            <div class="g6-win-player">
+              <b>${esc(m.nickname)}</b>
+              <small>${esc(m.text)} · ${esc(t.sec(m.t))}</small>
+              <strong>+${result.points}</strong>
+            </div>
+          `).join("")}
+        </div>
+        ${winner.members.filter((m) => !winnerIds.has(m.id)).map((m) => `
+          <div class="g6-win-extra">
+            <span>${esc(m.nickname)}「${esc(m.text)}」· ${esc(t.sec(m.t))}${m.merged ? ` · ${esc(t.merged)}` : ""} · ${esc(t.later)}</span>
+            <span>${esc(t.sync1)}</span>
+          </div>
+        `).join("")}
+      </div>
+    `
+    : `<div class="g6-win"><div class="g6-win-word g6-none">${esc(t.noSync)}</div></div>`;
+
+  const othersHtml = result.groups
+    .filter((g) => !winner || g.id !== winner.id)
+    .map((g) => `
+      <div class="g6-other">
+        <div class="g6-other-head">
+          <strong>${g6Words(g.words)}</strong>
+          ${g.syncAt !== null ? `<small>${esc(t.sec(g.syncAt))} Sync · ${esc(t.slower)}</small>` : ""}
+        </div>
+        <div class="g6-chips">${g.members.map(memberChip).join("")}</div>
+        ${g.syncAt !== null ? `<small class="g6-other-note">${esc(t.sync1)}</small>` : ""}
+      </div>
+    `).join("");
+
+  $("#gamePanel").innerHTML = `
+    ${g6Head(game, `<span class="g6-pill-dark">${esc(t.reveal)}</span>`)}
+    ${winnerHtml}
+    ${othersHtml ? `<div class="eyebrow g6-section-label">${esc(t.others)}</div>${othersHtml}` : ""}
+    ${result.noAnswer?.length ? `<p class="g6-sub">${esc(t.noAnswer(result.noAnswer.join("、")))}</p>` : ""}
+    <p class="g6-sub">${esc(game.round >= game.totalRounds ? t.lastRound : t.nextRound)}</p>
+  `;
+
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
+
+function g6PairMap(pairs) {
+  const map = {};
+  for (const p of pairs || []) {
+    map[`${p.a}|${p.b}`] = p.count;
+    map[`${p.b}|${p.a}`] = p.count;
+  }
+  return map;
+}
+
+function g6RadarSvg(sel, players, counts, rounds) {
+  const others = players.filter((p) => p.id !== sel.id);
+  const k = others.length;
+  const cx = 165, cy = 135, R = 92;
+  const max = Math.max(1, rounds);
+  const pt = (i, f) => {
+    const a = (-90 + (360 / k) * i) * Math.PI / 180;
+    return [cx + R * f * Math.cos(a), cy + R * f * Math.sin(a)];
+  };
+  const ring = (f) => others.map((_, i) => pt(i, f).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const spokes = others.map((_, i) => {
+    const [x, y] = pt(i, 1);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"></line>`;
+  }).join("");
+  const poly = others.map((p, i) => pt(i, (counts[`${sel.id}|${p.id}`] || 0) / max).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const labels = others.map((p, i) => {
+    const a = (-90 + (360 / k) * i) * Math.PI / 180;
+    const x = cx + (R + 24) * Math.cos(a);
+    const y = cy + (R + 20) * Math.sin(a);
+    const anchor = Math.abs(Math.cos(a)) < 0.2 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
+    return `
+      <text x="${x.toFixed(1)}" y="${(y - 2).toFixed(1)}" text-anchor="${anchor}" class="g6-rl-name">${esc(p.nickname)}</text>
+      <text x="${x.toFixed(1)}" y="${(y + 13).toFixed(1)}" text-anchor="${anchor}" class="g6-rl-val">${counts[`${sel.id}|${p.id}`] || 0} / ${rounds}</text>
+    `;
+  }).join("");
+  return `
+    <svg class="g6-radar" viewBox="0 0 330 270" role="img" aria-label="${esc(sel.nickname)} 同其他玩家嘅同步雷達圖">
+      <g class="g6-grid">
+        <polygon points="${ring(1)}" class="outer"></polygon>
+        <polygon points="${ring(0.75)}"></polygon>
+        <polygon points="${ring(0.5)}"></polygon>
+        <polygon points="${ring(0.25)}"></polygon>
+        ${spokes}
+      </g>
+      <polygon points="${poly}" class="g6-poly"></polygon>
+      ${labels}
+    </svg>
+  `;
+}
+
+function renderGame6Gameover(game) {
+  const t = g6T();
+  S.g6Key = "g6-over";
+  const players = S.room.players || [];
+  const ranking = game.ranking || [];
+  const pairs = game.pairs || [];
+  const rounds = Math.max(1, game.playedRounds || 0);
+  const counts = g6PairMap(pairs);
+  const top = pairs[0] && pairs[0].count > 0 ? pairs[0] : null;
+  const isHost = S.room.hostId === S.playerId;
+
+  if (!S.g6RadarSel || !players.some((p) => p.id === S.g6RadarSel)) {
+    S.g6RadarSel = players.some((p) => p.id === S.playerId) ? S.playerId : players[0]?.id;
+  }
+  const sel = players.find((p) => p.id === S.g6RadarSel) || players[0];
+
+  let chartHtml = "";
+  if (players.length >= 4 && sel) {
+    chartHtml = `
+      <div class="g6-chart">
+        <div class="g6-chart-head">
+          <strong>${esc(t.radarTitle(sel.nickname))}</strong>
+          <small>${esc(t.radarUnit)} / ${rounds}</small>
+        </div>
+        <div class="g6-radar-chips">
+          ${players.map((p) => `
+            <button type="button" class="g6-rchip ${p.id === sel.id ? "active" : ""}" onclick="g6RadarPick('${p.id}')">${esc(p.nickname)}</button>
+          `).join("")}
+        </div>
+        ${g6RadarSvg(sel, players, counts, rounds)}
+      </div>
+    `;
+  } else if (players.length === 3 && sel) {
+    // 3 個人得兩條軸，雷達圖畫唔到形狀，改用橫條。
+    chartHtml = `
+      <div class="g6-chart">
+        <div class="g6-chart-head">
+          <strong>${esc(t.radarTitle(sel.nickname))}</strong>
+          <small>${esc(t.radarUnit)} / ${rounds}</small>
+        </div>
+        <div class="g6-radar-chips">
+          ${players.map((p) => `
+            <button type="button" class="g6-rchip ${p.id === sel.id ? "active" : ""}" onclick="g6RadarPick('${p.id}')">${esc(p.nickname)}</button>
+          `).join("")}
+        </div>
+        ${players.filter((p) => p.id !== sel.id).map((p) => {
+          const c = counts[`${sel.id}|${p.id}`] || 0;
+          return `
+            <div class="g6-bar-row">
+              <span>${esc(p.nickname)}</span>
+              <span class="g6-bar"><span style="width:${Math.round((c / rounds) * 100)}%"></span></span>
+              <b>${c} / ${rounds}</b>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  } else if (players.length === 2) {
+    const c = pairs[0]?.count || 0;
+    chartHtml = `
+      <div class="g6-chart g6-duo">
+        <strong>${esc(t.twoPlayer(Math.round((c / rounds) * 100)))}</strong>
+        <small>${esc(t.pairCount(c, rounds))}</small>
+      </div>
+    `;
+  }
+
+  $("#gamePanel").innerHTML = `
+    <div class="eyebrow">GAME OVER · ${game.playedRounds || 0} ROUNDS${game.endedEarly ? ` · ${esc(t.endedEarly)}` : ""}</div>
+    <h2 class="g6-mid">
+      ${top ? `${esc(t.bestPair)}<span>${esc(top.aNickname)} × ${esc(top.bNickname)}</span>` : esc(t.noPair)}
+    </h2>
+
+    <div class="g6-rank">
+      ${ranking.map((r, i) => `
+        <div class="g6-rank-row ${i === 0 ? "first" : ""} ${r.id === S.playerId ? "me" : ""}">
+          <span>${i + 1} · ${esc(r.nickname)}</span><b>${r.score}</b>
+        </div>
+      `).join("")}
+    </div>
+
+    ${chartHtml}
+
+    ${
+      pairs.length > 1
+        ? `
+          <div class="eyebrow g6-section-label">${esc(t.pairRank)}</div>
+          <div class="g6-pairs">
+            ${pairs.slice(0, 3).map((p, i) => `
+              <div class="g6-pair-row ${i === 0 && p.count > 0 ? "first" : ""}">
+                <span>${esc(p.aNickname)} × ${esc(p.bNickname)}</span>
+                <b>${esc(t.pairCount(p.count, rounds))}</b>
+              </div>
+            `).join("")}
+          </div>
+        `
+        : ""
+    }
+
+    <div class="g6-end-actions">
+      ${isHost ? `<button type="button" class="btn btn-yellow" onclick="g6Restart()">${esc(t.again)}</button>` : `<p class="g6-sub">${esc(t.waitHost)}</p>`}
+      <button type="button" class="btn btn-outline" onclick="leaveRoom()">${esc(t.lobby)}</button>
+    </div>
+  `;
+  clearInterval(S.timer);
+}
+
+window.g6RadarPick = (id) => {
+  S.g6RadarSel = id;
+  if (S.room?.gameState?.phase === "gameover") renderGame6Gameover(S.room.gameState);
+};

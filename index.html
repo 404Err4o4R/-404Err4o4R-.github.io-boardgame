@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=10">
+  <link rel="stylesheet" href="./style.css?v=11">
 </head>
 
 <body>
@@ -237,6 +237,10 @@
                 故事接龍
               </option>
 
+              <option value="game6">
+                Sync 唔 Sync
+              </option>
+
             </select>
 
           </label>
@@ -255,8 +259,8 @@
               id="langBox"
               class="filter-box"
             >
-              <button type="button" class="filter-chip lang-chip active" data-lang="yue">廣東話</button>
-              <button type="button" class="filter-chip lang-chip" data-lang="zh">書面語</button>
+              <button type="button" class="filter-chip lang-chip active" data-lang="yue">香港</button>
+              <button type="button" class="filter-chip lang-chip" data-lang="zh">台灣</button>
             </div>
 
           </div>
@@ -374,6 +378,52 @@
               最少 3 人先可以開始遊戲
             </p>
 
+          </div>
+
+
+          <div
+            id="g6Section"
+            class="hidden"
+          >
+            <div class="label-row">
+              <span>每 round 時間</span>
+            </div>
+            <div id="g6TimeBox" class="filter-box">
+              <button type="button" class="filter-chip g6-time-chip" data-sec="10">10 秒</button>
+              <button type="button" class="filter-chip g6-time-chip active" data-sec="20">20 秒</button>
+              <button type="button" class="filter-chip g6-time-chip" data-sec="30">30 秒</button>
+            </div>
+
+            <div class="label-row" style="margin-top:14px">
+              <span>回合數</span>
+            </div>
+            <div id="g6RoundsBox" class="filter-box">
+              <button type="button" class="filter-chip g6-rounds-chip" data-rounds="5">5輪</button>
+              <button type="button" class="filter-chip g6-rounds-chip active" data-rounds="10">10輪</button>
+              <button type="button" class="filter-chip g6-rounds-chip" data-rounds="20">20輪</button>
+              <button type="button" class="filter-chip g6-rounds-chip" data-rounds="custom">自定義</button>
+            </div>
+            <input
+              id="g6RoundsCustom"
+              type="number"
+              min="3"
+              max="30"
+              placeholder="輸入回合數（3-30）"
+              class="hidden"
+              style="margin-top:8px"
+            >
+
+            <div class="label-row" style="margin-top:14px">
+              <span>投票合併時間</span>
+            </div>
+            <div class="g6-stepper">
+              <button type="button" class="g6-step-btn" data-step="-5" aria-label="減少投票時間">−</button>
+              <strong id="g6VoteLabel">10 秒</strong>
+              <button type="button" class="g6-step-btn" data-step="5" aria-label="增加投票時間">+</button>
+            </div>
+            <p class="notice" style="margin:6px 0 0">
+              打第一個諗到嘅字，撞啱就得分。2–6 人。
+            </p>
           </div>
 
 
@@ -712,6 +762,42 @@
 
       </article>
 
+
+      <article class="game-card lime-card">
+
+        <div class="sticker">
+          06
+        </div>
+
+        <div class="game-icon">
+          🔗
+        </div>
+
+        <h3>
+          Sync<br>
+          唔 Sync
+        </h3>
+
+        <p>
+          冇題目，打第一個諗到嘅字。
+          最快同人撞啱嗰兩個得分，最後睇邊對最夾。
+        </p>
+
+        <div class="tag-row">
+          <span>WORD</span>
+          <span>SYNC</span>
+          <span>2–6</span>
+        </div>
+
+        <button
+          class="btn btn-dark"
+          data-start="game6"
+        >
+          PLAY THIS GAME
+        </button>
+
+      </article>
+
     </div>
 
   </section>
@@ -799,6 +885,8 @@
 
     </div>
 
+    <div id="gameLabel" class="game-pill hidden"></div>
+
     <div class="top-spacer"></div>
 
     <div
@@ -833,7 +921,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=29" defer></script>
+<script src="./app.js?v=30" defer></script>
 
 </body>
 </html>

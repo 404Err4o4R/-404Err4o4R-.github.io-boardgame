@@ -7,6 +7,7 @@ import {
   GAME4_QUESTIONS,
   GAME5_OPENERS
 } from "./question-bank/loader.js";
+import { G6_S2T_PAIRS } from "./question-bank/g6-chars.js";
 
 const MAX_PLAYERS = 6;
 const MIN_PLAYERS = 2;
@@ -37,6 +38,17 @@ const G5_SENTENCE_MAX_LEN = 15;
 const G5_CHAR_MAX_LEN = 5;
 const G5_SENTENCE_ROUND_OPTIONS = [10, 15, 25];
 const G5_CHAR_ROUND_OPTIONS = [20, 50, 100];
+
+const G6_ANSWER_MS_OPTIONS = [10000, 20000, 30000];
+const G6_ROUND_MIN = 3;
+const G6_ROUND_MAX = 30;
+const G6_VOTE_MS_MIN = 5000;
+const G6_VOTE_MS_MAX = 30000;
+const G6_VOTE_MS_DEFAULT = 10000;
+const G6_REVEAL_MS = 7000;
+const G6_MAX_UNITS = 8; // 中文字算 2 個單位，英文字元算 1 個：即係中文最多 4 字、英文最多 8 個字元
+const G6_BASE_POINTS = 50;
+const G6_SPEED_POINTS = 50;
 
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
@@ -72,7 +84,7 @@ function shuffle(a) {
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6"; }
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
@@ -86,6 +98,43 @@ function clampG4Rounds(v) {
   const n = Number(v);
   return G4_ROUND_OPTIONS.includes(n) ? n : G4_ROUND_OPTIONS[0];
 }
+function clampG6AnswerMs(v) {
+  const n = Number(v);
+  return G6_ANSWER_MS_OPTIONS.includes(n) ? n : 20000;
+}
+function clampG6Rounds(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return 10;
+  return Math.min(G6_ROUND_MAX, Math.max(G6_ROUND_MIN, n));
+}
+function clampG6VoteMs(v) {
+  const n = Math.round(Number(v) / 1000) * 1000;
+  if (!Number.isFinite(n) || n <= 0) return G6_VOTE_MS_DEFAULT;
+  return Math.min(G6_VOTE_MS_MAX, Math.max(G6_VOTE_MS_MIN, n));
+}
+
+// ===== Game 6 · Sync 唔 Sync：答案正規化 =====
+const G6_S2T = (() => {
+  const m = new Map();
+  for (let i = 0; i + 1 < G6_S2T_PAIRS.length; i += 2) m.set(G6_S2T_PAIRS[i], G6_S2T_PAIRS[i + 1]);
+  return m;
+})();
+function g6Units(text) {
+  let units = 0;
+  for (const ch of text) units += /[\u0000-\u024F]/.test(ch) ? 1 : 2;
+  return units;
+}
+// 去空格、全形轉半形、大細楷、簡轉繁，之後完全相同就當同一個答案。
+function g6Normalize(text) {
+  const base = String(text || "").normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+  let out = "";
+  for (const ch of base) out += G6_S2T.get(ch) || ch;
+  return out;
+}
+function g6PairKey(a, b) {
+  return a < b ? a + "|" + b : b + "|" + a;
+}
+
 function clampG5Rounds(mode, v) {
   const options = mode==="char" ? G5_CHAR_ROUND_OPTIONS : G5_SENTENCE_ROUND_OPTIONS;
   const n = Number(v);
@@ -214,6 +263,12 @@ export default {
                 body.g5Mode === "char" ? "char" : "sentence",
               g5Rounds:
                 body.g5Rounds || null,
+              g6AnswerMs:
+                body.g6AnswerSeconds ? body.g6AnswerSeconds*1000 : null,
+              g6Rounds:
+                body.g6Rounds || null,
+              g6VoteMs:
+                body.g6VoteSeconds ? body.g6VoteSeconds*1000 : null,
               roomTtl: ROOM_TTL
             })
           }
@@ -316,6 +371,12 @@ function publicRoom(room, viewerId=null) {
     game: room.game,
     hostId: room.hostId,
     filters: room.filters,
+    language: room.language==="zh" ? "zh" : "yue",
+    g6Settings: room.game==="game6" ? {
+      answerMs: room.g6AnswerMs||20000,
+      rounds: room.g6Rounds||10,
+      voteMs: room.g6VoteMs||G6_VOTE_MS_DEFAULT
+    } : null,
     players: room.players.map(p=>({
   id:p.id,
   nickname:p.nickname,
@@ -546,6 +607,82 @@ results:g.results||null
     return base5;
   }
 
+  if(room.game==="game6") {
+    const connected = room.players.filter(p=>p.connected);
+    const nick = (id)=>room.players.find(p=>p.id===id)?.nickname || "玩家";
+    const base6={
+      phase:g.phase,
+      round:g.round,
+      totalRounds:g.totalRounds,
+      answerMs:g.answerMs,
+      voteMs:g.voteMs,
+      endsAt:g.endsAt||null
+    };
+
+    if(g.phase==="answering"){
+      base6.submittedCount=Object.keys(g.answers||{}).length;
+      base6.totalCount=connected.length;
+      base6.mySubmitted=!!(viewerId && g.answers?.[viewerId]);
+      base6.myAnswer=viewerId ? (g.answers?.[viewerId]?.text || null) : null;
+    }
+
+    if(g.phase==="merging"){
+      const myGroup=(g.groups||[]).find(gr=>viewerId && gr.members.includes(viewerId));
+      // 投票階段只公開答案同人數，邊個答咗咩留返去揭曉先講。
+      base6.groups=(g.groups||[]).map(gr=>({
+        id:gr.id,
+        words:gr.words,
+        count:gr.members.length
+      }));
+      base6.myGroupId=myGroup ? myGroup.id : null;
+      base6.proposals=(g.proposals||[]).map(pr=>{
+        const yes=Object.values(pr.votes).filter(v=>v===true).length;
+        const no=Object.values(pr.votes).filter(v=>v===false).length;
+        return {
+          id:pr.id,
+          a:pr.a,
+          b:pr.b,
+          wordsA:pr.wordsA,
+          wordsB:pr.wordsB,
+          byNickname:nick(pr.by),
+          status:pr.status,
+          yes,
+          no,
+          eligibleCount:pr.eligible.length,
+          myEligible:!!(viewerId && pr.eligible.includes(viewerId)),
+          myVote:viewerId && Object.prototype.hasOwnProperty.call(pr.votes,viewerId) ? pr.votes[viewerId] : null
+        };
+      });
+      base6.skipCount=Object.keys(g.skip||{}).length;
+      base6.totalCount=connected.length;
+      base6.mySkip=!!(viewerId && g.skip?.[viewerId]);
+    }
+
+    if(g.phase==="reveal" && g.result){
+      base6.result=g.result;
+    }
+
+    if(g.phase==="gameover"){
+      base6.endedEarly=!!g.endedEarly;
+      base6.playedRounds=g.playedRounds||0;
+      base6.sync=room.g6Sync||{};
+      base6.ranking=[...room.players]
+        .sort((a,b)=>(b.score||0)-(a.score||0))
+        .map(p=>({id:p.id,nickname:p.nickname,score:p.score||0}));
+      const pairs=[];
+      for(let i=0;i<room.players.length;i++){
+        for(let j=i+1;j<room.players.length;j++){
+          const a=room.players[i], b=room.players[j];
+          const count=(room.g6Sync||{})[g6PairKey(a.id,b.id)]||0;
+          pairs.push({a:a.id,b:b.id,aNickname:a.nickname,bNickname:b.nickname,count});
+        }
+      }
+      base6.pairs=pairs.sort((x,y)=>y.count-x.count);
+    }
+
+    return base6;
+  }
+
   const base={
     phase:g.phase, round:g.round, term:g.term || null,
     endsAt:g.endsAt||null, judgeId:g.judgeId||null,
@@ -612,6 +749,9 @@ export class GameRoom extends DurableObject {
         g4Anonymous:body.g4Anonymous!==false,
         g5Mode:body.g5Mode==="char"?"char":"sentence",
         g5Rounds:clampG5Rounds(body.g5Mode,body.g5Rounds),
+        g6AnswerMs:clampG6AnswerMs(body.g6AnswerMs),
+        g6Rounds:clampG6Rounds(body.g6Rounds),
+        g6VoteMs:clampG6VoteMs(body.g6VoteMs),
         hostId:null,
         players:[],
         gameState:null,
@@ -656,7 +796,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
-    if(game==="game3" || game==="game4" || game==="game5") return [];
+    if(game==="game3" || game==="game4" || game==="game5" || game==="game6") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -709,6 +849,12 @@ export class GameRoom extends DurableObject {
       case "g4:end": return this.onG4End(session.playerId);
       case "g5:submit": return this.onG5Submit(session.playerId,msg.text);
       case "g5:end": return this.onG5End(session.playerId);
+      case "g6:submit": return this.onG6Submit(session.playerId,msg.text);
+      case "g6:propose": return this.onG6Propose(session.playerId,msg.a,msg.b);
+      case "g6:vote": return this.onG6Vote(session.playerId,msg.proposalId,msg.agree);
+      case "g6:skip": return this.onG6Skip(session.playerId);
+      case "g6:end": return this.onG6End(session.playerId);
+      case "g6:restart": return this.onG6Restart(session.playerId);
       case "reconnect": return this.onReconnect(ws,session.playerId);
       default: return this.safeSend(ws,{type:"error",message:"未知操作。"});
     }
@@ -844,10 +990,21 @@ async onReady(playerId, ready){
       if(this.room.game==="game1" && this.room.gameState?.phase==="chat"){
         this.room.gameState.nextReady[p.id]=true;
       }
+      if(await this.g6AfterDisconnect()) return;
     }
 
     await this.save();
     await this.broadcastRoom();
+  }
+
+  // Sync 唔 Sync：有人斷線之後，如果剩低嘅人已經全部作答，就唔使等到時間完。
+  async g6AfterDisconnect(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="answering") return false;
+    const connected=this.room.players.filter(p=>p.connected);
+    if(!connected.length || !connected.every(p=>g.answers[p.id])) return false;
+    await this.startMergingGame6();
+    return true;
   }
 
   async onStart(playerId){
@@ -877,6 +1034,7 @@ if (notReady.length > 0) {
     else if(this.room.game==="game3") await this.startGame3();
     else if(this.room.game==="game4") await this.startGame4();
     else if(this.room.game==="game5") await this.startGame5();
+    else if(this.room.game==="game6") await this.startGame6();
     else await this.startGame2();
   }
 
@@ -1974,6 +2132,314 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
 
+  /* =========================
+     Game 6 · Sync 唔 Sync
+  ========================= */
+
+  async startGame6(){
+    for(const p of this.room.players) p.score=0;
+    this.room.g6Sync={};
+    this.room.g6History=[];
+    await this.beginRoundGame6(1);
+  }
+
+  async beginRoundGame6(round){
+    const answerMs=this.room.g6AnswerMs||20000;
+    const now=Date.now();
+    this.room.gameState={
+      game:"game6",
+      phase:"answering",
+      round,
+      totalRounds:this.room.g6Rounds||10,
+      answerMs,
+      voteMs:this.room.g6VoteMs||G6_VOTE_MS_DEFAULT,
+      startedAt:now,
+      endsAt:now+answerMs,
+      answers:{}, // playerId -> {text, norm, t}
+      groups:[],
+      proposals:[],
+      skip:{},
+      result:null,
+      playedRounds:round-1
+    };
+    await this.save();
+    await this.ctx.storage.setAlarm(this.room.gameState.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async onG6Submit(playerId,text){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="answering") return;
+    if(g.answers[playerId]) return; // 每 round 只可以交一次
+    if(!this.room.players.some(p=>p.id===playerId && p.connected)) return;
+
+    const clean=String(text||"").trim().replace(/\s+/g," ");
+    const norm=g6Normalize(clean);
+    if(!norm) return this.errorPlayer(playerId,"答案唔可以留空。");
+    if(g6Units(clean.replace(/\s+/g,""))>G6_MAX_UNITS){
+      return this.errorPlayer(playerId,"答案太長：中文最多 4 字，英文最多 8 個字元。");
+    }
+
+    const t=Math.max(0,Math.min(g.answerMs,Date.now()-g.startedAt));
+    g.answers[playerId]={text:clean,norm,t};
+
+    const connected=this.room.players.filter(p=>p.connected);
+    if(connected.length && connected.every(p=>g.answers[p.id])){
+      await this.startMergingGame6();
+      return;
+    }
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async startMergingGame6(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="answering") return;
+
+    const byNorm=new Map();
+    for(const [pid,a] of Object.entries(g.answers)){
+      if(!byNorm.has(a.norm)) byNorm.set(a.norm,{members:[],words:[]});
+      const entry=byNorm.get(a.norm);
+      entry.members.push(pid);
+      if(!entry.words.includes(a.text)) entry.words.push(a.text);
+    }
+    g.groups=[...byNorm.values()].map((gr,i)=>({id:"g"+(i+1),members:gr.members,words:gr.words}));
+    g.proposals=[];
+    g.skip={};
+
+    // 少過兩組答案就冇嘢可以合併，直接揭曉。
+    if(g.groups.length<2){
+      await this.revealGame6();
+      return;
+    }
+
+    g.phase="merging";
+    g.endsAt=Date.now()+g.voteMs;
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  g6EligibleVoters(g,a,b){
+    const ga=g.groups.find(x=>x.id===a), gb=g.groups.find(x=>x.id===b);
+    const involved=new Set([...(ga?.members||[]),...(gb?.members||[])]);
+    const connected=this.room.players.filter(p=>p.connected).map(p=>p.id);
+    const outsiders=connected.filter(id=>!involved.has(id));
+    // 冇第三者可以投（例如 2 人局），就要答呢兩個答案嘅人全部同意。
+    return outsiders.length ? {list:outsiders,unanimous:false} : {list:connected.filter(id=>involved.has(id)),unanimous:true};
+  }
+
+  async onG6Propose(playerId,a,b){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="merging") return;
+    if(!a || !b || a===b) return;
+    const ga=g.groups.find(x=>x.id===a), gb=g.groups.find(x=>x.id===b);
+    if(!ga || !gb) return;
+    const exists=g.proposals.some(pr=>pr.status==="open" && ((pr.a===a&&pr.b===b)||(pr.a===b&&pr.b===a)));
+    if(exists) return;
+    if(g.proposals.length>=8) return this.errorPlayer(playerId,"今 round 提議太多，唔可以再加。");
+
+    const {list,unanimous}=this.g6EligibleVoters(g,a,b);
+    const pr={
+      id:"p"+(g.proposals.length+1),
+      a,b,
+      wordsA:ga.words,
+      wordsB:gb.words,
+      by:playerId,
+      eligible:list,
+      unanimous,
+      votes:{},
+      status:"open"
+    };
+    if(list.includes(playerId)) pr.votes[playerId]=true; // 提議人自己當投咗同意
+    g.proposals.push(pr);
+    // 有新提議就重新計時，等大家有時間投票。
+    g.skip={};
+    g.endsAt=Date.now()+g.voteMs;
+    await this.resolveProposalsGame6(false);
+  }
+
+  async onG6Vote(playerId,proposalId,agree){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="merging") return;
+    const pr=g.proposals.find(x=>x.id===proposalId);
+    if(!pr || pr.status!=="open") return;
+    if(!pr.eligible.includes(playerId)) return;
+    if(Object.prototype.hasOwnProperty.call(pr.votes,playerId)) return;
+    pr.votes[playerId]=!!agree;
+    await this.resolveProposalsGame6(false);
+  }
+
+  async onG6Skip(playerId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="merging") return;
+    g.skip[playerId]=true;
+    await this.resolveProposalsGame6(false);
+  }
+
+  // 計每個提議：過半數同意就合併、冇可能過就否決；時間到（final）仲未決定就照現時票數計。
+  async resolveProposalsGame6(final){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="merging") return;
+
+    for(const pr of g.proposals){
+      if(pr.status!=="open") continue;
+      const yes=Object.values(pr.votes).filter(v=>v===true).length;
+      const no=Object.values(pr.votes).filter(v=>v===false).length;
+      const n=pr.eligible.length;
+      const need=pr.unanimous ? n : Math.floor(n/2)+1;
+      if(yes>=need) pr.status="passed";
+      else if(n-no<need || final) pr.status="failed";
+      if(pr.status==="passed") this.mergeGroupsGame6(pr.a,pr.b);
+    }
+
+    const open=g.proposals.some(pr=>pr.status==="open");
+    const connected=this.room.players.filter(p=>p.connected);
+    const allSkip=connected.length && connected.every(p=>g.skip[p.id]);
+
+    if(final || (!open && (allSkip || g.groups.length<2))){
+      await this.revealGame6();
+      return;
+    }
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  mergeGroupsGame6(a,b){
+    const g=this.room.gameState;
+    const ga=g.groups.find(x=>x.id===a), gb=g.groups.find(x=>x.id===b);
+    if(!ga || !gb || ga===gb) return;
+    ga.members=[...ga.members,...gb.members];
+    ga.words=[...ga.words,...gb.words.filter(w=>!ga.words.includes(w))];
+    ga.mergedFrom=[...(ga.mergedFrom||[]),...gb.words];
+    g.groups=g.groups.filter(x=>x.id!==b);
+    // 指住被合併組別嘅提議改指新組別；變成同一組嘅就作廢。
+    for(const pr of g.proposals){
+      if(pr.a===b) pr.a=a;
+      if(pr.b===b) pr.b=a;
+      if(pr.status==="open" && pr.a===pr.b) pr.status="failed";
+    }
+  }
+
+  async revealGame6(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6") return;
+    const nick=(id)=>this.room.players.find(p=>p.id===id)?.nickname || "玩家";
+
+    // 冇經過合併階段（全部人答同一樣或者得一個答案）都要有組別。
+    if(!g.groups.length){
+      const byNorm=new Map();
+      for(const [pid,a] of Object.entries(g.answers)){
+        if(!byNorm.has(a.norm)) byNorm.set(a.norm,{members:[],words:[]});
+        const e=byNorm.get(a.norm);
+        e.members.push(pid);
+        if(!e.words.includes(a.text)) e.words.push(a.text);
+      }
+      g.groups=[...byNorm.values()].map((gr,i)=>({id:"g"+(i+1),members:gr.members,words:gr.words}));
+    }
+
+    const groups=g.groups.map(gr=>{
+      const members=gr.members
+        .map(id=>({id,nickname:nick(id),text:g.answers[id]?.text||"",t:g.answers[id]?.t??g.answerMs,merged:!!(gr.mergedFrom||[]).includes(g.answers[id]?.text)}))
+        .sort((x,y)=>x.t-y.t);
+      return {
+        id:gr.id,
+        words:gr.words,
+        members,
+        syncAt:members.length>=2 ? members[1].t : null
+      };
+    });
+
+    // 默契數據：同一組入面每一對都 +1（包括慢咗同第三個人）。
+    this.room.g6Sync=this.room.g6Sync||{};
+    for(const gr of groups){
+      for(let i=0;i<gr.members.length;i++){
+        for(let j=i+1;j<gr.members.length;j++){
+          const k=g6PairKey(gr.members[i].id,gr.members[j].id);
+          this.room.g6Sync[k]=(this.room.g6Sync[k]||0)+1;
+        }
+      }
+    }
+
+    // 最快 sync = 第二個人交出相同答案嗰刻最早嘅組別，頭兩個人得分。
+    const synced=groups.filter(gr=>gr.syncAt!==null);
+    let winner=null, points=0;
+    if(synced.length){
+      winner=synced.reduce((best,gr)=>gr.syncAt<best.syncAt ? gr : best);
+      const remaining=Math.max(0,g.answerMs-winner.syncAt);
+      points=Math.round(G6_BASE_POINTS+G6_SPEED_POINTS*remaining/g.answerMs);
+      for(const m of winner.members.slice(0,2)){
+        const p=this.room.players.find(x=>x.id===m.id);
+        if(p) p.score=(p.score||0)+points;
+      }
+    }
+
+    groups.sort((x,y)=>{
+      if(winner && x.id===winner.id) return -1;
+      if(winner && y.id===winner.id) return 1;
+      if(x.syncAt!==null && y.syncAt!==null) return x.syncAt-y.syncAt;
+      if(x.syncAt!==null) return -1;
+      if(y.syncAt!==null) return 1;
+      return 0;
+    });
+
+    const answeredIds=new Set(Object.keys(g.answers));
+    const noAnswer=this.room.players.filter(p=>!answeredIds.has(p.id)).map(p=>p.nickname);
+
+    g.result={
+      groups,
+      winnerGroupId:winner ? winner.id : null,
+      winnerIds:winner ? winner.members.slice(0,2).map(m=>m.id) : [],
+      points,
+      noAnswer
+    };
+    g.playedRounds=g.round;
+    this.room.g6History=[...(this.room.g6History||[]),{
+      round:g.round,
+      winnerWords:winner ? winner.words : [],
+      winnerIds:g.result.winnerIds,
+      points
+    }];
+
+    g.phase="reveal";
+    g.endsAt=Date.now()+G6_REVEAL_MS;
+    await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async advanceAfterRevealGame6(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="reveal") return;
+    if(g.round>=g.totalRounds){
+      g.phase="gameover";
+      g.endsAt=null;
+      await this.save();
+      await this.broadcastRoom();
+      return;
+    }
+    await this.beginRoundGame6(g.round+1);
+  }
+
+  async onG6End(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase==="gameover") return;
+    g.phase="gameover";
+    g.endedEarly=true;
+    g.endsAt=null;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async onG6Restart(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="gameover") return;
+    await this.startGame6();
+  }
+
   async errorPlayer(playerId,message){
     this.sendToPlayer(playerId,{type:"error",message});
   }
@@ -2023,6 +2489,8 @@ async onG1Next(playerId){
     if(this.room.game==="game1" && this.room.gameState?.phase==="chat"){
       this.room.gameState.nextReady[p.id]=true;
     }
+
+    if(await this.g6AfterDisconnect()) return;
 
     await this.save();
     await this.broadcastRoom();
@@ -2101,6 +2569,21 @@ async onG1Next(playerId){
 
     if(g?.game==="game5" && g.phase==="writing" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.advanceGame5(g.currentTurnPlayerId,"……");
+      return;
+    }
+
+    if(g?.game==="game6" && g.phase==="answering" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.startMergingGame6();
+      return;
+    }
+
+    if(g?.game==="game6" && g.phase==="merging" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.resolveProposalsGame6(true);
+      return;
+    }
+
+    if(g?.game==="game6" && g.phase==="reveal" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.advanceAfterRevealGame6();
       return;
     }
 
