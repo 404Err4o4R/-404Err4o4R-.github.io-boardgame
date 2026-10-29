@@ -151,10 +151,11 @@ function renderCategories() {
   const g6Section = $("#g6Section");
 
   if (g6Section) g6Section.classList.toggle("hidden", S.selectedGame !== "game6");
+  $("#g7Section")?.classList.toggle("hidden", S.selectedGame !== "game7");
   $("#g1Section")?.classList.toggle("hidden", S.selectedGame !== "game1");
   $("#g2Section")?.classList.toggle("hidden", S.selectedGame !== "game2");
 
-  if (S.selectedGame === "game6") {
+  if (S.selectedGame === "game6" || S.selectedGame === "game7") {
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.add("hidden");
     if (langSection) langSection.classList.remove("hidden");
@@ -415,6 +416,34 @@ const ROOM_COVERS = {
       <div class="gc-label eyebrow">WORD SYNC</div>
       <div class="gc-label bottom">Sync 唔 Sync</div>
     </div>
+  `,
+  game7: `
+    <div class="game-cover cover-g7">
+      <div class="gc-icon">
+        <svg viewBox="-20 -15 260 220" aria-hidden="true">
+          <circle cx="110" cy="118" r="72" fill="#1f2740"/>
+          <path d="M62 96 A52 52 0 0 1 92 64" fill="none" stroke="#FEFEF2" stroke-width="8" stroke-linecap="round" opacity=".35"/>
+          <rect x="90" y="34" width="40" height="20" rx="6" fill="#FEFEF2" stroke="#1f2740" stroke-width="3"/>
+          <path d="M110 34 C108 8 140 -2 160 8" fill="none" stroke="#1f2740" stroke-width="4" stroke-linecap="round"/>
+          <polygon points="178.0,-48.0 184.2,-25.2 201.0,-41.8 195.0,-19.0 217.8,-25.0 201.2,-8.2 224.0,-2.0 201.2,4.2 217.8,21.0 195.0,15.0 201.0,37.8 184.2,21.2 178.0,44.0 171.8,21.2 155.0,37.8 161.0,15.0 138.2,21.0 154.8,4.2 132.0,-2.0 154.8,-8.2 138.2,-25.0 161.0,-19.0 155.0,-41.8 171.8,-25.2" fill="#F2D965" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"/>
+          <polygon points="186.7,-28.6 186.2,-13.3 200.7,-18.5 191.3,-6.3 206.0,-2.0 191.3,2.3 200.7,14.5 186.2,9.3 186.7,24.6 178.0,12.0 169.3,24.6 169.8,9.3 155.3,14.5 164.7,2.3 150.0,-2.0 164.7,-6.3 155.3,-18.5 169.8,-13.3 169.3,-28.6 178.0,-16.0" fill="#FEFEF2" stroke="#1f2740" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M205.0 -48.8L211.0 -59.2M230.2 -16.0L241.8 -19.1M224.8 25.0L235.2 31.0M127.3 -20.5L116.0 -24.6M155.2 -50.9L150.1 -61.8" fill="none" stroke="#1f2740" stroke-width="4" stroke-linecap="round"/>
+          <text x="110" y="146" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="76" fill="#FFD3DD">?</text>
+          <g transform="rotate(-10 12 137)">
+            <rect x="-14" y="120" width="52" height="34" rx="10" fill="#FEFEF2" stroke="#1f2740" stroke-width="3"/>
+            <text x="12" y="144" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="20" fill="#1f2740">25</text>
+          </g>
+          <g transform="rotate(8 212 121)">
+            <rect x="186" y="104" width="52" height="34" rx="10" fill="#F2D965" stroke="#1f2740" stroke-width="3"/>
+            <text x="212" y="128" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="20" fill="#1f2740">52</text>
+          </g>
+          <rect x="54" y="178" width="112" height="26" rx="13" fill="#FEFEF2" stroke="#1f2740" stroke-width="3"/>
+          <text x="110" y="196" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="15" fill="#1f2740">37 — 68</text>
+        </svg>
+      </div>
+      <div class="gc-label eyebrow">NUMBER BOMB</div>
+      <div class="gc-label bottom">數字炸彈</div>
+    </div>
   `
 };
 
@@ -424,7 +453,8 @@ const GAME_ACCENTS = {
   game3: "#F2795F",
   game4: "#7B57CE",
   game5: "#5c8fb0",
-  game6: "#3C5A1E"
+  game6: "#3C5A1E",
+  game7: "#7A1030"
 };
 
 const GAME_NAMES = {
@@ -433,7 +463,8 @@ const GAME_NAMES = {
   game3: "He/She's a 10",
   game4: "Most Likely To 邊個至似",
   game5: "故事接龍",
-  game6: "Sync 唔 Sync"
+  game6: "Sync 唔 Sync",
+  game7: "數字炸彈"
 };
 
 function renderRoomVisual() {
@@ -732,6 +763,34 @@ document.querySelectorAll(".g6-step-btn").forEach((button) => {
   });
 });
 
+/* Game 7 · 數字炸彈 開房設定 */
+S.g7Rounds = 5;
+S.g7TurnSeconds = 10;
+
+bindChips("#g7TimeBox", ".g7-time-chip", (chip) => { S.g7TurnSeconds = Number(chip.dataset.sec) || 10; });
+bindChips("#g7RoundsBox", ".g7-rounds-chip", (chip) => {
+  const custom = $("#g7RoundsCustom");
+  if (chip.dataset.rounds === "custom") {
+    custom?.classList.remove("hidden");
+    custom?.focus();
+    S.g7Rounds = null;
+  } else {
+    custom?.classList.add("hidden");
+    S.g7Rounds = Number(chip.dataset.rounds) || 5;
+  }
+});
+$("#g7RoundsCustom")?.addEventListener("input", () => {
+  const box = $("#g7RoundsCustom");
+  const n = Number(box.value);
+  if (Number.isInteger(n) && n >= 1 && n <= 20) {
+    S.g7Rounds = n;
+    box.style.borderColor = "";
+  } else {
+    S.g7Rounds = null;
+    box.style.borderColor = box.value ? "var(--yellow-deep)" : "";
+  }
+});
+
 /* =========================
    房間
 ========================= */
@@ -776,6 +835,10 @@ async function createRoom() {
       throw new Error("自定義回合數要喺 3 至 30 之間。");
     }
 
+    if (S.selectedGame === "game7" && !S.g7Rounds) {
+      throw new Error("自定義回合數要喺 1 至 20 之間。");
+    }
+
     const res = await fetch(`${HTTP_BASE}/api/rooms`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -784,7 +847,7 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6") ? (S.selectedLanguage || "yue") : null,
+        language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7") ? (S.selectedLanguage || "yue") : null,
         g1VoteSeconds: S.selectedGame === "game1" ? S.g1VoteSeconds : null,
         g1Rounds: S.selectedGame === "game1" ? S.g1Rounds : null,
         g2SpeakSeconds: S.selectedGame === "game2" ? S.g2SpeakSeconds : null,
@@ -792,6 +855,8 @@ async function createRoom() {
         g6AnswerSeconds: S.selectedGame === "game6" ? S.g6AnswerSeconds : null,
         g6Rounds: S.selectedGame === "game6" ? S.g6Rounds : null,
         g6VoteSeconds: S.selectedGame === "game6" ? S.g6VoteSeconds : null,
+        g7TurnSeconds: S.selectedGame === "game7" ? S.g7TurnSeconds : null,
+        g7Rounds: S.selectedGame === "game7" ? S.g7Rounds : null,
         g4Rounds: S.selectedGame === "game4" ? (S.selectedG4Rounds || 20) : null,
         g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null,
         g5Mode: S.selectedGame === "game5" ? (S.selectedG5Mode || "sentence") : null,
@@ -999,6 +1064,7 @@ function handleServerMessage(message) {
     );
     applyGameTheme(message.room?.game);
     S.g6Key = null;
+    S.g7Key = null;
 
     setConnectionStatus(
       "CONNECTED",
@@ -1251,6 +1317,13 @@ function renderRoom() {
             投票合併 ${Math.round(room.g6Settings.voteMs / 1000)} 秒 ·
             ${room.language === "zh" ? "台灣版" : "香港版"}
           </p>`
+        : room.game === "game7" && room.g7Settings
+        ? `<p class="notice" style="margin:10px 0 0">
+            ${room.g7Settings.rounds} 個回合 ·
+            每次估數 ${Math.round(room.g7Settings.turnMs / 1000)} 秒 ·
+            炸彈範圍 1–100 ·
+            ${room.language === "zh" ? "台灣版" : "香港版"}
+          </p>`
         : ""
     }
 
@@ -1471,9 +1544,12 @@ function renderScoreboard(room) {
           const isRater = raterId && p.id === raterId;
           const isNextRater = nextRaterId && p.id === nextRaterId;
           const isMe = p.id === S.playerId;
+          const g7 = room.game === "game7" && room.gameState && room.gameState.phase !== "gameover" ? room.gameState : null;
+          const g7Out = !!(g7 && Array.isArray(g7.alive) && !g7.alive.includes(p.id));
+          const g7Turn = !!(g7 && g7.phase === "turn" && g7.currentId === p.id);
 
           return `
-            <div class="sb-row ${isMe ? "me" : ""}" style="opacity:${p.connected ? "1" : ".5"}">
+            <div class="sb-row ${isMe ? "me" : ""} ${g7Out ? "g7-out" : ""} ${g7Turn ? "g7-turn" : ""}" style="opacity:${p.connected ? (g7Out ? ".55" : "1") : ".5"}">
               <span class="sb-rank">${index + 1}</span>
               <span class="sb-name">
                 ${
@@ -1483,6 +1559,8 @@ function renderScoreboard(room) {
                 }${esc(p.nickname)}${isMe ? "（你）" : ""}
                 ${isRater ? '<span class="sb-tag">莊家</span>' : ""}
                 ${isNextRater ? '<span class="sb-tag">下一位莊家</span>' : ""}
+                ${g7Out ? `<span class="sb-tag">${esc(g7T().outTag)}</span>` : ""}
+                ${g7Turn ? `<span class="sb-tag">${esc(g7T().turnTag)}</span>` : ""}
               </span>
               <b class="sb-score">${p.score || 0}</b>
             </div>
@@ -1499,6 +1577,20 @@ function renderScoreboard(room) {
             class="btn btn-outline"
             style="margin-top:8px;font-size:13px;padding:10px"
             onclick="g6EndEarly()"
+          >
+            提前結算
+          </button>`
+        : ""
+    }
+
+    ${
+      S.room?.game === "game7" &&
+      room.hostId === S.playerId &&
+      room.gameState?.phase !== "gameover"
+        ? `<button
+            class="btn btn-outline"
+            style="margin-top:8px;font-size:13px;padding:10px"
+            onclick="g7EndEarly()"
           >
             提前結算
           </button>`
@@ -1592,6 +1684,8 @@ function renderGame() {
     renderGame5(game);
   } else if (S.room.game === "game6") {
     renderGame6(game);
+  } else if (S.room.game === "game7") {
+    renderGame7(game);
   } else {
     renderGame2(game);
   }
@@ -4497,4 +4591,557 @@ window.g6PairPick = (key) => {
 
 window.restart2 = () => {
   send({ type: "g2:restart" });
+};
+
+/* =========================
+   Game 7 · 數字炸彈
+========================= */
+
+const G7_TEXT = {
+  yue: {
+    roundLabel: (r, t) => `ROUND ${r} / ${t}`,
+    bombInfo: (n, alive) => `第 ${n} 個炸彈 · 剩 ${alive} 人`,
+    yourTurn: "輪到你！",
+    turnOf: (n) => `輪到 ${n}`,
+    thinking: (n) => `${n} 諗緊…`,
+    rangeLabel: "炸彈喺呢個範圍入面",
+    onlyBomb: "淨係剩返炸彈一個數字！",
+    guess: "估！",
+    inputLabel: "你估嘅數字",
+    low: "太細",
+    high: "太大",
+    boom: "爆咗",
+    auto: "（超時）",
+    guessed: (n, v) => `${n} 估 ${v}`,
+    used: (n, c) => `${n} 用咗「${c}」`,
+    assigned: (n, t) => `${n} 用「指定」掟俾 ${t}`,
+    offlineOut: (n) => `${n} 斷線出局`,
+    skillTag: "技能",
+    outTag: "出局",
+    turnTag: "估緊",
+    you: "你",
+    cards: { skip: "跳過", reverse: "反轉", assign: "指定" },
+    cardDesc: {
+      skip: "唔使估，交俾下一位",
+      reverse: "方向倒轉，交返俾上一位",
+      assign: "揀一個人代你估"
+    },
+    yourCard: "你嘅技能卡",
+    use: "使用",
+    cardUsed: "呢個回合張卡已經用咗",
+    cardWait: "輪到你先用得",
+    viaAssign: (by) => `${by} 指定咗你！`,
+    viaSkip: (by) => `${by} 跳過咗，輪到你`,
+    viaReverse: (by) => `${by} 反轉咗方向，輪到你`,
+    assignEyebrow: "使用技能卡 · 指定",
+    assignTitle: "掟俾邊個？",
+    nowRange: "而家範圍",
+    assignHint: "被指定嘅人如果有卡，可以即刻再掟出去",
+    cancel: "取消",
+    assignTo: (n) => `指定${n}`,
+    pickFirst: "揀一個人先",
+    spectateEyebrow: "你已出局 · 觀戰中",
+    onlyOut: "只有出局嘅人睇到",
+    bombIs: "今次個炸彈係",
+    markerNote: "紅線係炸彈位置",
+    revive: "下個回合開始時你會復活",
+    boomTitle: (n) => `${n} 爆咗！`,
+    bombWas: "炸彈係",
+    viaAssignBoom: (by, n) => `${by} 用「指定」掟咗俾 ${n}`,
+    autoBoom: "超時，系統幫佢估中咗",
+    left: (n) => `仲剩 ${n} 人`,
+    newBomb: "新炸彈 1–100",
+    startBy: (n) => `由 ${n} 開始`,
+    roundWin: (n) => `${n} 贏咗呢個回合！`,
+    nextRound: (r) => `第 ${r} 回合準備開始`,
+    lastRound: "最後一個回合完結",
+    roundsDone: (n) => `${n} 個回合完結`,
+    endedEarly: "提前結算",
+    tieTitle: "並列贏家！",
+    winTitle: "贏家！",
+    noWinner: "未有人贏到回合",
+    survived: (n) => `生存到最後 ${n} 次`,
+    perRound: "每回合贏家",
+    ranking: "排名",
+    again: "再玩一場",
+    waitHost: "等房主決定再玩一場",
+    lobby: "返大廳",
+    confirmEnd: "肯定提前結算？之後就唔可以再繼續呢局。"
+  },
+  zh: {
+    roundLabel: (r, t) => `ROUND ${r} / ${t}`,
+    bombInfo: (n, alive) => `第 ${n} 顆炸彈 · 剩 ${alive} 人`,
+    yourTurn: "輪到你了！",
+    turnOf: (n) => `輪到 ${n}`,
+    thinking: (n) => `${n} 思考中…`,
+    rangeLabel: "炸彈就在這個範圍裡",
+    onlyBomb: "只剩下炸彈一個數字了！",
+    guess: "猜！",
+    inputLabel: "你猜的數字",
+    low: "太小",
+    high: "太大",
+    boom: "爆炸",
+    auto: "（逾時）",
+    guessed: (n, v) => `${n} 猜 ${v}`,
+    used: (n, c) => `${n} 使用了「${c}」`,
+    assigned: (n, t) => `${n} 用「指定」丟給 ${t}`,
+    offlineOut: (n) => `${n} 斷線出局`,
+    skillTag: "技能",
+    outTag: "出局",
+    turnTag: "猜數中",
+    you: "你",
+    cards: { skip: "跳過", reverse: "反轉", assign: "指定" },
+    cardDesc: {
+      skip: "不用猜，直接交給下一位",
+      reverse: "方向反轉，交回給上一位",
+      assign: "選一個人替你猜"
+    },
+    yourCard: "你的技能卡",
+    use: "使用",
+    cardUsed: "本回合的卡已經用掉",
+    cardWait: "輪到你才能使用",
+    viaAssign: (by) => `${by} 指定了你！`,
+    viaSkip: (by) => `${by} 跳過了，輪到你`,
+    viaReverse: (by) => `${by} 反轉了方向，輪到你`,
+    assignEyebrow: "使用技能卡 · 指定",
+    assignTitle: "丟給誰？",
+    nowRange: "目前範圍",
+    assignHint: "被指定的人如果有卡，可以馬上再丟出去",
+    cancel: "取消",
+    assignTo: (n) => `指定${n}`,
+    pickFirst: "請先選一個人",
+    spectateEyebrow: "你已出局 · 觀戰中",
+    onlyOut: "只有出局的人看得到",
+    bombIs: "這次的炸彈是",
+    markerNote: "紅線是炸彈的位置",
+    revive: "下個回合開始時你會復活",
+    boomTitle: (n) => `${n} 爆炸了！`,
+    bombWas: "炸彈是",
+    viaAssignBoom: (by, n) => `${by} 用「指定」丟給了 ${n}`,
+    autoBoom: "逾時，系統替他猜中了",
+    left: (n) => `還剩 ${n} 人`,
+    newBomb: "新炸彈 1–100",
+    startBy: (n) => `由 ${n} 開始`,
+    roundWin: (n) => `${n} 贏得這個回合！`,
+    nextRound: (r) => `第 ${r} 回合準備開始`,
+    lastRound: "最後一個回合結束",
+    roundsDone: (n) => `${n} 個回合結束`,
+    endedEarly: "提前結算",
+    tieTitle: "並列贏家！",
+    winTitle: "贏家！",
+    noWinner: "還沒有人贏得回合",
+    survived: (n) => `撐到最後 ${n} 次`,
+    perRound: "每回合贏家",
+    ranking: "排名",
+    again: "再玩一場",
+    waitHost: "等房主決定要不要再玩一場",
+    lobby: "回大廳",
+    confirmEnd: "確定提前結算？之後就不能再繼續這一局。"
+  }
+};
+
+function g7T() {
+  return G7_TEXT[S.room?.language === "zh" ? "zh" : "yue"];
+}
+
+function g7Nick(id) {
+  if (id && id === S.playerId) return g7T().you;
+  return S.room?.players?.find((p) => p.id === id)?.nickname || "玩家";
+}
+
+const G7_CARD_ICONS = {
+  skip: '<path d="M5 6l6 6-6 6M13 6l6 6-6 6"></path>',
+  reverse: '<path d="M4 9h13l-3-3M20 15H7l3 3"></path>',
+  assign: '<circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>'
+};
+
+function g7CardIcon(card, size = 24) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${G7_CARD_ICONS[card] || ""}</svg>`;
+}
+
+function g7Head(game, eyebrow) {
+  return `
+    <div class="g7-head">
+      <div>
+        <div class="eyebrow">${esc(g7T().roundLabel(game.round, game.totalRounds))}</div>
+        <span class="g7-pill">${esc(eyebrow)}</span>
+      </div>
+      ${game.phase === "turn" && game.endsAt ? `<div id="time" class="timer"></div>` : ""}
+    </div>
+  `;
+}
+
+function g7RangeHtml(game, opts = {}) {
+  const t = g7T();
+  const low = game.low;
+  const high = game.high;
+  const left = ((low - 1) / 100) * 100;
+  const width = ((high - low + 1) / 100) * 100;
+  const marker = opts.bomb !== null && opts.bomb !== undefined
+    ? `<div class="g7-marker" style="left:${((opts.bomb - 0.5) / 100) * 100}%"></div>`
+    : "";
+  return `
+    <div class="g7-range ${low === high ? "g7-range-last" : ""}">
+      ${opts.hideLabel ? "" : `<div class="g7-range-label">${esc(low === high ? t.onlyBomb : t.rangeLabel)}</div>`}
+      <div class="g7-range-nums">
+        ${low === high
+          ? `<span>${low}</span>`
+          : `<span>${low}</span><b>—</b><span>${high}</span>`}
+      </div>
+      <div class="g7-bar" role="img" aria-label="${low}–${high}">
+        <div class="g7-bar-fill" style="left:${left}%;width:${width}%"></div>
+        ${marker}
+      </div>
+      <div class="g7-bar-ends"><span>1</span><span>100</span></div>
+      ${opts.note ? `<p class="g7-range-note">${esc(opts.note)}</p>` : ""}
+    </div>
+  `;
+}
+
+function g7HistoryHtml(game, limit = 3) {
+  const t = g7T();
+  const rows = [...(game.history || [])].reverse().slice(0, limit);
+  if (!rows.length) return "";
+  return `
+    <div class="g7-hist">
+      ${rows.map((h) => {
+        if (h.kind === "card") {
+          const label = h.card === "assign"
+            ? t.assigned(g7Nick(h.id), g7Nick(h.targetId))
+            : t.used(g7Nick(h.id), t.cards[h.card] || h.card);
+          return `<div class="g7-hist-row"><span>${esc(label)}</span><span class="g7-tag">${esc(t.skillTag)}</span></div>`;
+        }
+        if (h.kind === "out") {
+          return `<div class="g7-hist-row"><span>${esc(t.offlineOut(g7Nick(h.id)))}</span><span class="g7-tag">${esc(t.outTag)}</span></div>`;
+        }
+        const res = h.result === "low" ? t.low : h.result === "high" ? t.high : t.boom;
+        return `<div class="g7-hist-row ${h.id === S.playerId ? "mine" : ""}"><span>${esc(t.guessed(g7Nick(h.id), h.value))}${h.auto ? esc(t.auto) : ""}</span><span class="g7-tag">${esc(res)}</span></div>`;
+      }).join("")}
+    </div>
+  `;
+}
+
+function g7CardHtml(game, isMyTurn) {
+  const t = g7T();
+  const card = game.myCard;
+  if (!card) {
+    return `<div class="g7-card g7-card-empty"><span>${esc(t.cardUsed)}</span></div>`;
+  }
+  return `
+    <div class="g7-card">
+      <div class="g7-card-face">${g7CardIcon(card)}</div>
+      <div class="g7-card-text">
+        <div class="g7-card-eyebrow">${esc(t.yourCard)}</div>
+        <strong>${esc(t.cards[card])}</strong>
+        <p>${esc(t.cardDesc[card])}</p>
+      </div>
+      ${isMyTurn
+        ? `<button type="button" class="g7-card-btn" onclick="g7UseCard()">${esc(t.use)}</button>`
+        : `<span class="g7-card-wait">${esc(t.cardWait)}</span>`}
+    </div>
+  `;
+}
+
+function renderGame7(game) {
+  const me = S.playerId;
+  const alive = game.alive || [];
+  const isAlive = alive.includes(me);
+  const isMyTurn = game.phase === "turn" && game.currentId === me;
+
+  if (!isMyTurn || game.myCard !== "assign") S.g7Picking = false;
+
+  const key = JSON.stringify([
+    game.phase, game.round, game.bombIndex, game.turnSeq, alive.length,
+    game.myCard, !!S.g7Picking, S.g7Picking ? S.g7Pick : null, S.room?.language,
+    game.phase === "gameover" ? (game.ranking || []).map((p) => p.id + p.score).join() : ""
+  ]);
+  if (S.g7Key === key && $("#gamePanel .g7-root")) return;
+  S.g7Key = key;
+
+  if (game.phase === "gameover") return renderGame7Gameover(game);
+  if (game.phase === "boom") return renderGame7Boom(game);
+  if (!isAlive) return renderGame7Spectate(game);
+  if (isMyTurn && S.g7Picking) return renderGame7Assign(game);
+  return renderGame7Turn(game, isMyTurn);
+}
+
+function renderGame7Turn(game, isMyTurn) {
+  const t = g7T();
+  const viaLine = isMyTurn && game.via
+    ? (game.via.card === "assign" ? t.viaAssign(g7Nick(game.via.by))
+      : game.via.card === "reverse" ? t.viaReverse(g7Nick(game.via.by))
+      : t.viaSkip(g7Nick(game.via.by)))
+    : "";
+
+  $("#gamePanel").innerHTML = `
+    <div class="g7-root ${isMyTurn ? "g7-my-turn" : ""}">
+      ${g7Head(game, t.bombInfo(game.bombIndex, (game.alive || []).length))}
+      <h2 class="g7-big">${esc(isMyTurn ? t.yourTurn : t.thinking(g7Nick(game.currentId)))}</h2>
+      ${viaLine ? `<p class="g7-via">${esc(viaLine)}</p>` : ""}
+      ${g7RangeHtml(game)}
+      ${g7HistoryHtml(game)}
+      ${isMyTurn ? `
+        <form class="g7-guess" onsubmit="event.preventDefault();g7Guess()">
+          <label class="g7-guess-field">
+            <span class="sr-only">${esc(t.inputLabel)}</span>
+            <input id="g7Input" type="number" inputmode="numeric" min="${game.low}" max="${game.high}" step="1"
+              placeholder="${game.low}–${game.high}" ${game.low === game.high ? `value="${game.low}"` : ""} autocomplete="off">
+          </label>
+          <button type="submit" class="btn btn-dark g7-guess-btn">${esc(t.guess)}</button>
+        </form>
+      ` : ""}
+      ${g7CardHtml(game, isMyTurn)}
+    </div>
+  `;
+
+  startTimer($("#time"), game.endsAt);
+  if (isMyTurn) {
+    const input = $("#g7Input");
+    if (input && window.matchMedia("(pointer:fine)").matches) input.focus();
+  }
+}
+
+function renderGame7Assign(game) {
+  const t = g7T();
+  const choices = (game.alive || []).filter((id) => id !== S.playerId);
+  const outIds = (game.order || []).filter((id) => !(game.alive || []).includes(id));
+  const pick = choices.includes(S.g7Pick) ? S.g7Pick : null;
+
+  $("#gamePanel").innerHTML = `
+    <div class="g7-root">
+      ${g7Head(game, t.assignEyebrow)}
+      <h2 class="g7-big">${esc(t.assignTitle)}</h2>
+      <div class="g7-nowrange"><span>${esc(t.nowRange)}</span><strong>${game.low === game.high ? game.low : `${game.low} — ${game.high}`}</strong></div>
+      <div class="g7-who-grid">
+        ${choices.map((id) => `
+          <button type="button" class="g7-who ${pick === id ? "picked" : ""}" onclick="g7PickTarget('${id}')">
+            <span class="g7-av">${esc([...g7Nick(id)][0] || "?")}</span>${esc(g7Nick(id))}
+          </button>
+        `).join("")}
+        ${outIds.map((id) => `
+          <button type="button" class="g7-who" disabled>
+            <span class="g7-av">${esc([...g7Nick(id)][0] || "?")}</span>${esc(g7Nick(id))} · ${esc(t.outTag)}
+          </button>
+        `).join("")}
+      </div>
+      <p class="g7-note">${esc(t.assignHint)}</p>
+      <div class="g7-actions">
+        <button type="button" class="btn btn-outline" onclick="g7CancelAssign()">${esc(t.cancel)}</button>
+        <button type="button" class="btn btn-dark" onclick="g7ConfirmAssign()" ${pick ? "" : "disabled"}>${esc(pick ? t.assignTo(g7Nick(pick)) : t.pickFirst)}</button>
+      </div>
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+}
+
+function renderGame7Spectate(game) {
+  const t = g7T();
+  const waiting = game.phase === "turn";
+  $("#gamePanel").innerHTML = `
+    <div class="g7-root">
+      ${g7Head(game, t.spectateEyebrow)}
+      <h2 class="g7-big">${esc(waiting ? t.thinking(g7Nick(game.currentId)) : "")}</h2>
+      ${game.bomb !== null && game.bomb !== undefined ? `
+        <div class="g7-secret">
+          ${g7BombSvg(40)}
+          <div class="g7-secret-text">
+            <div class="g7-card-eyebrow">${esc(t.onlyOut)}</div>
+            <span>${esc(t.bombIs)}</span>
+          </div>
+          <strong>${game.bomb}</strong>
+        </div>
+      ` : ""}
+      ${g7RangeHtml(game, { hideLabel: true, bomb: game.bomb, note: t.markerNote })}
+      ${g7HistoryHtml(game)}
+      <p class="g7-note g7-push">${esc(t.revive)}</p>
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+}
+
+function g7BombSvg(size) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 56 56" aria-hidden="true"><circle cx="25" cy="33" r="18" fill="#FFD3DD"/><rect x="19" y="11" width="12" height="7" rx="2" fill="#F7577A"/><path d="M25 11 C25 4 33 2 38 6" fill="none" stroke="#FFD3DD" stroke-width="2.5" stroke-linecap="round"/><polygon points="41,1 43,6 48,5 44,9 47,13 42,11 39,15 39,10 34,9 39,7" fill="#F2D965"/><text x="25" y="40" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="17" fill="#1f2740">?</text></svg>`;
+}
+
+function g7BurstSvg() {
+  const pts = (cx, cy, ro, ri, n) => {
+    const out = [];
+    for (let i = 0; i < n * 2; i++) {
+      const r = i % 2 ? ri : ro;
+      const a = (-90 + (i * 180) / n) * Math.PI / 180;
+      out.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
+    }
+    return out.join(" ");
+  };
+  const sparks = Array.from({ length: 12 }, (_, i) => {
+    const a = (i * 30 + 15) * Math.PI / 180;
+    const x1 = 130 + 112 * Math.cos(a), y1 = 130 + 112 * Math.sin(a);
+    const x2 = 130 + 128 * Math.cos(a), y2 = 130 + 128 * Math.sin(a);
+    return `<path class="g7-spark" style="--i:${i}" d="M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}"></path>`;
+  }).join("");
+  return `
+    <svg class="g7-burst" viewBox="0 0 260 260" aria-hidden="true">
+      <g class="g7-sparks" fill="none" stroke="#F2D965" stroke-width="7" stroke-linecap="round">${sparks}</g>
+      <polygon class="g7-burst-outer" points="${pts(130, 130, 118, 64, 16)}" fill="#F2D965" stroke="#1f2740" stroke-width="4" stroke-linejoin="round"></polygon>
+      <polygon class="g7-burst-mid" points="${pts(130, 130, 92, 52, 14)}" fill="#F7577A" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></polygon>
+      <polygon class="g7-burst-inner" points="${pts(130, 130, 66, 40, 12)}" fill="#FFD3DD" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></polygon>
+      <text x="130" y="145" text-anchor="middle" textLength="128" lengthAdjust="spacingAndGlyphs" class="g7-burst-text">BOOM</text>
+    </svg>
+  `;
+}
+
+function renderGame7Boom(game) {
+  const t = g7T();
+  const b = game.lastBoom || {};
+  const isBomb = b.kind !== "offline";
+  const name = g7Nick(b.id);
+  const winner = game.roundWinnerId;
+  const alive = game.alive || [];
+
+  const viaLine = isBomb && b.via?.card === "assign"
+    ? t.viaAssignBoom(g7Nick(b.via.by), name)
+    : isBomb && b.auto ? t.autoBoom : "";
+
+  const footer = winner
+    ? `
+      <div class="g7-next g7-next-win">
+        <span>${esc(t.roundWin(g7Nick(winner)))}<br><small>${esc(game.round >= game.totalRounds ? t.lastRound : t.nextRound(game.round + 1))}</small></span>
+        <strong id="g7Count"></strong>
+      </div>
+    `
+    : `
+      <div class="g7-left-label">${esc(t.left(alive.length))}</div>
+      <div class="g7-alive">${alive.map((id) => `<span>${esc(g7Nick(id))}</span>`).join("")}</div>
+      <div class="g7-next">
+        <span>${esc(t.newBomb)}<br><small>${esc(t.startBy(g7Nick(game.nextStartId)))}</small></span>
+        <strong id="g7Count"></strong>
+      </div>
+    `;
+
+  $("#gamePanel").innerHTML = `
+    <div class="g7-root g7-boom ${isBomb ? "" : "g7-boom-offline"}">
+      <div class="eyebrow g7-boom-eyebrow">${esc(t.roundLabel(game.round, game.totalRounds))} · ${esc(t.bombInfo(b.bombIndex || game.bombIndex, alive.length).split(" · ")[0])}</div>
+      ${isBomb ? `<div class="g7-burst-wrap">${g7BurstSvg()}</div>` : ""}
+      <h2 class="g7-big">${esc(isBomb ? t.boomTitle(name) : t.offlineOut(name))}</h2>
+      ${isBomb ? `<div class="g7-bomb-was"><span>${esc(t.bombWas)}</span><strong>${b.bomb}</strong></div>` : ""}
+      ${viaLine ? `<p class="g7-via">${esc(viaLine)}</p>` : ""}
+      <div class="g7-boom-foot">${footer}</div>
+    </div>
+  `;
+
+  clearInterval(S.timer);
+  const count = $("#g7Count");
+  const tick = () => {
+    if (!count) return;
+    const left = Math.max(0, Math.ceil(((game.endsAt || 0) - Date.now()) / 1000));
+    count.textContent = String(left);
+  };
+  tick();
+  S.timer = setInterval(tick, 200);
+}
+
+function renderGame7Gameover(game) {
+  const t = g7T();
+  clearInterval(S.timer);
+  const ranking = game.ranking || [];
+  const top = ranking.length ? ranking[0].score : 0;
+  const winners = top > 0 ? ranking.filter((p) => p.score === top) : [];
+  const isHost = S.room.hostId === S.playerId;
+  const rankOf = (score) => 1 + ranking.filter((p) => p.score > score).length;
+  const rounds = game.winners || [];
+  const crown = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7A1030" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"></path></svg>';
+
+  $("#gamePanel").innerHTML = `
+    <div class="g7-root g7-result">
+      <div class="g7-result-head">
+        <div class="eyebrow">${esc(game.endedEarly ? t.endedEarly : t.roundsDone(rounds.length))}</div>
+        <h2 class="g7-big">${esc(winners.length > 1 ? t.tieTitle : winners.length ? t.winTitle : t.noWinner)}</h2>
+      </div>
+      ${winners.length ? `
+        <div class="g7-winners ${winners.length === 1 ? "single" : ""}">
+          ${winners.map((p) => `
+            <div class="g7-win">
+              ${crown}
+              <strong>${esc(g7Nick(p.id))}</strong>
+              <small>${esc(t.survived(p.score))}</small>
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
+      ${rounds.length ? `
+        <div class="g7-section">
+          <div class="eyebrow">${esc(t.perRound)}</div>
+          <div class="g7-rounds">
+            ${rounds.map((r) => `<div class="g7-rd">R${r.round}<span>${esc(g7Nick(r.id))}</span></div>`).join("")}
+          </div>
+        </div>
+      ` : ""}
+      <div class="g7-section">
+        <div class="eyebrow">${esc(t.ranking)}</div>
+        <div class="g7-rank">
+          ${ranking.map((p) => `
+            <div class="g7-rank-row ${winners.some((w) => w.id === p.id) ? "first" : ""} ${p.id === S.playerId ? "me" : ""}">
+              <span>${rankOf(p.score)}</span><span class="g7-rank-name">${esc(p.nickname)}${p.id === S.playerId ? `（${esc(t.you)}）` : ""}</span><b>${p.score}</b>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+      <div class="g7-actions">
+        <button type="button" class="btn btn-outline" onclick="leaveRoom()">${esc(t.lobby)}</button>
+        ${isHost ? `<button type="button" class="btn btn-dark" onclick="g7Restart()">${esc(t.again)}</button>` : `<p class="g7-note">${esc(t.waitHost)}</p>`}
+      </div>
+    </div>
+  `;
+}
+
+window.g7Guess = () => {
+  const game = S.room?.gameState;
+  const input = $("#g7Input");
+  if (!game || !input) return;
+  const n = Number(input.value);
+  if (!input.value || !Number.isInteger(n) || n < game.low || n > game.high) {
+    flash(`請輸入 ${game.low}–${game.high} 之間嘅整數。`);
+    input.focus();
+    return;
+  }
+  send({ type: "g7:guess", value: n });
+};
+
+window.g7UseCard = () => {
+  const game = S.room?.gameState;
+  if (!game || game.currentId !== S.playerId || !game.myCard) return;
+  if (game.myCard === "assign") {
+    S.g7Picking = true;
+    S.g7Pick = null;
+    renderGame7(game);
+    return;
+  }
+  send({ type: "g7:card" });
+};
+
+window.g7PickTarget = (id) => {
+  S.g7Pick = id;
+  renderGame7(S.room.gameState);
+};
+
+window.g7CancelAssign = () => {
+  S.g7Picking = false;
+  S.g7Pick = null;
+  renderGame7(S.room.gameState);
+};
+
+window.g7ConfirmAssign = () => {
+  if (!S.g7Pick) return;
+  send({ type: "g7:card", targetId: S.g7Pick });
+  S.g7Picking = false;
+};
+
+window.g7Restart = () => {
+  send({ type: "g7:restart" });
+};
+
+window.g7EndEarly = async () => {
+  const ok = await askConfirm(g7T().confirmEnd);
+  if (!ok) return;
+  send({ type: "g7:end" });
 };

@@ -554,6 +554,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 #gameShell[data-game="game4"]{--card:#7B57CE;--card-fg:#fff;--sel:#FFD166;--sel-fg:#1f2740;--deep:#FFD166;--strip:#FFD166;--strip-fg:#4a2f7a;--ring:#FFD166}
 #gameShell[data-game="game5"]{--card:#AFCBE3;--card-fg:#1f2740;--sel:#2f5a7a;--sel-fg:#fff;--deep:#2f5a7a;--strip:#AFCBE3;--strip-fg:#1f2740}
 #gameShell[data-game="game6"]{--card:#B9DD5B;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#3C5A1E;--strip:#B9DD5B;--strip-fg:#1f2740}
+#gameShell[data-game="game7"]{--card:#F7577A;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#7A1030;--strip:#FFD3DD;--strip-fg:#7A1030}
 
 .game-pill{font-size:12px;font-weight:900;padding:6px 12px;border-radius:999px;background:var(--strip);color:var(--strip-fg);white-space:nowrap}
 .game-content{max-width:1180px}
@@ -761,7 +762,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 /* 封面統一尺寸：開房卡固定最少 920px 高（夠放最長嗰隻 game 嘅設定），
    六隻 game 嘅封面同插圖大小一樣；手機版封面固定 340px 高。 */
 .room-panel{min-height:970px}
-.room-visual .cover2 .gc-icon,.room-visual .cover-g6 .gc-icon{width:min(72%,340px)}
+.room-visual .cover2 .gc-icon,.room-visual .cover-g6 .gc-icon,.room-visual .cover-g7 .gc-icon{width:min(72%,340px)}
 .room-visual:has(.cover-g1){background:var(--g1-a)}
 .room-visual:has(.cover-g2){background:var(--g2-a)}
 .room-visual:has(.cover-g3){background:var(--g3-a)}
@@ -771,6 +772,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .room-visual:has(.cover2-g4){background:#7B57CE}
 .room-visual:has(.cover2-g5){background:#AFCBE3}
 .room-visual:has(.cover-g6){background:#B9DD5B}
+.room-visual:has(.cover-g7){background:#F7577A}
 @media (max-width:900px){
   .room-panel{min-height:0}
   .room-visual{min-height:0;height:340px}
@@ -827,3 +829,141 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .g6-log[open] > .g6-log-head::after{content:"－"}
 .g6-log{display:block}
 .g6-log[open] > .g6-log-round{margin-top:8px}
+
+/* ===== Game 7 · 數字炸彈 ===== */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.cherry-card{background:#F7577A;color:#1f2740}.cherry-card .tag-row span{background:rgba(31,39,64,.12)}
+.cherry-card .game-icon svg{display:block}
+
+.cover-g7{background:#F7577A}
+.cover-g7 .gc-icon{top:52%;width:72%}
+.cover-g7 .gc-icon svg{width:100%;height:auto;display:block;overflow:visible}
+.cover-g7 .gc-label{opacity:1}
+.cover-g7 .gc-label.eyebrow{top:6%;background:#1f2740;color:#FFD3DD}
+.cover-g7 .gc-label.bottom{bottom:6%;background:#FEFEF2;color:#1f2740}
+
+.sb-row.g7-out .sb-name{text-decoration:line-through}
+.sb-row.g7-turn{border-color:#1f2740;box-shadow:0 3px 0 #1f2740}
+
+.g7-root{display:flex;flex-direction:column;gap:14px;min-height:476px}
+.g7-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.g7-head .eyebrow{margin-bottom:6px}
+.g7-pill{display:inline-block;font-size:12px;font-weight:900;background:#1f2740;color:#FEFEF2;padding:5px 11px;border-radius:999px}
+.g7-big{font-family:"Fredoka",sans-serif;font-weight:700;font-size:clamp(32px,4.6vw,46px);line-height:1.02;letter-spacing:-.02em;margin:0}
+.g7-big:empty{display:none}
+.g7-via{margin:-6px 0 0;font-weight:900;font-size:14px}
+.g7-note{margin:0;font-size:13px;font-weight:800;text-align:center}
+.g7-push{margin-top:auto}
+
+.g7-range{background:var(--cream);color:#1f2740;border-radius:24px;padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.g7-range-label{font-size:11px;letter-spacing:.14em;font-weight:900;opacity:.7;text-align:center}
+.g7-range-nums{display:flex;align-items:center;justify-content:center;gap:16px;font-family:"Fredoka",sans-serif;font-weight:700;font-size:clamp(44px,7vw,64px);line-height:1}
+.g7-range-nums b{font-size:.5em;opacity:.4}
+.g7-range-last .g7-range-nums{color:#7A1030}
+.g7-range-last .g7-range-label{opacity:1;color:#7A1030}
+.g7-bar{position:relative;height:14px;border-radius:999px;background:#e4e8f2}
+.g7-bar-fill{position:absolute;top:0;bottom:0;min-width:6px;border-radius:999px;background:var(--card);outline:2px solid #1f2740;transition:left .35s ease,width .35s ease}
+.g7-marker{position:absolute;top:-6px;width:4px;height:26px;margin-left:-2px;border-radius:2px;background:#7A1030}
+.g7-bar-ends{display:flex;justify-content:space-between;font-size:11px;font-weight:900;opacity:.6}
+.g7-range-note{margin:0;font-size:12px;font-weight:800;text-align:center}
+
+.g7-hist{display:flex;flex-direction:column;gap:6px}
+.g7-hist-row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(254,254,242,.55);color:#1f2740;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:800}
+.g7-hist-row.mine{background:rgba(254,254,242,.85)}
+.g7-tag{flex-shrink:0;font-size:11px;font-weight:900;padding:2px 9px;border-radius:999px;background:#1f2740;color:#FEFEF2}
+
+.g7-guess{display:flex;gap:10px}
+.g7-guess-field{flex:1;display:flex;min-width:0}
+#gameShell.is-playing #gamePanel .g7-guess input{width:100%;height:64px;box-sizing:border-box;margin:0;padding:0 18px;font-family:"Fredoka",sans-serif;font-weight:700;font-size:30px;-moz-appearance:textfield}
+.g7-guess input::-webkit-outer-spin-button,.g7-guess input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.g7-guess-btn{height:64px;padding:0 28px;font-size:17px;flex-shrink:0}
+
+.g7-card{margin-top:auto;display:flex;align-items:center;gap:12px;background:#1f2740;color:#FEFEF2;border-radius:22px;padding:12px 12px 12px 14px}
+.g7-card-face{width:44px;height:58px;border-radius:10px;background:#FFD3DD;color:#7A1030;display:grid;place-items:center;flex-shrink:0}
+.g7-card-text{flex:1;min-width:0}
+.g7-card-text strong{font-family:"Fredoka",sans-serif;font-size:20px}
+.g7-card-text p{margin:0;font-size:12px;font-weight:700;opacity:.8}
+.g7-card-eyebrow{font-size:10px;letter-spacing:.14em;font-weight:900;opacity:.7}
+.g7-card-btn{min-height:44px;padding:0 18px;border:2px solid #FEFEF2;border-radius:14px;background:transparent;color:#FEFEF2;font-weight:900;font-size:14px;cursor:pointer}
+.g7-card-btn:hover{background:#FEFEF2;color:#1f2740}
+.g7-card-wait{font-size:11px;font-weight:800;opacity:.7;text-align:right;max-width:72px}
+.g7-card-empty{justify-content:center;font-size:13px;font-weight:800;opacity:.75;min-height:58px}
+
+.g7-nowrange{display:flex;align-items:center;justify-content:space-between;background:var(--cream);color:#1f2740;border-radius:18px;padding:10px 16px;font-weight:900}
+.g7-nowrange span{font-size:12px;letter-spacing:.1em}
+.g7-nowrange strong{font-family:"Fredoka",sans-serif;font-size:26px}
+.g7-who-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.g7-who{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:104px;border:2px solid transparent;border-radius:22px;background:var(--cream);color:#1f2740;box-shadow:0 4px 0 rgba(31,39,64,.22);font-weight:900;font-size:16px;cursor:pointer}
+.g7-who:hover:not(:disabled){border-color:#1f2740}
+.g7-who.picked{background:#1f2740;color:#FEFEF2;border-color:#1f2740;box-shadow:0 4px 0 #1f2740}
+.g7-who:disabled{opacity:.4;box-shadow:none;cursor:default}
+.g7-av{width:44px;height:44px;border-radius:50%;background:#FFD3DD;color:#7A1030;display:grid;place-items:center;font-family:"Fredoka",sans-serif;font-size:20px}
+.g7-actions{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center}
+.g7-actions .btn{min-height:56px}
+.g7-actions .btn:disabled{opacity:.5;cursor:not-allowed}
+
+.g7-secret{display:flex;align-items:center;gap:14px;background:#1f2740;color:#FEFEF2;border-radius:22px;padding:12px 16px}
+.g7-secret-text{flex:1;font-weight:900;font-size:14px}
+.g7-secret strong{font-family:"Fredoka",sans-serif;font-size:48px;line-height:1;color:#FFD3DD}
+
+/* 爆炸畫面 */
+#gameShell.is-playing #gamePanel:has(.g7-boom){background:#1f2740;color:#FEFEF2;overflow:hidden}
+.g7-boom{align-items:center;text-align:center;animation:g7-shake .5s cubic-bezier(.36,.07,.19,.97) .15s both}
+.g7-boom-eyebrow{color:#F7577A;opacity:1!important}
+.g7-burst-wrap{position:relative;width:min(300px,78vw);aspect-ratio:1;margin:-6px 0 -10px}
+.g7-burst-wrap:before{content:"";position:absolute;inset:-30%;border-radius:50%;background:radial-gradient(circle,rgba(247,87,122,.55) 0%,rgba(247,87,122,0) 62%);animation:g7-flash 1.2s ease-out both}
+.g7-burst{position:relative;width:100%;height:100%;overflow:visible}
+.g7-burst-outer,.g7-burst-mid,.g7-burst-inner{transform-origin:130px 130px;transform-box:view-box}
+.g7-burst-outer{animation:g7-pop .55s cubic-bezier(.2,1.6,.4,1) both,g7-spin 8s linear .55s infinite}
+.g7-burst-mid{animation:g7-pop .55s cubic-bezier(.2,1.6,.4,1) .08s both,g7-spin-r 6s linear .6s infinite}
+.g7-burst-inner{animation:g7-pop .5s cubic-bezier(.2,1.6,.4,1) .16s both}
+.g7-burst-text{font-family:"Fredoka",sans-serif;font-weight:700;font-size:42px;fill:#7A1030;letter-spacing:.02em;transform-origin:130px 130px;transform-box:view-box;animation:g7-pop .45s cubic-bezier(.2,1.8,.4,1) .24s both}
+.g7-spark{transform-origin:130px 130px;transform-box:view-box;animation:g7-spark 1s ease-out calc(.1s + var(--i)*.015s) both}
+.g7-bomb-was{display:flex;align-items:center;gap:12px;background:#FEFEF2;color:#1f2740;border-radius:20px;padding:10px 20px}
+.g7-bomb-was span{font-size:13px;font-weight:900}
+.g7-bomb-was strong{font-family:"Fredoka",sans-serif;font-size:44px;line-height:1;color:#7A1030}
+.g7-boom .g7-via{margin:0;opacity:.85}
+.g7-boom-foot{margin-top:auto;width:100%;display:flex;flex-direction:column;gap:10px}
+.g7-left-label{font-size:12px;letter-spacing:.14em;font-weight:900;opacity:.7}
+.g7-alive{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.g7-alive span{background:#FEFEF2;color:#1f2740;border-radius:999px;padding:6px 12px;font-weight:900;font-size:13px}
+.g7-next{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#F7577A;color:#1f2740;border-radius:20px;padding:12px 16px;font-weight:900;font-size:15px;text-align:left}
+.g7-next small{font-size:12px;font-weight:800}
+.g7-next strong{font-family:"Fredoka",sans-serif;font-size:34px;min-width:28px;text-align:right}
+.g7-next-win{background:#F2D965}
+.g7-boom-offline{justify-content:center}
+
+@keyframes g7-pop{0%{transform:scale(0) rotate(-30deg);opacity:0}70%{opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes g7-spin{to{transform:rotate(360deg)}}
+@keyframes g7-spin-r{to{transform:rotate(-360deg)}}
+@keyframes g7-spark{0%{transform:scale(.3);opacity:0}25%{opacity:1}100%{transform:scale(1.25);opacity:0}}
+@keyframes g7-flash{0%{transform:scale(.2);opacity:0}25%{opacity:1}100%{transform:scale(1);opacity:.55}}
+@keyframes g7-shake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,3px)}40%,60%{transform:translate(7px,-3px)}}
+@media (prefers-reduced-motion:reduce){
+  .g7-boom,.g7-burst-outer,.g7-burst-mid,.g7-burst-inner,.g7-burst-text,.g7-spark,.g7-burst-wrap:before{animation:none!important}
+}
+
+/* 結算 */
+.g7-result-head{text-align:center}
+.g7-result-head .eyebrow{margin-bottom:8px}
+.g7-winners{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.g7-winners.single{max-width:260px;width:100%;margin:0 auto}
+.g7-win{background:var(--cream);color:#1f2740;border:2px solid #1f2740;box-shadow:0 4px 0 #1f2740;border-radius:22px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.g7-win strong{font-family:"Fredoka",sans-serif;font-size:26px}
+.g7-win small{font-size:12px;font-weight:900}
+.g7-section{display:flex;flex-direction:column;gap:8px}
+.g7-rounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.g7-rd{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--cream);color:#1f2740;border-radius:12px;padding:6px 4px;font-size:11px;font-weight:900}
+.g7-rd span{font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g7-rank{display:flex;flex-direction:column;gap:6px}
+.g7-rank-row{display:flex;align-items:center;gap:10px;background:rgba(254,254,242,.6);color:#1f2740;border-radius:14px;padding:10px 14px;font-weight:800;font-size:14px}
+.g7-rank-row.first{background:#1f2740;color:#FEFEF2}
+.g7-rank-row.me{outline:2px solid #1f2740}
+.g7-rank-name{flex:1;min-width:0}
+.g7-rank-row b{font-family:"Fredoka",sans-serif;font-size:18px}
+
+@media (max-width:900px){
+  .g7-root{min-height:0}
+  .g7-who{min-height:92px}
+  .g7-burst-wrap{width:min(230px,60vw);margin:-10px 0 -14px}
+}

@@ -57,6 +57,18 @@ const G6_MAX_UNITS = 105; // 中文字算 15 個單位，英文字元算 7 個�
 const G6_BASE_POINTS = 50;
 const G6_SPEED_POINTS = 50;
 
+const G7_TURN_MS_OPTIONS = [10000, 15000];
+const G7_ROUND_MIN = 1;
+const G7_ROUND_MAX = 20;
+const G7_BOMB_MIN = 1;
+const G7_BOMB_MAX = 100;
+const G7_BOOM_MS = 4000;        // 爆炸畫面停留（入面有 3 秒倒數先出新炸彈）
+const G7_ROUND_WIN_MS = 5000;   // 回合完結（剩返一個人）畫面停留
+const G7_OFFLINE_TURN_MS = 1500; // 輪到斷咗線嘅人：等一陣就當超時
+const G7_OFFLINE_STRIKES = 2;   // 斷線連續超時兩次就當淘汰
+const G7_CARDS = ["skip", "reverse", "assign"];
+const G7_HISTORY_MAX = 12;
+
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -91,7 +103,7 @@ function shuffle(a) {
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7"; }
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
@@ -135,6 +147,19 @@ function clampG6VoteMs(v) {
   const n = Math.round(Number(v) / 1000) * 1000;
   if (!Number.isFinite(n) || n <= 0) return G6_VOTE_MS_DEFAULT;
   return Math.min(G6_VOTE_MS_MAX, Math.max(G6_VOTE_MS_MIN, n));
+}
+
+function clampG7TurnMs(v) {
+  const n = Number(v);
+  return G7_TURN_MS_OPTIONS.includes(n) ? n : G7_TURN_MS_OPTIONS[0];
+}
+function clampG7Rounds(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n <= 0) return 5;
+  return Math.min(G7_ROUND_MAX, Math.max(G7_ROUND_MIN, n));
+}
+function g7RandInt(min, max) {
+  return min + Math.floor(Math.random() * (max - min + 1));
 }
 
 // ===== Game 6 · Sync 唔 Sync：答案正規化 =====
@@ -301,6 +326,10 @@ export default {
                 body.g6Rounds || null,
               g6VoteMs:
                 body.g6VoteSeconds ? body.g6VoteSeconds*1000 : null,
+              g7TurnMs:
+                body.g7TurnSeconds ? body.g7TurnSeconds*1000 : null,
+              g7Rounds:
+                body.g7Rounds || null,
               roomTtl: ROOM_TTL
             })
           }
@@ -410,6 +439,10 @@ function publicRoom(room, viewerId=null) {
       answerMs: room.g6AnswerMs||20000,
       rounds: room.g6Rounds||10,
       voteMs: room.g6VoteMs||G6_VOTE_MS_DEFAULT
+    } : null,
+    g7Settings: room.game==="game7" ? {
+      turnMs: room.g7TurnMs||G7_TURN_MS_OPTIONS[0],
+      rounds: room.g7Rounds||5
     } : null,
     players: room.players.map(p=>({
   id:p.id,
@@ -737,6 +770,43 @@ results:g.results||null
     return base6;
   }
 
+  if(room.game==="game7") {
+    const alive=g.alive||[];
+    const viewerAlive=!!(viewerId && alive.includes(viewerId));
+    // 炸彈數字只會畀已經出局（或者唔喺呢局）嘅人睇；完場先全部公開。
+    const showBomb=g.phase==="gameover" || (!!viewerId && !viewerAlive);
+    const base7={
+      phase:g.phase,
+      round:g.round,
+      totalRounds:g.totalRounds,
+      turnMs:g.turnMs,
+      bombIndex:g.bombIndex||0,
+      low:g.low,
+      high:g.high,
+      order:g.order||[],
+      alive,
+      direction:g.direction||1,
+      currentId:g.currentId||null,
+      turnSeq:g.turnSeq||0,
+      endsAt:g.endsAt||null,
+      via:g.via||null,
+      history:(g.history||[]).slice(-G7_HISTORY_MAX),
+      myCard:viewerId ? (g.cards?.[viewerId]||null) : null,
+      bomb:showBomb ? (g.bomb ?? null) : null,
+      lastBoom:g.phase==="boom" ? (g.lastBoom||null) : null,
+      roundWinnerId:g.roundWinnerId||null,
+      nextStartId:g.nextStartId||null,
+      winners:room.g7Winners||[],
+      endedEarly:!!g.endedEarly
+    };
+    if(g.phase==="gameover"){
+      base7.ranking=[...room.players]
+        .sort((a,b)=>(b.score||0)-(a.score||0))
+        .map(p=>({id:p.id,nickname:p.nickname,score:p.score||0}));
+    }
+    return base7;
+  }
+
   const base={
     phase:g.phase, round:g.round, totalRounds:g.totalRounds||room.g2Rounds||5, term:g.term || null,
     endsAt:g.endsAt||null, judgeId:g.judgeId||null,
@@ -810,6 +880,8 @@ export class GameRoom extends DurableObject {
         g6AnswerMs:clampG6AnswerMs(body.g6AnswerMs),
         g6Rounds:clampG6Rounds(body.g6Rounds),
         g6VoteMs:clampG6VoteMs(body.g6VoteMs),
+        g7TurnMs:clampG7TurnMs(body.g7TurnMs),
+        g7Rounds:clampG7Rounds(body.g7Rounds),
         hostId:null,
         players:[],
         gameState:null,
@@ -854,7 +926,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
-    if(game==="game3" || game==="game4" || game==="game5" || game==="game6") return [];
+    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -916,6 +988,10 @@ export class GameRoom extends DurableObject {
       case "g6:next": return this.onG6Next(session.playerId);
       case "g6:end": return this.onG6End(session.playerId);
       case "g6:restart": return this.onG6Restart(session.playerId);
+      case "g7:guess": return this.onG7Guess(session.playerId,msg.value);
+      case "g7:card": return this.onG7Card(session.playerId,msg.targetId);
+      case "g7:end": return this.onG7End(session.playerId);
+      case "g7:restart": return this.onG7Restart(session.playerId);
       case "reconnect": return this.onReconnect(ws,session.playerId);
       default: return this.safeSend(ws,{type:"error",message:"未知操作。"});
     }
@@ -1052,6 +1128,7 @@ async onReady(playerId, ready){
         this.room.gameState.nextReady[p.id]=true;
       }
       if(await this.g6AfterDisconnect()) return;
+      if(await this.g7AfterDisconnect()) return;
     }
 
     await this.save();
@@ -1096,6 +1173,7 @@ if (notReady.length > 0) {
     else if(this.room.game==="game4") await this.startGame4();
     else if(this.room.game==="game5") await this.startGame5();
     else if(this.room.game==="game6") await this.startGame6();
+    else if(this.room.game==="game7") await this.startGame7();
     else await this.startGame2();
   }
 
@@ -2633,6 +2711,263 @@ async onG1Next(playerId){
     await this.startGame6();
   }
 
+  /* =========================
+     Game 7 · 數字炸彈
+  ========================= */
+
+  async startGame7(){
+    for(const p of this.room.players) p.score=0;
+    this.room.g7Winners=[]; // 每個回合嘅贏家：[{round, id}]
+    await this.beginRoundGame7(1);
+  }
+
+  // 每個回合開始：所有在線玩家復活，每人隨機派一張技能卡。
+  async beginRoundGame7(round){
+    const order=this.room.players.map(p=>p.id);
+    const alive=this.room.players.filter(p=>p.connected).map(p=>p.id);
+    const prev=this.room.gameState;
+    if(alive.length<MIN_PLAYERS){
+      return this.finishGame7(prev?.game==="game7" && round>1);
+    }
+    const cards={};
+    for(const id of alive) cards[id]=G7_CARDS[Math.floor(Math.random()*G7_CARDS.length)];
+    this.room.gameState={
+      game:"game7",
+      phase:"turn",
+      round,
+      totalRounds:this.room.g7Rounds||5,
+      turnMs:this.room.g7TurnMs||G7_TURN_MS_OPTIONS[0],
+      order,
+      alive,
+      direction:1,
+      cards,
+      strikes:{},
+      bombIndex:0,
+      turnSeq:prev?.game==="game7" ? (prev.turnSeq||0) : 0,
+      history:[],
+      lastBoom:null,
+      roundWinnerId:null,
+      nextStartId:null
+    };
+    // 每個回合由唔同人開始，輪住嚟。
+    await this.newBombGame7(alive[(round-1)%alive.length]);
+  }
+
+  async newBombGame7(startId){
+    const g=this.room.gameState;
+    g.bombIndex=(g.bombIndex||0)+1;
+    g.bomb=g7RandInt(G7_BOMB_MIN,G7_BOMB_MAX);
+    g.low=G7_BOMB_MIN;
+    g.high=G7_BOMB_MAX;
+    g.history=[];
+    g.lastBoom=null;
+    g.nextStartId=null;
+    this.setTurnGame7(startId,null);
+    await this.commitGame7();
+  }
+
+  setTurnGame7(id,via){
+    const g=this.room.gameState;
+    const now=Date.now();
+    g.phase="turn";
+    g.currentId=id;
+    g.via=via;
+    g.turnSeq=(g.turnSeq||0)+1;
+    const p=this.room.players.find(x=>x.id===id);
+    g.endsAt=now+(p?.connected ? g.turnMs : G7_OFFLINE_TURN_MS);
+  }
+
+  async commitGame7(){
+    const g=this.room.gameState;
+    await this.save();
+    if(g?.endsAt) await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  // 由 id 嗰個位開始，跟方向搵下一個仲生存嘅人（id 自己可能啱啱出局）。
+  nextAliveGame7(id,dir){
+    const g=this.room.gameState;
+    const order=g.order||[];
+    const n=order.length;
+    const i=order.indexOf(id);
+    if(i<0) return g.alive[0]||null;
+    for(let k=1;k<=n;k++){
+      const cand=order[(((i+dir*k)%n)+n)%n];
+      if(cand!==id && g.alive.includes(cand)) return cand;
+    }
+    return null;
+  }
+
+  pushHistoryGame7(entry){
+    const g=this.room.gameState;
+    g.history=[...(g.history||[]),entry].slice(-G7_HISTORY_MAX);
+  }
+
+  async onG7Guess(playerId,value){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game7" || g.phase!=="turn") return;
+    if(g.currentId!==playerId) return this.errorPlayer(playerId,"未輪到你。");
+    const n=Number(value);
+    if(!Number.isInteger(n) || n<g.low || n>g.high){
+      return this.errorPlayer(playerId,`請輸入 ${g.low}–${g.high} 之間嘅整數。`);
+    }
+    g.strikes[playerId]=0;
+    await this.applyGuessGame7(playerId,n,false);
+  }
+
+  async applyGuessGame7(id,n,auto){
+    const g=this.room.gameState;
+    if(n===g.bomb) return this.boomGame7(id,n,auto);
+    const result=n<g.bomb ? "low" : "high";
+    if(result==="low") g.low=n+1; else g.high=n-1;
+    this.pushHistoryGame7({kind:"guess",id,value:n,result,auto});
+    this.setTurnGame7(this.nextAliveGame7(id,g.direction),null);
+    await this.commitGame7();
+  }
+
+  async onG7Card(playerId,targetId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game7" || g.phase!=="turn") return;
+    if(g.currentId!==playerId) return this.errorPlayer(playerId,"未輪到你。");
+    const card=g.cards?.[playerId];
+    if(!card) return this.errorPlayer(playerId,"你呢個回合已經冇技能卡。");
+
+    let next;
+    if(card==="assign"){
+      if(!targetId || targetId===playerId || !g.alive.includes(targetId)){
+        return this.errorPlayer(playerId,"請揀一個仲未出局嘅玩家。");
+      }
+      next=targetId;
+    } else if(card==="reverse"){
+      g.direction=-(g.direction||1);
+      next=this.nextAliveGame7(playerId,g.direction);
+    } else {
+      next=this.nextAliveGame7(playerId,g.direction);
+    }
+
+    g.cards[playerId]=null;
+    g.strikes[playerId]=0;
+    this.pushHistoryGame7({kind:"card",id:playerId,card,targetId:next});
+    this.setTurnGame7(next,{card,by:playerId});
+    await this.commitGame7();
+  }
+
+  // 超時：系統喺範圍入面隨機幫佢估一個（唔會幫佢用卡）。
+  // 斷咗線嘅人連續超時兩次就當淘汰，個炸彈照舊，輪去下一位。
+  async timeoutGame7(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game7" || g.phase!=="turn") return;
+    const id=g.currentId;
+    const p=this.room.players.find(x=>x.id===id);
+    if(!p?.connected){
+      g.strikes[id]=(g.strikes[id]||0)+1;
+      if(g.strikes[id]>=G7_OFFLINE_STRIKES){
+        g.alive=g.alive.filter(x=>x!==id);
+        this.pushHistoryGame7({kind:"out",id});
+        if(g.alive.length<=1){
+          g.lastBoom={kind:"offline",id,bombIndex:g.bombIndex,via:null};
+          return this.endRoundGame7(id);
+        }
+        this.setTurnGame7(this.nextAliveGame7(id,g.direction),null);
+        await this.commitGame7();
+        return;
+      }
+    }
+    await this.applyGuessGame7(id,g7RandInt(g.low,g.high),true);
+  }
+
+  async boomGame7(id,n,auto){
+    const g=this.room.gameState;
+    this.pushHistoryGame7({kind:"guess",id,value:n,result:"boom",auto});
+    g.alive=g.alive.filter(x=>x!==id);
+    g.lastBoom={
+      kind:"bomb",
+      id,
+      bomb:g.bomb,
+      auto:!!auto,
+      via:g.via||null,
+      bombIndex:g.bombIndex
+    };
+    if(g.alive.length<=1) return this.endRoundGame7(id);
+    g.phase="boom";
+    g.currentId=null;
+    g.nextStartId=this.nextAliveGame7(id,g.direction);
+    g.endsAt=Date.now()+G7_BOOM_MS;
+    await this.commitGame7();
+  }
+
+  // 剩返最後一個人：佢贏呢個回合。
+  async endRoundGame7(){
+    const g=this.room.gameState;
+    const winner=g.alive[0]||null;
+    if(winner){
+      const p=this.room.players.find(x=>x.id===winner);
+      if(p) p.score=(p.score||0)+1;
+      this.room.g7Winners=[...(this.room.g7Winners||[]),{round:g.round,id:winner}];
+    }
+    g.phase="boom";
+    g.currentId=null;
+    g.roundWinnerId=winner;
+    g.nextStartId=null;
+    g.endsAt=Date.now()+G7_ROUND_WIN_MS;
+    await this.commitGame7();
+  }
+
+  async afterBoomGame7(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game7" || g.phase!=="boom") return;
+    if(g.roundWinnerId || g.alive.length<=1){
+      if(g.round>=g.totalRounds) return this.finishGame7(false);
+      return this.beginRoundGame7(g.round+1);
+    }
+    let start=g.nextStartId;
+    if(!start || !g.alive.includes(start)) start=g.alive[0];
+    await this.newBombGame7(start);
+  }
+
+  async finishGame7(endedEarly){
+    const g=this.room.gameState && this.room.gameState.game==="game7"
+      ? this.room.gameState
+      : {game:"game7",round:0,totalRounds:this.room.g7Rounds||5,turnMs:this.room.g7TurnMs||G7_TURN_MS_OPTIONS[0],order:[],alive:[],history:[]};
+    g.phase="gameover";
+    g.endsAt=null;
+    g.currentId=null;
+    g.endedEarly=!!endedEarly;
+    this.room.gameState=g;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  // 輪到嘅人斷咗線：唔使等夠時間，好快就當佢超時。
+  async g7AfterDisconnect(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game7" || g.phase!=="turn") return false;
+    const p=this.room.players.find(x=>x.id===g.currentId);
+    if(!p || p.connected) return false;
+    const soon=Date.now()+G7_OFFLINE_TURN_MS;
+    if(g.endsAt && g.endsAt<=soon) return false;
+    g.endsAt=soon;
+    await this.commitGame7();
+    return true;
+  }
+
+  async onG7End(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game7" || g.phase==="gameover") return;
+    await this.finishGame7(true);
+  }
+
+  async onG7Restart(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game7" || g.phase!=="gameover") return;
+    if(this.room.players.filter(p=>p.connected).length<MIN_PLAYERS){
+      return this.errorPlayer(playerId,"最少要 2 位在線玩家先可以再玩。");
+    }
+    await this.startGame7();
+  }
+
   async errorPlayer(playerId,message){
     this.sendToPlayer(playerId,{type:"error",message});
   }
@@ -2684,6 +3019,7 @@ async onG1Next(playerId){
     }
 
     if(await this.g6AfterDisconnect()) return;
+    if(await this.g7AfterDisconnect()) return;
 
     await this.save();
     await this.broadcastRoom();
@@ -2777,6 +3113,16 @@ async onG1Next(playerId){
 
     if(g?.game==="game6" && g.phase==="reveal" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.advanceAfterRevealGame6();
+      return;
+    }
+
+    if(g?.game==="game7" && g.phase==="turn" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.timeoutGame7();
+      return;
+    }
+
+    if(g?.game==="game7" && g.phase==="boom" && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.afterBoomGame7();
       return;
     }
 
