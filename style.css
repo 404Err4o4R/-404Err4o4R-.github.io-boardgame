@@ -760,7 +760,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 
 /* 封面統一尺寸：開房卡固定最少 920px 高（夠放最長嗰隻 game 嘅設定），
    六隻 game 嘅封面同插圖大小一樣；手機版封面固定 340px 高。 */
-.room-panel{min-height:920px}
+.room-panel{min-height:930px}
 .room-visual .cover2 .gc-icon,.room-visual .cover-g6 .gc-icon{width:min(72%,340px)}
 .room-visual:has(.cover-g1){background:var(--g1-a)}
 .room-visual:has(.cover-g2){background:var(--g2-a)}
@@ -774,4 +774,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 @media (max-width:900px){
   .room-panel{min-height:0}
   .room-visual{min-height:0;height:340px}
+}
+
+/* 網頁版：開房卡固定高度，「CREATE ROOM」／「JOIN ROOM」掣推到卡底 */
+@media (min-width:901px){
+  .room-form{display:flex;flex-direction:column}
+  .room-form .tab-panel.active{display:flex;flex-direction:column;gap:16px;flex:1}
+  #createBtn,#joinBtn{margin-top:auto}
 }
