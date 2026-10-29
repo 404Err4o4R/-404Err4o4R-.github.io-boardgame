@@ -668,6 +668,7 @@ results:g.results||null
         count:gr.members.length
       }));
       base6.myGroupId=myGroup ? myGroup.id : null;
+      base6.autoPair=!!g.autoPair;
       base6.proposals=(g.proposals||[]).map(pr=>{
         const yes=Object.values(pr.votes).filter(v=>v===true).length;
         const no=Object.values(pr.votes).filter(v=>v===false).length;
@@ -2285,6 +2286,18 @@ async onG1Next(playerId){
 
     g.phase="merging";
     g.endsAt=Date.now()+g.voteMs;
+
+    // 得兩個答案（例如二人局）：唔使揀，直接問大家「呢兩個算唔算同一個？」
+    g.autoPair=g.groups.length===2;
+    if(g.autoPair){
+      const [a,b]=g.groups;
+      const {list,unanimous}=this.g6EligibleVoters(g,a.id,b.id);
+      g.proposals.push({
+        id:"p1",a:a.id,b:b.id,wordsA:a.words,wordsB:b.words,
+        by:null,eligible:list,unanimous,votes:{},status:"open"
+      });
+    }
+
     await this.save();
     await this.ctx.storage.setAlarm(g.endsAt);
     await this.broadcastRoom();
@@ -2301,7 +2314,7 @@ async onG1Next(playerId){
 
   async onG6Propose(playerId,a,b){
     const g=this.room.gameState;
-    if(!g || g.game!=="game6" || g.phase!=="merging") return;
+    if(!g || g.game!=="game6" || g.phase!=="merging" || g.autoPair) return;
     if(!a || !b || a===b) return;
     const ga=g.groups.find(x=>x.id===a), gb=g.groups.find(x=>x.id===b);
     if(!ga || !gb) return;
@@ -2367,7 +2380,7 @@ async onG1Next(playerId){
     const connected=this.room.players.filter(p=>p.connected);
     const allSkip=connected.length && connected.every(p=>g.skip[p.id]);
 
-    if(final || (!open && (allSkip || g.groups.length<2))){
+    if(final || (!open && (allSkip || g.groups.length<2 || g.autoPair))){
       await this.revealGame6();
       return;
     }

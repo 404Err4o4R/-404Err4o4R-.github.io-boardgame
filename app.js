@@ -3716,7 +3716,11 @@ const G6_TEXT = {
     tooLong: "太長喇：中文最多 4 字，英文最多 8 個字元",
     empty: "打個字先",
     mergeTitle: "有冇答案應該算同一個？",
-    mergeHint: "撳兩個答案就可以提議合併。完全相同嘅已經自動歸埋一齊。",
+    mergeHint: "揀兩個你覺得意思一樣嘅答案，再撳「提議合併」。完全相同嘅已經自動歸埋一齊。",
+    slotEmpty: "揀答案",
+    propose: "提議合併",
+    pairQ: "呢兩個答案算唔算同一個？",
+    pairNote: "要全部人都話「算」先會合併",
     picked: "已揀",
     mine: "你嘅答案",
     proposeBy: (n) => `${n} 提議合併`,
@@ -3768,7 +3772,11 @@ const G6_TEXT = {
     tooLong: "太長了：中文最多 4 字，英文最多 8 個字元",
     empty: "請先輸入",
     mergeTitle: "有沒有答案應該算同一個？",
-    mergeHint: "點選兩個答案就可以提議合併。完全相同的已自動歸在一起。",
+    mergeHint: "選兩個你覺得意思相同的答案，再按「提議合併」。完全相同的已自動歸在一起。",
+    slotEmpty: "選答案",
+    propose: "提議合併",
+    pairQ: "這兩個答案算不算同一個？",
+    pairNote: "要所有人都說「算」才會合併",
     picked: "已選",
     mine: "你的答案",
     proposeBy: (n) => `${n} 提議合併`,
@@ -3939,6 +3947,8 @@ function renderGame6Merging(game) {
   const groupIds = new Set((game.groups || []).map((g) => g.id));
   S.g6Pick = (S.g6Pick || []).filter((id) => groupIds.has(id));
 
+  if (game.autoPair) return renderGame6Pair(game);
+
   const groupsHtml = (game.groups || []).map((g) => {
     const picked = S.g6Pick.includes(g.id);
     return `
@@ -3978,6 +3988,15 @@ function renderGame6Merging(game) {
     <h2 class="g6-mid">${esc(t.mergeTitle)}</h2>
     <div class="g6-groups">${groupsHtml}</div>
     <p class="g6-sub">${esc(t.mergeHint)}</p>
+    <div class="g6-pickbar">
+      ${[0, 1].map((i) => {
+        const g = (game.groups || []).find((x) => x.id === S.g6Pick[i]);
+        return g
+          ? `<button type="button" class="g6-slot filled" onclick="g6PickGroup('${g.id}')">${g6Words(g.words)}</button>`
+          : `<span class="g6-slot">${esc(t.slotEmpty)}</span>`;
+      }).join('<b class="g6-eq">=</b>')}
+      <button type="button" class="btn btn-dark g6-propose" onclick="g6ProposePick()" ${S.g6Pick.length === 2 ? "" : "disabled"}>${esc(t.propose)}</button>
+    </div>
     ${proposalsHtml}
     <div class="g6-status">
       ${
@@ -3998,15 +4017,49 @@ window.g6PickGroup = (id) => {
   if (S.g6Pick.includes(id)) {
     S.g6Pick = S.g6Pick.filter((x) => x !== id);
   } else {
-    S.g6Pick = [...S.g6Pick, id];
-  }
-  if (S.g6Pick.length === 2) {
-    const [a, b] = S.g6Pick;
-    S.g6Pick = [];
-    send({ type: "g6:propose", a, b });
+    // 最多揀兩個；揀第三個就換走最早揀嗰個。
+    S.g6Pick = [...S.g6Pick, id].slice(-2);
   }
   renderGame6Merging(game);
 };
+
+window.g6ProposePick = () => {
+  const game = S.room?.gameState;
+  if (!game || game.phase !== "merging" || S.g6Pick.length !== 2) return;
+  const [a, b] = S.g6Pick;
+  S.g6Pick = [];
+  send({ type: "g6:propose", a, b });
+};
+
+// 得兩個答案（例如二人局）：直接問「呢兩個算唔算同一個？」
+function renderGame6Pair(game) {
+  const t = g6T();
+  const pr = (game.proposals || [])[0];
+  if (!pr) return;
+  let action = "";
+  if (pr.status === "passed") action = `<p class="g6-pr-result">${esc(t.passed)}</p>`;
+  else if (pr.status === "failed") action = `<p class="g6-pr-result">${esc(t.failed)}</p>`;
+  else if (!pr.myEligible) action = "";
+  else if (pr.myVote !== null && pr.myVote !== undefined) action = `<p class="g6-pr-note">${esc(t.youVoted(pr.myVote))}</p>`;
+  else action = `
+    <div class="g6-pr-actions">
+      <button type="button" class="btn btn-yellow" onclick="g6VoteMerge('${pr.id}', true)">${esc(t.agree)}</button>
+      <button type="button" class="btn g6-ghost" onclick="g6VoteMerge('${pr.id}', false)">${esc(t.disagree)}</button>
+    </div>
+  `;
+  $("#gamePanel").innerHTML = `
+    ${g6Head(game)}
+    <h2 class="g6-mid">${esc(t.pairQ)}</h2>
+    <div class="g6-proposal g6-pair">
+      <div class="g6-pr-words g6-pair-words">
+        <span>${g6Words(pr.wordsA)}</span><b>=</b><span>${g6Words(pr.wordsB)}</span><b>？</b>
+      </div>
+      ${action}
+      <div class="g6-pr-count">已投 ${pr.yes + pr.no} / ${pr.eligibleCount} · ${esc(t.pairNote)}</div>
+    </div>
+  `;
+  if (game.endsAt) startTimer($("#time"), game.endsAt);
+}
 
 window.g6VoteMerge = (proposalId, agree) => {
   send({ type: "g6:vote", proposalId, agree });
