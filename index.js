@@ -16,6 +16,11 @@ const MIN_PLAYERS_GAME4 = 3;
 const ROOM_TTL = 1000 * 60 * 60 * 6;
 const MAX_MESSAGE = 12_000;
 const MAX_CHAT_HISTORY = 100;
+const ROOM_CHAT_MAX_CHARS = 30;     // 聊天室每條訊息上限（字數）
+const ROOM_CHAT_HISTORY = 50;       // Durable Object 保留最近幾多條
+const ROOM_CHAT_MIN_GAP_MS = 1000;  // 每秒最多 1 條
+const ROOM_CHAT_WINDOW_MS = 10000;  // 每 10 秒最多 5 條
+const ROOM_CHAT_WINDOW_MAX = 5;
 const MAX_CHAT_ARCHIVE = 1000; // 房主專用嘅全場聊天記錄上限（唔會跟住每題重置）
 
 const G1_VOTE_MS = 10000;
@@ -394,6 +399,8 @@ export default {
                 body.g2SpeakSeconds ? body.g2SpeakSeconds*1000 : null,
               g2Rounds:
                 body.g2Rounds || null,
+              g2Mode:
+                body.g2Mode === "offline" ? "offline" : "online",
               g6AnswerMs:
                 body.g6AnswerSeconds ? body.g6AnswerSeconds*1000 : null,
               g6Rounds:
@@ -516,7 +523,7 @@ function publicRoom(room, viewerId=null) {
     filters: room.filters,
     language: room.language==="zh" ? "zh" : "yue",
     g1Settings: room.game==="game1" ? { voteMs: room.g1VoteMs||G1_VOTE_MS, rounds: room.g1Rounds||0 } : null,
-    g2Settings: room.game==="game2" ? { speakMs: room.g2SpeakMs||G2_SPEAK_MS, rounds: room.g2Rounds||5 } : null,
+    g2Settings: room.game==="game2" ? { speakMs: room.g2SpeakMs||G2_SPEAK_MS, rounds: room.g2Rounds||5, mode: room.g2Mode==="offline"?"offline":"online" } : null,
     g6Settings: room.game==="game6" ? {
       answerMs: room.g6AnswerMs||20000,
       rounds: room.g6Rounds||10,
@@ -547,6 +554,9 @@ function publicRoom(room, viewerId=null) {
   score:p.score||0
 })),
     gameState: publicGameState(room, viewerId),
+    roomChat: chatPolicy(room, viewerId),
+    // 啱啱出局嘅玩家要即刻見到淘汰區之前嘅對話，所以淨係畀已出局嘅人帶埋淘汰區記錄。
+    roomChatDead: (viewerId && chatDeadIds(room).includes(viewerId)) ? (room.deadChat||[]) : null,
     // 房主可以睇返成場所有題目嘅聊天記錄，其他人淨係見到依家嗰題（新一題開始就會重置）。
     chat: (viewerId && viewerId===room.hostId) ? (room.chatArchive || room.chat || []) : (room.chat || []),
     viewerRole: viewerId && room.gameState?.roles?.[viewerId] || null,
@@ -1055,6 +1065,68 @@ results:g.results||null
   return base;
 }
 
+
+/* =========================
+   全房聊天室（所有 game 共用）
+   ─ 新 game 唔使做任何嘢就有聊天室；有特殊玩法先喺 CHAT_RULES 加設定：
+     enabled(room)      → false 就成個聊天室唔顯示（例如 9upper 線下版）
+     lockPhases         → 呢啲 phase 全部人暫停聊天（只可以睇）
+     lockPlayers(room)  → 呢啲玩家暫停聊天（例如將來 Wavelength 出提示嗰個）
+     deadIds(room)      → 呢啲玩家開「淘汰區」頻道，全房頻道只可以睇
+     announceRounds     → false 就唔出「第 N 回合開始」系統訊息
+========================= */
+const CHAT_RULES = {
+  game1: { lockPhases:["vote"], roundWord:"question" },
+  game2: { enabled: room => room.g2Mode!=="offline" },
+  game3: { lockPhases:["writing","rating"] },
+  game5: { announceRounds:false },
+  game6: { lockPhases:["answering"] },
+  game7: { deadIds: g7DeadIds }
+};
+
+// 數字炸彈：回合進行中已經出局（唔喺 alive）嘅玩家。回合完咗（有贏家）就唔再算。
+function g7DeadIds(room){
+  const g=room.gameState;
+  if(!g || g.game!=="game7") return [];
+  if(g.phase!=="turn" && g.phase!=="boom") return [];
+  if(g.roundWinnerId) return [];
+  const alive=new Set(g.alive||[]);
+  return room.players.map(p=>p.id).filter(id=>!alive.has(id));
+}
+
+function chatRule(room){ return CHAT_RULES[room.game] || {}; }
+
+function chatDeadIds(room){
+  const rule=chatRule(room);
+  return typeof rule.deadIds==="function" ? (rule.deadIds(room)||[]) : [];
+}
+
+function chatPolicy(room, viewerId=null){
+  const rule=chatRule(room);
+  const enabled=typeof rule.enabled==="function" ? !!rule.enabled(room) : rule.enabled!==false;
+  const phase=room.gameState?.phase || "waiting";
+  const muted=room.chatMuted||[];
+  const phaseLocked=!!(rule.lockPhases && rule.lockPhases.includes(phase));
+  const lockedIds=typeof rule.lockPlayers==="function" ? (rule.lockPlayers(room)||[]) : [];
+  const dead=!!viewerId && chatDeadIds(room).includes(viewerId);
+  const isMuted=!!viewerId && muted.includes(viewerId);
+  let reason=null;
+  if(!enabled) reason="disabled";
+  else if(!viewerId) reason="guest";
+  else if(isMuted) reason="muted";
+  else if(phaseLocked || lockedIds.includes(viewerId)) reason="locked";
+  else if(dead) reason="dead";
+  return {
+    enabled,
+    canSend: !reason,
+    reason,
+    deadChannel: enabled && dead,
+    canSendDead: enabled && dead && !isMuted,
+    muted,
+    maxChars: ROOM_CHAT_MAX_CHARS
+  };
+}
+
 export class GameRoom extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -1091,6 +1163,7 @@ export class GameRoom extends DurableObject {
         g1Rounds:clampG1Rounds(body.g1Rounds),
         g2SpeakMs:clampG2SpeakMs(body.g2SpeakMs),
         g2Rounds:clampG2Rounds(body.g2Rounds),
+        g2Mode:body.g2Mode==="offline"?"offline":"online",
         g6AnswerMs:clampG6AnswerMs(body.g6AnswerMs),
         g6Rounds:clampG6Rounds(body.g6Rounds),
         g6VoteMs:clampG6VoteMs(body.g6VoteMs),
@@ -1106,6 +1179,10 @@ export class GameRoom extends DurableObject {
         players:[],
         gameState:null,
         chat:[],
+        roomChat:[],   // 全房聊天室（所有 game 共用），最近 ROOM_CHAT_HISTORY 條
+        deadChat:[],   // 數字炸彈「淘汰區」，每個回合開始清空
+        chatSeq:0,
+        chatMuted:[],
         // Game 1 每題鎖定嗰刻嘅投票快照，儲埋嚟計「結算」嗰陣嘅心有靈犀指數。
         g1History:[],
         createdAt:Date.now(),
@@ -1227,6 +1304,8 @@ export class GameRoom extends DurableObject {
       case "g9:guess": return this.onG9Guess(session.playerId,msg.value);
       case "g9:end": return this.onG9End(session.playerId);
       case "g9:restart": return this.onG9Restart(session.playerId);
+      case "chat:send": return this.onRoomChat(session.playerId,msg.text,msg.channel);
+      case "chat:mute": return this.onRoomChatMute(session.playerId,msg.targetId,msg.muted);
       case "reconnect": return this.onReconnect(ws,session.playerId);
       default: return this.safeSend(ws,{type:"error",message:"未知操作。"});
     }
@@ -1289,6 +1368,7 @@ export class GameRoom extends DurableObject {
 };
     this.room.players.push(p);
     ws.serializeAttachment({playerId:p.id,token:p.token});
+    this.pushChatSystem("join",{name:p.nickname});
     await this.save();
     this.sendWelcome(ws,p);
     await this.broadcastRoom();
@@ -1299,7 +1379,8 @@ export class GameRoom extends DurableObject {
       type:"welcome",
       playerId:p.id,
       token:p.token,
-      room:publicRoom(this.room,p.id)
+      room:publicRoom(this.room,p.id),
+      chatHistory:this.chatHistoryFor(p.id)
     });
     if(this.room.gameState?.phase && this.room.gameState.phase!=="waiting"){
       this.sendPrivateState(ws,p.id);
@@ -1345,6 +1426,7 @@ async onReady(playerId, ready){
 
     const wasHost = p.id===this.room.hostId;
     const inLobby = !this.room.gameState || this.room.gameState.phase==="waiting";
+    this.pushChatSystem("leave",{name:p.nickname});
 
     if(inLobby){
       this.room.players = this.room.players.filter(x=>x.id!==playerId);
@@ -3678,6 +3760,7 @@ async onG1Next(playerId){
     if(alive.length<MIN_PLAYERS){
       return this.finishGame7(prev?.game==="game7" && round>1);
     }
+    this.room.deadChat=[]; // 新回合全部人復活，淘汰區清空
     const cards={};
     for(const id of alive) cards[id]=G7_CARDS[Math.floor(Math.random()*G7_CARDS.length)];
     this.room.gameState={
@@ -4178,6 +4261,105 @@ async onG1Next(playerId){
     await this.startGame9();
   }
 
+  /* ---------- 全房聊天室 ---------- */
+
+  chatHistoryFor(viewerId){
+    const all=(this.room.roomChat||[]);
+    const dead=viewerId && chatDeadIds(this.room).includes(viewerId) ? (this.room.deadChat||[]) : [];
+    return [...all,...dead].sort((a,b)=>a.id-b.id);
+  }
+
+  nextChatId(){
+    this.room.chatSeq=(this.room.chatSeq||0)+1;
+    return this.room.chatSeq;
+  }
+
+  // 系統訊息只存 key + 參數，前端按房間語言（香港／台灣）出字。
+  pushChatSystem(key,params={}){
+    if(!chatPolicy(this.room).enabled) return;
+    const msg={id:this.nextChatId(),kind:"sys",channel:"all",key,params,at:Date.now()};
+    this.room.roomChat=[...(this.room.roomChat||[]),msg].slice(-ROOM_CHAT_HISTORY);
+    this.broadcast({type:"chat:msg",msg});
+  }
+
+  // 由遊戲狀態自動推斷「遊戲開始／第 N 回合開始／遊戲結束」，新 game 唔使額外寫。
+  trackChatGameEvents(){
+    const g=this.room.gameState;
+    const t=this.room.chatTrack||{playing:false,round:0};
+    const rule=chatRule(this.room);
+    const phase=g?.phase||"waiting";
+    const active=!!g && phase!=="waiting";
+    const over=active && (phase==="gameover" || phase==="final");
+    const playing=active && !over;
+    const round=playing ? (Number(g.round)||0) : 0;
+    let changed=false;
+    let started=false;
+    if(playing && !t.playing){ this.pushChatSystem("start"); started=true; changed=true; }
+    if(over && t.playing){ this.pushChatSystem("end"); changed=true; }
+    if(playing && round && round!==t.round && rule.announceRounds!==false && !(started && round===1)){
+      this.pushChatSystem("round",{n:round,word:rule.roundWord||"round"});
+      changed=true;
+    }
+    const next={playing,round};
+    if(next.playing!==t.playing || next.round!==t.round){ this.room.chatTrack=next; changed=true; }
+    return changed;
+  }
+
+  async onRoomChat(playerId,text,channel){
+    const p=this.room.players.find(x=>x.id===playerId);
+    if(!p) return;
+    const pol=chatPolicy(this.room,playerId);
+    if(!pol.enabled) return;
+    const ch=channel==="dead" ? "dead" : "all";
+    if(ch==="dead" ? !pol.canSendDead : !pol.canSend){
+      return this.sendToPlayer(playerId,{type:"chat:denied",reason:pol.reason||"locked"});
+    }
+    const clean=Array.from(String(text||"").replace(/[\u0000-\u001f\u007f]/g,"").replace(/\s+/g," ").trim())
+      .slice(0,ROOM_CHAT_MAX_CHARS).join("");
+    if(!clean) return;
+
+    // 限速（記喺記憶體，唔需要存落 storage）
+    const now=Date.now();
+    this.chatRate=this.chatRate||new Map();
+    const times=(this.chatRate.get(playerId)||[]).filter(x=>now-x<ROOM_CHAT_WINDOW_MS);
+    if((times.length && now-times[times.length-1]<ROOM_CHAT_MIN_GAP_MS) || times.length>=ROOM_CHAT_WINDOW_MAX){
+      this.chatRate.set(playerId,times);
+      return this.sendToPlayer(playerId,{type:"chat:denied",reason:"rate"});
+    }
+    times.push(now);
+    this.chatRate.set(playerId,times);
+
+    const msg={id:this.nextChatId(),kind:"player",channel:ch,playerId,nickname:p.nickname,seat:p.seat,text:clean,at:now};
+    if(ch==="dead"){
+      this.room.deadChat=[...(this.room.deadChat||[]),msg].slice(-ROOM_CHAT_HISTORY);
+      await this.save();
+      const dead=new Set(chatDeadIds(this.room));
+      for(const ws of this.ctx.getWebSockets()){
+        const a=ws.deserializeAttachment() || {};
+        if(a.playerId && dead.has(a.playerId)) this.safeSend(ws,{type:"chat:msg",msg});
+      }
+      return;
+    }
+    this.room.roomChat=[...(this.room.roomChat||[]),msg].slice(-ROOM_CHAT_HISTORY);
+    await this.save();
+    this.broadcast({type:"chat:msg",msg});
+  }
+
+  async onRoomChatMute(playerId,targetId,muted){
+    if(playerId!==this.room.hostId || !targetId || targetId===playerId) return;
+    const target=this.room.players.find(x=>x.id===targetId);
+    if(!target) return;
+    const list=new Set(this.room.chatMuted||[]);
+    const want=muted!==false;
+    if(want===list.has(targetId)) return;
+    if(want) list.add(targetId); else list.delete(targetId);
+    this.room.chatMuted=[...list];
+    this.pushChatSystem(want?"mute":"unmute",{name:target.nickname});
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+
   async errorPlayer(playerId,message){
     this.sendToPlayer(playerId,{type:"error",message});
   }
@@ -4197,6 +4379,7 @@ async onG1Next(playerId){
   }
 
   async broadcastRoom(){
+    if(this.trackChatGameEvents()) await this.save();
     for(const ws of this.ctx.getWebSockets()){
       const a=ws.deserializeAttachment() || {};
       const viewer=a.playerId||null;

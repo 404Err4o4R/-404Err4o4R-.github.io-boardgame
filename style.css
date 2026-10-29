@@ -1165,7 +1165,7 @@ button.g8-c:hover{border-color:#F2D965}
   .g8-titles{gap:6px}
 }
 
-/* =========================================================
+/* ==================================================
    首頁 hero（v25）：左邊遊戲封面格＋右邊開房／入房
    桌面：封面 3 欄格仔；≤900px：封面變一行橫向滑動，放喺標題同表格中間
 ========================================================= */
@@ -1497,4 +1497,115 @@ button.g8-c:hover{border-color:#F2D965}
   .g9-end{font-size:13px;padding:5px 9px}
   .g9-reveal-top{flex-direction:column}
   .g9-target{flex-direction:row;gap:10px;justify-content:space-between;padding:8px 16px}
+=======
+/* =========================================================
+   全房聊天室（chat.js）— 所有 game 共用
+   手機／細螢幕：底部聊天欄，展開後半透明蓋住遊戲
+   電腦（≥1100px）：右邊固定側欄，可以收埋
+   顏色跟 #gameShell[data-game] 嘅主題色（--card / --sel）
+========================================================= */
+.g2-mode-box{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.g2-mode-chip{display:flex;flex-direction:column;align-items:flex-start;gap:4px;border-radius:18px;padding:12px 14px;text-align:left}
+.g2-mode-chip strong{font-size:15px}
+.g2-mode-chip small{font-size:12px;font-weight:700;line-height:1.4;opacity:.8}
+.g2-mode-chip.active{background:#004643;border-color:#004643;color:#F0EDE5}
+
+.rc{position:fixed;z-index:90;display:flex;flex-direction:column;gap:8px;box-sizing:border-box;color:#1f2740;font-family:"Nunito","Noto Sans HK",system-ui,sans-serif;
+  left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));background:#fff;border-radius:24px;padding:10px 12px 12px;box-shadow:0 -6px 30px rgba(50,60,100,.16)}
+.rc.hidden,.rc-fab.hidden{display:none!important}
+.rc-head{display:flex;align-items:center;gap:8px;padding:0 4px;min-height:34px}
+.rc-dot{width:8px;height:8px;border-radius:50%;background:#6FA51F;flex:none}
+.rc.is-locked .rc-dot{background:#9aa0b0}
+.rc-title{font-size:14px;font-weight:900}
+.rc-people{font-size:12px;font-weight:700;color:#5a627a}
+.rc-spacer{flex:1}
+.rc-toggle{height:34px;border:0;border-radius:11px;background:#eef0f4;color:#1f2740;padding:0 10px;display:flex;align-items:center;gap:4px;font-weight:900;font-size:12px}
+.rc-toggle.icon-only{width:36px;padding:0;justify-content:center}
+.rc-tabs{display:flex;gap:4px;background:#eef0f4;border-radius:13px;padding:3px}
+.rc-tabs.hidden,.rc-dead-hint.hidden,.rc-form.hidden,.rc-locked.hidden,.rc-badge.hidden,.rc-people.hidden,.rc-menu.hidden,.rc-toast.hidden{display:none}
+.rc-tab{height:30px;border:0;border-radius:10px;background:transparent;color:#3d4560;padding:0 12px;font-weight:900;font-size:12px;display:flex;align-items:center;gap:6px}
+.rc-tab.active{background:var(--sel,#1f2740);color:var(--sel-fg,#fff)}
+.rc-badge{min-width:18px;height:18px;border-radius:999px;background:#E8467C;color:#fff;font-size:11px;font-weight:900;display:inline-grid;place-items:center;padding:0 5px;box-sizing:border-box}
+.rc-dead-hint{font-size:12px;font-weight:800;padding:0 4px;color:#FFB3CA}
+
+.rc-log{height:104px;overflow:hidden;display:flex;flex-direction:column;gap:6px;padding:0 4px;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 34px);mask-image:linear-gradient(to bottom,transparent 0,#000 34px)}
+.rc-log>:first-child{margin-top:auto}
+.rc.is-locked:not(.open) .rc-log{opacity:.6}
+.rc-msg{display:flex;gap:8px;align-items:flex-end;font-size:14px;line-height:1.35}
+.rc-av{display:none;width:30px;height:30px;flex:none;border-radius:50%;color:#fff;place-items:center;font-weight:900;font-size:13px}
+.rc-body{min-width:0;overflow-wrap:anywhere}
+.rc-name{font-weight:900;margin-right:8px;font-size:inherit;background:none;border:0;padding:0;font-family:inherit}
+.rc-name-btn{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.rc-sys{align-self:center;text-align:center;font-size:12px;font-weight:800;color:#5a627a;background:#f1f2f5;border-radius:999px;padding:3px 10px;max-width:90%}
+
+.rc-form{display:flex;gap:8px;align-items:center;margin:0}
+.rc-input{flex:1;min-width:0;display:flex;align-items:center;gap:6px;background:#f4f5f8;border:2px solid #e1e4ec;border-radius:16px;padding:0 12px;height:46px;box-sizing:border-box}
+.rc-input:focus-within{border-color:#1f2740;background:#fff}
+.rc-input input{flex:1;min-width:0;border:0!important;background:transparent!important;outline:none;font-size:16px;padding:0!important;margin:0!important;height:auto!important;box-shadow:none!important;color:#1f2740}
+.rc-count{font-size:11px;font-weight:800;color:#5a627a;flex:none}
+.rc-send{width:46px;height:46px;flex:none;border:0;border-radius:16px;background:#1f2740;color:var(--card,#B9DD5B);display:grid;place-items:center}
+.rc-send:disabled{opacity:.45;cursor:not-allowed}
+.rc-locked{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border-radius:16px;background:#eceef3;border:2px dashed #c3c8d4;color:#3d4560;font-size:13px;font-weight:900;padding:6px 12px;text-align:center;box-sizing:border-box}
+
+.rc-menu{position:absolute;z-index:3;transform:translateY(calc(-100% - 6px));background:#1f2740;color:#FEFEF2;border-radius:16px;padding:6px;box-shadow:0 12px 30px rgba(31,39,64,.3);display:flex;flex-direction:column;min-width:160px}
+.rc-menu-label{font-size:11px;font-weight:900;letter-spacing:.1em;color:#c3c8d4;padding:6px 10px 4px}
+.rc-menu button{height:40px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#FEFEF2;text-align:left;padding:0 10px;font-weight:900;font-size:14px;display:flex;align-items:center;gap:8px}
+.rc-menu button:hover,.rc-menu button:focus-visible{background:rgba(255,255,255,.2)}
+.rc-toast{position:absolute;left:50%;top:-12px;transform:translate(-50%,-100%);background:#1f2740;color:#FEFEF2;font-size:12px;font-weight:900;border-radius:999px;padding:6px 12px;white-space:nowrap}
+
+/* 手機展開：半透明，見到後面遊戲 */
+.rc.open{top:calc(84px + env(safe-area-inset-top));background:rgba(254,254,242,.72);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);border:1px solid rgba(31,39,64,.1)}
+.rc.open .rc-log{flex:1;height:auto;overflow-y:auto;gap:10px;-webkit-mask-image:none;mask-image:none;overscroll-behavior:contain}
+.rc.open .rc-toggle{background:#1f2740;color:#FEFEF2}
+
+/* 展開 + 電腦側欄：氣泡樣式 */
+.rc.open .rc-av{display:grid}
+.rc.open .rc-body{display:flex;flex-direction:column;gap:2px;max-width:min(260px,78%)}
+.rc.open .rc-name{font-size:12px;margin:0;align-self:flex-start}
+.rc.open .rc-text{background:#fff;border-radius:4px 16px 16px 16px;padding:8px 12px;font-size:15px;line-height:1.4;box-shadow:0 2px 6px rgba(31,39,64,.08)}
+.rc.open .rc-msg.mine{justify-content:flex-end}
+.rc.open .rc-msg.mine .rc-av,.rc.open .rc-msg.mine .rc-name{display:none}
+.rc.open .rc-msg.mine .rc-text{background:var(--card,#B9DD5B);color:var(--card-fg,#1f2740);border-radius:16px 4px 16px 16px;font-weight:700}
+.rc.open .rc-sys{background:rgba(255,255,255,.75);color:#3d4560}
+
+/* 淘汰區：深色，同全房分得清 */
+.rc.rc-dead{background:#2a3150;color:#FEFEF2}
+.rc.rc-dead.open{background:rgba(31,39,64,.86)}
+.rc.rc-dead .rc-tabs{background:rgba(255,255,255,.1)}
+.rc.rc-dead .rc-tab{color:#d4d8e4}
+.rc.rc-dead .rc-tab.active{background:#E8467C;color:#fff}
+.rc.rc-dead .rc-toggle{background:rgba(255,255,255,.12);color:#FEFEF2}
+.rc.rc-dead.open .rc-text{background:rgba(255,255,255,.14)!important;color:#FEFEF2!important;box-shadow:none!important}
+.rc.rc-dead.open .rc-msg.mine .rc-text{background:#E8467C!important}
+.rc.rc-dead .rc-sys{background:rgba(255,255,255,.1);color:#d4d8e4}
+.rc.rc-dead .rc-name{filter:brightness(1.7)}
+.rc.rc-dead .rc-input{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
+.rc.rc-dead .rc-input input{color:#FEFEF2}
+.rc.rc-dead .rc-input input::placeholder,.rc.rc-dead .rc-count{color:#c3c8d4}
+.rc.rc-dead .rc-send{background:#E8467C;color:#fff}
+
+/* 留位，唔好遮住遊戲操作掣 */
+#gameShell.has-chat .game-content{padding-bottom:230px}
+
+/* 電腦版：右邊固定側欄 */
+.rc-fab{position:fixed;z-index:90;right:24px;bottom:24px;border:0;border-radius:999px;background:#1f2740;color:#FEFEF2;height:52px;padding:0 18px;display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;box-shadow:0 10px 30px rgba(31,39,64,.25)}
+@media (min-width:1100px){
+  .rc{left:auto;right:0;top:0;bottom:0;width:340px;border-radius:0;padding:0;gap:0;box-shadow:none;border-left:1px solid rgba(146,159,193,.25);background:#fff}
+  .rc.open{top:0;background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-left:1px solid rgba(146,159,193,.25)}
+  .rc.rc-dead,.rc.rc-dead.open{background:#2a3150}
+  .rc-head{padding:16px 18px;border-bottom:1px solid rgba(146,159,193,.2);min-height:0}
+  .rc-dead-hint{padding:10px 18px 0}
+  .rc-log,.rc.open .rc-log{flex:1;height:auto;overflow-y:auto;padding:16px 18px;gap:12px;-webkit-mask-image:none;mask-image:none}
+  .rc-form,.rc-locked{margin:14px 18px 18px}
+  .rc-locked{margin-top:14px}
+  .rc.open .rc-text{background:#f4f5f8;box-shadow:none}
+  .rc.open .rc-sys{background:#f1f2f5;color:#5a627a}
+  .rc.rc-dead.open .rc-sys{background:rgba(255,255,255,.1);color:#d4d8e4}
+  .rc.open .rc-toggle,.rc-toggle{background:#eef0f4;color:#1f2740}
+  .rc.rc-dead .rc-toggle{background:rgba(255,255,255,.12);color:#FEFEF2}
+  #gameShell.has-chat{padding-right:340px}
+  #gameShell.has-chat.chat-collapsed{padding-right:0}
+  #gameShell.has-chat.chat-collapsed .rc{display:none}
+  #gameShell.has-chat .game-content{padding-bottom:24px}
 }
