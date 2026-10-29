@@ -806,3 +806,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .g6-fastest-main strong{font-family:"Fredoka",sans-serif;font-size:30px}
 .g6-fastest-main .g6-pill-dark{background:#B9DD5B;color:#1f2740;font-size:14px}
 .g6-fastest small{font-weight:800;opacity:.85}
+.g6-log{background:#fff;color:#1f2740;border-radius:26px;padding:16px;margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.g6-log-round{background:#F6F7FA;border-radius:16px;padding:0 12px}
+.g6-log-round[open]{padding-bottom:10px}
+.g6-log-round summary{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:48px;cursor:pointer;font-weight:800;list-style:none}
+.g6-log-round summary::-webkit-details-marker{display:none}
+.g6-log-round summary::after{content:"＋";margin-left:auto;font-weight:900}
+.g6-log-round[open] summary::after{content:"－"}
+.g6-log-r{font-size:12px;font-weight:900;background:#1f2740;color:#FEFEF2;border-radius:999px;padding:3px 10px}
+.g6-log-word{font-family:"Fredoka",sans-serif;font-size:18px}
+.g6-log-meta{font-size:12px;color:#4b5470}
+.g6-log-round .g6-hist-row{background:#fff;margin-top:6px}

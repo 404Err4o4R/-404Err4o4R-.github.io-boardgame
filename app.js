@@ -3774,7 +3774,12 @@ const G6_TEXT = {
     pairPick: "揀一對睇默契",
     axes: ["同步率", "一擊即中", "速度", "得分", "效率"],
     pairRadarTitle: (a, b) => `${a} × ${b} 默契雷達`,
-    roundsUnit: "round"
+    roundsUnit: "round",
+    logTitle: "睇返紀錄",
+    logHint: "撳每個 round 睇返大家估過咩",
+    logRound: (r) => `Round ${r}`,
+    logSuccess: (a) => `第 ${a} 次 Sync 到`,
+    logVoid: "作廢"
   },
   zh: {
     answerTitle: "想到什麼，就打什麼！",
@@ -3848,7 +3853,12 @@ const G6_TEXT = {
     pairPick: "選一對看默契",
     axes: ["同步率", "一擊即中", "速度", "得分", "效率"],
     pairRadarTitle: (a, b) => `${a} × ${b} 默契雷達`,
-    roundsUnit: "回合"
+    roundsUnit: "回合",
+    logTitle: "查看紀錄",
+    logHint: "點選每個回合查看大家猜過什麼",
+    logRound: (r) => `第 ${r} 回合`,
+    logSuccess: (a) => `第 ${a} 次 Sync`,
+    logVoid: "作廢"
   }
 };
 
@@ -4373,6 +4383,39 @@ function renderGame6Gameover(game) {
     `
     : "";
 
+  const log = game.log || [];
+  const logHtml = log.length
+    ? `
+      <div class="g6-log">
+        <div class="g6-chart-head">
+          <strong>${esc(t.logTitle)}</strong>
+          <small>${esc(t.logHint)}</small>
+        </div>
+        ${log.map((r) => `
+          <details class="g6-log-round">
+            <summary>
+              <span class="g6-log-r">${esc(t.logRound(r.round))}</span>
+              ${
+                r.success
+                  ? `<span class="g6-log-word">${g6Words(r.words)}</span>
+                     <span class="g6-log-meta">${esc(r.winners.join(" × "))} · ${esc(t.logSuccess(r.attempt))} · ${esc(t.sec(r.syncAt))} · +${r.points}</span>`
+                  : `<span class="g6-log-meta">${esc(t.logVoid)}</span>`
+              }
+            </summary>
+            ${(r.history || []).map((h) => `
+              <div class="g6-hist-row">
+                <span class="g6-hist-n">${esc(t.attemptN(h.attempt))}</span>
+                <span class="g6-chips">
+                  ${h.entries.map((e) => `<span class="g6-chip ${e.id === S.playerId ? "mine" : ""}">${esc(e.nickname)} · ${esc(e.text)}</span>`).join("")}
+                </span>
+              </div>
+            `).join("")}
+          </details>
+        `).join("")}
+      </div>
+    `
+    : "";
+
   $("#gamePanel").innerHTML = `
     <div class="eyebrow">GAME OVER · ${game.playedRounds || 0} ROUNDS${game.endedEarly ? ` · ${esc(t.endedEarly)}` : ""}</div>
     <h2 class="g6-mid">
@@ -4406,6 +4449,8 @@ function renderGame6Gameover(game) {
         `
         : ""
     }
+
+    ${logHtml}
 
     <div class="g6-end-actions">
       ${isHost ? `<button type="button" class="btn btn-yellow" onclick="g6Restart()">${esc(t.again)}</button>` : `<p class="g6-sub">${esc(t.waitHost)}</p>`}

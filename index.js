@@ -730,6 +730,7 @@ results:g.results||null
       const events=room.g6Events||[];
       base6.fastest=events.length ? events.reduce((m,e)=>e.t<m.t ? e : m) : null;
       base6.maxAttempts=G6_MAX_ATTEMPTS;
+      base6.log=room.g6Log||[];
     }
 
     return base6;
@@ -2232,6 +2233,7 @@ async onG1Next(playerId){
     this.room.g6PairStats={};  // 每對玩家嘅詳細默契數據（二／三人局雷達圖用）
     this.room.g6Events=[];     // 每次 sync 嘅記錄，用嚟搵「最快一次」
     this.room.g6History=[];
+    this.room.g6Log=[];        // 每 round 嘅完整紀錄（結算畫面「睇返紀錄」用）
     await this.beginRoundGame6(1);
   }
 
@@ -2478,6 +2480,7 @@ async onG1Next(playerId){
       }
       // 5 次都冇人 sync 到：呢 round 作廢。
       g.result={success:false,voided:true,groups,noAnswer,attempt:g.attempt};
+      this.room.g6Log=[...(this.room.g6Log||[]),{round:g.round,success:false,history:g.history}];
       g.playedRounds=g.round;
       g.phase="reveal";
       g.next={};
@@ -2535,6 +2538,11 @@ async onG1Next(playerId){
     g.result={success:true,groups,winnerGroupId:winner.id,winnerIds,points,noAnswer,attempt:g.attempt};
     g.playedRounds=g.round;
     this.room.g6History=[...(this.room.g6History||[]),{round:g.round,attempt:g.attempt,winnerWords:winner.words,winnerIds,points}];
+    this.room.g6Log=[...(this.room.g6Log||[]),{
+      round:g.round,success:true,attempt:g.attempt,history:g.history,
+      words:winner.words,syncAt:winner.syncAt,points,
+      winners:winner.members.slice(0,2).map(m=>m.nickname)
+    }];
 
     g.phase="reveal";
     g.next={};
