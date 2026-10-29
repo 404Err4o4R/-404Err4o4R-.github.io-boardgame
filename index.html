@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=14">
+  <link rel="stylesheet" href="./style.css?v=15">
 </head>
 
 <body>
@@ -378,6 +378,66 @@
               最少 3 人先可以開始遊戲
             </p>
 
+          </div>
+
+
+          <div
+            id="g1Section"
+            class="hidden"
+          >
+            <div class="label-row">
+              <span>投票時間</span>
+            </div>
+            <div id="g1TimeBox" class="filter-box">
+              <button type="button" class="filter-chip g1-time-chip active" data-sec="10">10 秒</button>
+              <button type="button" class="filter-chip g1-time-chip" data-sec="15">15 秒</button>
+              <button type="button" class="filter-chip g1-time-chip" data-sec="20">20 秒</button>
+            </div>
+            <div class="label-row" style="margin-top:14px">
+              <span>回合數</span>
+            </div>
+            <div id="g1RoundsBox" class="filter-box">
+              <button type="button" class="filter-chip g1-rounds-chip" data-rounds="10">10輪</button>
+              <button type="button" class="filter-chip g1-rounds-chip" data-rounds="20">20輪</button>
+              <button type="button" class="filter-chip g1-rounds-chip" data-rounds="30">30輪</button>
+              <button type="button" class="filter-chip g1-rounds-chip active" data-rounds="0">無限</button>
+            </div>
+            <p class="notice" style="margin:6px 0 0">
+              無限：房主自己決定幾時結算
+            </p>
+          </div>
+
+
+          <div
+            id="g2Section"
+            class="hidden"
+          >
+            <div class="label-row">
+              <span>每人發言時間</span>
+            </div>
+            <div id="g2TimeBox" class="filter-box">
+              <button type="button" class="filter-chip g2-time-chip" data-sec="20">20 秒</button>
+              <button type="button" class="filter-chip g2-time-chip active" data-sec="30">30 秒</button>
+              <button type="button" class="filter-chip g2-time-chip" data-sec="45">45 秒</button>
+            </div>
+            <div class="label-row" style="margin-top:14px">
+              <span>回合數</span>
+            </div>
+            <div id="g2RoundsBox" class="filter-box">
+              <button type="button" class="filter-chip g2-rounds-chip" data-rounds="3">3輪</button>
+              <button type="button" class="filter-chip g2-rounds-chip active" data-rounds="5">5輪</button>
+              <button type="button" class="filter-chip g2-rounds-chip" data-rounds="8">8輪</button>
+              <button type="button" class="filter-chip g2-rounds-chip" data-rounds="custom">自定義</button>
+            </div>
+            <input
+              id="g2RoundsCustom"
+              type="number"
+              min="1"
+              max="30"
+              placeholder="輸入回合數（1-30）"
+              class="hidden"
+              style="margin-top:8px"
+            >
           </div>
 
 
@@ -921,7 +981,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=32" defer></script>
+<script src="./app.js?v=33" defer></script>
 
 </body>
 </html>

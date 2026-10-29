@@ -151,6 +151,8 @@ function renderCategories() {
   const g6Section = $("#g6Section");
 
   if (g6Section) g6Section.classList.toggle("hidden", S.selectedGame !== "game6");
+  $("#g1Section")?.classList.toggle("hidden", S.selectedGame !== "game1");
+  $("#g2Section")?.classList.toggle("hidden", S.selectedGame !== "game2");
 
   if (S.selectedGame === "game6") {
     if (catSection) catSection.style.display = "none";
@@ -317,9 +319,9 @@ const ROOM_COVERS = {
   `,
   game2: `
     <div class="game-cover cover2 cover2-g2">
-      <div class="gc-blob"></div>
       <div class="gc-icon">
         <svg viewBox="-5 -0 260 220" aria-hidden="true">
+    <circle cx="45" cy="260" r="130" fill="#3FBFA8"></circle>
     <circle cx="88" cy="118" r="70" fill="#004643" stroke="#1f2740" stroke-width="3"></circle>
     <path d="M52 100q12-10 24 0" fill="none" stroke="#F0EDE5" stroke-width="6" stroke-linecap="round"></path>
     <circle cx="110" cy="98" r="8" fill="#F0EDE5"></circle>
@@ -638,6 +640,48 @@ $("#g5RoundsBox")?.addEventListener("click", (event) => {
   S.selectedG5Rounds = Number(chip.dataset.rounds) || G5_SENTENCE_ROUNDS[0];
 });
 
+/* Game 1 · 心有靈犀 / Game 2 · 9upper 開房設定 */
+S.g1VoteSeconds = 10;
+S.g1Rounds = 0; // 0 = 無限
+S.g2SpeakSeconds = 30;
+S.g2Rounds = 5;
+
+function bindChips(boxSel, chipSel, onPick) {
+  $(boxSel)?.addEventListener("click", (event) => {
+    const chip = event.target.closest(chipSel);
+    if (!chip) return;
+    document.querySelectorAll(`${boxSel} ${chipSel}`).forEach((el) => el.classList.remove("active"));
+    chip.classList.add("active");
+    onPick(chip);
+  });
+}
+
+bindChips("#g1TimeBox", ".g1-time-chip", (chip) => { S.g1VoteSeconds = Number(chip.dataset.sec) || 10; });
+bindChips("#g1RoundsBox", ".g1-rounds-chip", (chip) => { S.g1Rounds = Number(chip.dataset.rounds) || 0; });
+bindChips("#g2TimeBox", ".g2-time-chip", (chip) => { S.g2SpeakSeconds = Number(chip.dataset.sec) || 30; });
+bindChips("#g2RoundsBox", ".g2-rounds-chip", (chip) => {
+  const custom = $("#g2RoundsCustom");
+  if (chip.dataset.rounds === "custom") {
+    custom?.classList.remove("hidden");
+    custom?.focus();
+    S.g2Rounds = null;
+  } else {
+    custom?.classList.add("hidden");
+    S.g2Rounds = Number(chip.dataset.rounds) || 5;
+  }
+});
+$("#g2RoundsCustom")?.addEventListener("input", () => {
+  const box = $("#g2RoundsCustom");
+  const n = Number(box.value);
+  if (Number.isInteger(n) && n >= 1 && n <= 30) {
+    S.g2Rounds = n;
+    box.style.borderColor = "";
+  } else {
+    S.g2Rounds = null;
+    box.style.borderColor = box.value ? "var(--yellow-deep)" : "";
+  }
+});
+
 /* Game 6 · Sync 唔 Sync 開房設定 */
 S.g6AnswerSeconds = 20;
 S.g6Rounds = 10;
@@ -724,6 +768,10 @@ async function createRoom() {
 
     S.nickname = $("#createName")?.value.trim() || "玩家";
 
+    if (S.selectedGame === "game2" && !S.g2Rounds) {
+      throw new Error("自定義回合數要喺 1 至 30 之間。");
+    }
+
     if (S.selectedGame === "game6" && !S.g6Rounds) {
       throw new Error("自定義回合數要喺 3 至 30 之間。");
     }
@@ -737,6 +785,10 @@ async function createRoom() {
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
         language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6") ? (S.selectedLanguage || "yue") : null,
+        g1VoteSeconds: S.selectedGame === "game1" ? S.g1VoteSeconds : null,
+        g1Rounds: S.selectedGame === "game1" ? S.g1Rounds : null,
+        g2SpeakSeconds: S.selectedGame === "game2" ? S.g2SpeakSeconds : null,
+        g2Rounds: S.selectedGame === "game2" ? S.g2Rounds : null,
         g6AnswerSeconds: S.selectedGame === "game6" ? S.g6AnswerSeconds : null,
         g6Rounds: S.selectedGame === "game6" ? S.g6Rounds : null,
         g6VoteSeconds: S.selectedGame === "game6" ? S.g6VoteSeconds : null,
@@ -1179,6 +1231,19 @@ function renderRoom() {
     </div>
 
     ${
+      room.game === "game1" && room.g1Settings
+        ? `<p class="notice" style="margin:10px 0 0">
+            投票 ${Math.round(room.g1Settings.voteMs / 1000)} 秒 ·
+            ${room.g1Settings.rounds ? `${room.g1Settings.rounds} 輪` : "無限輪數（房主結算）"}
+          </p>`
+        : room.game === "game2" && room.g2Settings
+        ? `<p class="notice" style="margin:10px 0 0">
+            每人發言 ${Math.round(room.g2Settings.speakMs / 1000)} 秒 · ${room.g2Settings.rounds} 輪
+          </p>`
+        : ""
+    }
+
+    ${
       room.game === "game6" && room.g6Settings
         ? `<p class="notice" style="margin:10px 0 0">
             每 round ${Math.round(room.g6Settings.answerMs / 1000)} 秒 ·
@@ -1593,7 +1658,7 @@ if (game.phase === "intro") {
   $("#gamePanel").innerHTML = `
     <div class="game-intro">
       <div class="eyebrow">
-        ROUND ${game.round}
+        ROUND ${game.round}${game.totalRounds ? ` / ${game.totalRounds}` : ""}
       </div>
 
       <h2>
@@ -1633,7 +1698,7 @@ if (game.phase === "intro") {
       >
         <div>
           <div class="eyebrow">
-            ROUND ${game.round}
+            ROUND ${game.round}${game.totalRounds ? ` / ${game.totalRounds}` : ""}
           </div>
 
           <h2 class="title">
@@ -1689,7 +1754,7 @@ if (game.phase === "intro") {
       </div>
 
       <p class="notice">
-        10 秒投票。
+        ${Math.round((game.voteMs || 10000) / 1000)} 秒投票。
         ${
           myVote !== undefined
             ? "你已經投咗。"
@@ -2305,6 +2370,27 @@ function roleBlock() {
 }
 
 function renderGame2(game) {
+  if (game.phase === "gameover") {
+    const ranking = [...(S.room.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+    const isHost = S.room.hostId === S.playerId;
+    $("#gamePanel").innerHTML = `
+      <div class="eyebrow">GAME OVER · ${game.round} ROUNDS</div>
+      <h2 class="title">瞎掰王<br><span>最終排名</span></h2>
+      <div class="g6-rank">
+        ${ranking.map((p, i) => `
+          <div class="g6-rank-row ${i === 0 ? "first" : ""} ${p.id === S.playerId ? "me" : ""}">
+            <span>${i + 1} · ${esc(p.nickname)}</span><b>${p.score || 0}</b>
+          </div>
+        `).join("")}
+      </div>
+      <div class="g6-end-actions">
+        ${isHost ? `<button type="button" class="btn btn-yellow" onclick="restart2()">再玩一局</button>` : `<p class="notice">等房主決定再玩一局定散 Band</p>`}
+        <button type="button" class="btn btn-outline" onclick="leaveRoom()">返大廳</button>
+      </div>
+    `;
+    clearInterval(S.timer);
+    return;
+  }
 
   let html = `
     <div
@@ -2313,7 +2399,7 @@ function renderGame2(game) {
     >
       <div>
         <div class="eyebrow">
-          9UPPER BLUFF GAME
+          9UPPER · ROUND ${game.round} / ${game.totalRounds}
         </div>
 
         <h2 class="title">
@@ -2592,7 +2678,7 @@ function renderGame2(game) {
               style="margin-top:15px"
               onclick="next2()"
             >
-              NEXT ROUND
+              ${game.round >= game.totalRounds ? "睇最終結果" : "NEXT ROUND"}
             </button>
           `
           : ""
@@ -4163,4 +4249,8 @@ function renderGame6Gameover(game) {
 window.g6RadarPick = (id) => {
   S.g6RadarSel = id;
   if (S.room?.gameState?.phase === "gameover") renderGame6Gameover(S.room.gameState);
+};
+
+window.restart2 = () => {
+  send({ type: "g2:restart" });
 };

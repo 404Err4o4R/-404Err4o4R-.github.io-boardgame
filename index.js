@@ -22,6 +22,11 @@ const G2_PREP_MS = 30000;
 const G2_PICK_MS = 10000;
 const G2_SPEAK_MS = 30000;
 const G2_JUDGE_MS = 120000;
+const G1_VOTE_MS_OPTIONS = [10000, 15000, 20000];
+const G1_ROUND_OPTIONS = [10, 20, 30]; // 0 = 無限（房主自己結算）
+const G2_SPEAK_MS_OPTIONS = [20000, 30000, 45000];
+const G2_ROUND_MIN = 1;
+const G2_ROUND_MAX = 30;
 
 const G3_WRITE_MS_DEFAULT = 60000;
 const G3_SCORE_MS = 18000;
@@ -97,6 +102,23 @@ function clampWriteMs(v) {
 function clampG4Rounds(v) {
   const n = Number(v);
   return G4_ROUND_OPTIONS.includes(n) ? n : G4_ROUND_OPTIONS[0];
+}
+function clampG1VoteMs(v) {
+  const n = Number(v);
+  return G1_VOTE_MS_OPTIONS.includes(n) ? n : G1_VOTE_MS;
+}
+function clampG1Rounds(v) {
+  const n = Number(v);
+  return G1_ROUND_OPTIONS.includes(n) ? n : 0;
+}
+function clampG2SpeakMs(v) {
+  const n = Number(v);
+  return G2_SPEAK_MS_OPTIONS.includes(n) ? n : G2_SPEAK_MS;
+}
+function clampG2Rounds(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n <= 0) return 5;
+  return Math.min(G2_ROUND_MAX, Math.max(G2_ROUND_MIN, n));
 }
 function clampG6AnswerMs(v) {
   const n = Number(v);
@@ -263,6 +285,14 @@ export default {
                 body.g5Mode === "char" ? "char" : "sentence",
               g5Rounds:
                 body.g5Rounds || null,
+              g1VoteMs:
+                body.g1VoteSeconds ? body.g1VoteSeconds*1000 : null,
+              g1Rounds:
+                body.g1Rounds || 0,
+              g2SpeakMs:
+                body.g2SpeakSeconds ? body.g2SpeakSeconds*1000 : null,
+              g2Rounds:
+                body.g2Rounds || null,
               g6AnswerMs:
                 body.g6AnswerSeconds ? body.g6AnswerSeconds*1000 : null,
               g6Rounds:
@@ -372,6 +402,8 @@ function publicRoom(room, viewerId=null) {
     hostId: room.hostId,
     filters: room.filters,
     language: room.language==="zh" ? "zh" : "yue",
+    g1Settings: room.game==="game1" ? { voteMs: room.g1VoteMs||G1_VOTE_MS, rounds: room.g1Rounds||0 } : null,
+    g2Settings: room.game==="game2" ? { speakMs: room.g2SpeakMs||G2_SPEAK_MS, rounds: room.g2Rounds||5 } : null,
     g6Settings: room.game==="game6" ? {
       answerMs: room.g6AnswerMs||20000,
       rounds: room.g6Rounds||10,
@@ -412,6 +444,7 @@ function publicGameState(room, viewerId=null) {
 
     return {
       phase:g.phase, round:g.round, endsAt:g.endsAt||null,
+      totalRounds:g.totalRounds||0, voteMs:g.voteMs||G1_VOTE_MS,
       question:localizedQuestion,
       votes:g.phase==="vote" ? {
   0:Object.values(g.votes||{}).filter(v=>v===0).length,
@@ -684,7 +717,7 @@ results:g.results||null
   }
 
   const base={
-    phase:g.phase, round:g.round, term:g.term || null,
+    phase:g.phase, round:g.round, totalRounds:g.totalRounds||room.g2Rounds||5, term:g.term || null,
     endsAt:g.endsAt||null, judgeId:g.judgeId||null,
     order:g.order||[], spokenIds:g.spokenIds||[],
     currentPlayerId:g.currentPlayerId||null
@@ -749,6 +782,10 @@ export class GameRoom extends DurableObject {
         g4Anonymous:body.g4Anonymous!==false,
         g5Mode:body.g5Mode==="char"?"char":"sentence",
         g5Rounds:clampG5Rounds(body.g5Mode,body.g5Rounds),
+        g1VoteMs:clampG1VoteMs(body.g1VoteMs),
+        g1Rounds:clampG1Rounds(body.g1Rounds),
+        g2SpeakMs:clampG2SpeakMs(body.g2SpeakMs),
+        g2Rounds:clampG2Rounds(body.g2Rounds),
         g6AnswerMs:clampG6AnswerMs(body.g6AnswerMs),
         g6Rounds:clampG6Rounds(body.g6Rounds),
         g6VoteMs:clampG6VoteMs(body.g6VoteMs),
@@ -839,6 +876,7 @@ export class GameRoom extends DurableObject {
       case "g2:chat": return this.onChat(session.playerId,msg.text,"speaking");
       case "g2:judge": return this.onG2Judge(session.playerId,msg.targetId);
       case "g2:next": return this.onG2Next(session.playerId);
+      case "g2:restart": return this.onG2Restart(session.playerId);
       case "g3:submit": return this.onG3Submit(session.playerId,msg.text);
       case "g3:rating-start": return this.onG3RatingStart(session.playerId);
       case "g3:score": return this.onG3Score(session.playerId,msg.index,msg.score);
@@ -1051,7 +1089,7 @@ if (notReady.length > 0) {
     const q=this.pickGame1Question();
     this.room.gameState={
       game:"game1",phase:"vote",round:(this.room.gameState?.round||0)+1,
-      question:q,usedIds:[...new Set([...prevUsed,q.id])],votes:{},nextReady:{},winner:null,endsAt:Date.now()+G1_VOTE_MS
+      question:q,usedIds:[...new Set([...prevUsed,q.id])],votes:{},nextReady:{},winner:null,totalRounds:this.room.g1Rounds||0,voteMs:this.room.g1VoteMs||G1_VOTE_MS,endsAt:Date.now()+(this.room.g1VoteMs||G1_VOTE_MS)
     };
     this.room.chat=[]; // 新一題開始，舊嘅傾偈記錄唔再顯示，個聊天框先唔會越玩越長
     await this.save();
@@ -1129,6 +1167,7 @@ async onG1Next(playerId){
 
   // 房主隨時可以強制入下一題（包括結算完之後想繼續玩）。
   if (playerId === this.room.hostId) {
+    if (await this.g1FinishIfLastRound()) return;
     await this.startGame1();
     return;
   }
@@ -1153,6 +1192,7 @@ async onG1Next(playerId){
     connected.every(p => g.nextReady[p.id]);
 
   if (allReady) {
+    if (await this.g1FinishIfLastRound()) return;
     await this.startGame1();
     return;
   }
@@ -1331,6 +1371,19 @@ async onG1Next(playerId){
     return result;
   }
 
+  // 有設回合數嘅話，打完最後一題就直接去結算（結算畫面房主仍然可以揀繼續玩）。
+  async g1FinishIfLastRound(){
+    const g=this.room.gameState;
+    const total=this.room.g1Rounds||0;
+    if(!g || g.phase!=="chat" || !total || (g.round||0)<total) return false;
+    g.phase="final";
+    g.endsAt=null;
+    g.results=this.computeG1Results();
+    await this.save();
+    await this.broadcastRoom();
+    return true;
+  }
+
   async onG1Finish(playerId){
     const g=this.room.gameState;
     if(!g || g.phase!=="chat" || playerId!==this.room.hostId) return;
@@ -1380,6 +1433,7 @@ async onG1Next(playerId){
       game: "game2",
       phase: "prep",
       round: (this.room.gameState?.round || 0) + 1,
+      totalRounds: this.room.g2Rounds || 5,
       term: q.term,
       category: q.category,
       privateExplanation:
@@ -1495,7 +1549,7 @@ async onG1Next(playerId){
     g.phase="speaking";
     g.currentPlayerId=targetId;
     g.candidates=[];
-    g.endsAt=Date.now()+G2_SPEAK_MS;
+    g.endsAt=Date.now()+(this.room.g2SpeakMs||G2_SPEAK_MS);
 
     await this.save();
     await this.ctx.storage.setAlarm(g.endsAt);
@@ -1574,6 +1628,22 @@ async onG1Next(playerId){
   async onG2Next(playerId){
     const g=this.room.gameState;
     if(!g||g.phase!=="result"||playerId!==this.room.hostId)return;
+    if((g.round||0)>=(this.room.g2Rounds||5)){
+      g.phase="gameover";
+      g.endsAt=null;
+      await this.save();
+      await this.broadcastRoom();
+      return;
+    }
+    await this.startGame2();
+  }
+
+  // 9upper 打完全部回合之後，房主可以清零再玩一局。
+  async onG2Restart(playerId){
+    const g=this.room.gameState;
+    if(!g||g.game!=="game2"||g.phase!=="gameover"||playerId!==this.room.hostId)return;
+    for(const p of this.room.players) p.score=0;
+    this.room.gameState=null;
     await this.startGame2();
   }
 
