@@ -549,8 +549,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   --strip:var(--yellow);--strip-fg:var(--ink);--ring:#1f2740;--cream:#FEFEF2;
 }
 #gameShell[data-game="game1"]{--card:#F2D965;--card-fg:#1f2740;--sel:#7a89ae;--sel-fg:#fff;--deep:#3f4d73;--strip:#7a89ae;--strip-fg:#fff}
-#gameShell[data-game="game2"]{--card:#004643;--card-fg:#F0EDE5;--sel:#F0EDE5;--sel-fg:#004643;--deep:#F2D965;--strip:#F0EDE5;--strip-fg:#004643;--ring:#F2D965}
-#gameShell[data-game="game3"]{--card:#F2795F;--card-fg:#1f2740;--sel:#F2D9C4;--sel-fg:#8a5236;--deep:#5a2e1f;--strip:#F2D9C4;--strip-fg:#8a5236}
+#gameShell[data-game="game2"]{--card:#3FBFA8;--card-fg:#1f2740;--sel:#004643;--sel-fg:#F0EDE5;--deep:#004643;--strip:#3FBFA8;--strip-fg:#1f2740}
+#gameShell[data-game="game3"]{--card:#FF8A6B;--card-fg:#1f2740;--sel:#F2D9C4;--sel-fg:#8a5236;--deep:#5a2e1f;--strip:#F2D9C4;--strip-fg:#8a5236}
 #gameShell[data-game="game4"]{--card:#7B57CE;--card-fg:#fff;--sel:#FFD166;--sel-fg:#1f2740;--deep:#FFD166;--strip:#FFD166;--strip-fg:#4a2f7a;--ring:#FFD166}
 #gameShell[data-game="game5"]{--card:#AFCBE3;--card-fg:#1f2740;--sel:#2f5a7a;--sel-fg:#fff;--deep:#2f5a7a;--strip:#AFCBE3;--strip-fg:#1f2740}
 #gameShell[data-game="game6"]{--card:#B9DD5B;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#3C5A1E;--strip:#B9DD5B;--strip-fg:#1f2740}
@@ -733,3 +733,27 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   .g6-hint{flex-wrap:wrap}
 }
 .g3-target{font-size:1.3em;color:#fff;background:#c4553e;border-radius:10px;padding:0 8px}
+
+/* 封面（2026-10 新版，同 Sync 唔 Sync 封面一樣風格）*/
+.cover2{overflow:hidden}
+.cover2 .gc-icon{top:50%;width:72%}
+.cover2 .gc-icon svg{width:100%;height:auto;display:block}
+.cover2 .gc-label{opacity:1}
+.cover2 .gc-label.eyebrow{top:6%}
+.cover2 .gc-label.bottom{bottom:6%}
+.cover2-g1{background:#F2D965}
+.cover2-g1 .gc-label.eyebrow{background:#1f2740;color:#F2D965}
+.cover2-g1 .gc-label.bottom{background:#7a89ae;color:#fff}
+.cover2-g2{background:#F0EDE5}
+.cover2-g2 .gc-blob{position:absolute;left:-20%;bottom:-20%;width:86%;aspect-ratio:1;border-radius:50%;background:#3FBFA8}
+.cover2-g2 .gc-label.eyebrow{background:#004643;color:#F0EDE5}
+.cover2-g2 .gc-label.bottom{background:#F2D965;color:#1f2740;border:2px solid #1f2740}
+.cover2-g3{background:#FF8A6B}
+.cover2-g3 .gc-label.eyebrow{background:#1f2740;color:#FFB59F}
+.cover2-g3 .gc-label.bottom{background:#FEFEF2;color:#1f2740}
+.cover2-g4{background:#7B57CE}
+.cover2-g4 .gc-label.eyebrow{background:#FFD166;color:#4a2f7a}
+.cover2-g4 .gc-label.bottom{background:#4a2f7a;color:#FFD166}
+.cover2-g5{background:#AFCBE3}
+.cover2-g5 .gc-label.eyebrow{background:#1f2740;color:#AFCBE3}
+.cover2-g5 .gc-label.bottom{background:#FEFEF2;color:#1f2740}
