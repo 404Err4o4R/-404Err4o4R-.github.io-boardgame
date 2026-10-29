@@ -757,3 +757,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .cover2-g5{background:#AFCBE3}
 .cover2-g5 .gc-label.eyebrow{background:#1f2740;color:#AFCBE3}
 .cover2-g5 .gc-label.bottom{background:#FEFEF2;color:#1f2740}
+
+/* 封面統一尺寸：開房卡固定最少 920px 高（夠放最長嗰隻 game 嘅設定），
+   六隻 game 嘅封面同插圖大小一樣；手機版封面固定 340px 高。 */
+.room-panel{min-height:920px}
+.room-visual .cover2 .gc-icon,.room-visual .cover-g6 .gc-icon{width:min(72%,340px)}
+.room-visual:has(.cover-g1){background:var(--g1-a)}
+.room-visual:has(.cover-g2){background:var(--g2-a)}
+.room-visual:has(.cover-g3){background:var(--g3-a)}
+.room-visual:has(.cover2-g1){background:#F2D965}
+.room-visual:has(.cover2-g2){background:#F0EDE5}
+.room-visual:has(.cover2-g3){background:#FF8A6B}
+.room-visual:has(.cover2-g4){background:#7B57CE}
+.room-visual:has(.cover2-g5){background:#AFCBE3}
+.room-visual:has(.cover-g6){background:#B9DD5B}
+@media (max-width:900px){
+  .room-panel{min-height:0}
+  .room-visual{min-height:0;height:340px}
+}

@@ -294,7 +294,7 @@ const ROOM_COVERS = {
   game1: `
     <div class="game-cover cover2 cover2-g1">
       <div class="gc-icon">
-        <svg viewBox="0 0 240 220" aria-hidden="true">
+        <svg viewBox="-10 -0 260 220" aria-hidden="true">
     <path d="M62 86 Q120 18 178 86" fill="none" stroke="#1f2740" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"></path>
     <path d="M120 22l7 16 16 7-16 7-7 16-7-16-16-7 16-7z" fill="#FEFEF2" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></path>
 
@@ -319,7 +319,7 @@ const ROOM_COVERS = {
     <div class="game-cover cover2 cover2-g2">
       <div class="gc-blob"></div>
       <div class="gc-icon">
-        <svg viewBox="0 0 250 220" aria-hidden="true">
+        <svg viewBox="-5 -0 260 220" aria-hidden="true">
     <circle cx="88" cy="118" r="70" fill="#004643" stroke="#1f2740" stroke-width="3"></circle>
     <path d="M52 100q12-10 24 0" fill="none" stroke="#F0EDE5" stroke-width="6" stroke-linecap="round"></path>
     <circle cx="110" cy="98" r="8" fill="#F0EDE5"></circle>
@@ -341,7 +341,7 @@ const ROOM_COVERS = {
   game3: `
     <div class="game-cover cover2 cover2-g3">
       <div class="gc-icon">
-        <svg viewBox="0 0 260 220" aria-hidden="true">
+        <svg viewBox="-0 -0 260 220" aria-hidden="true">
     <path d="M14 82l46-30h28v132h22v28H14v-28h28V92l-20 10z" fill="#FEFEF2" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></path>
     <path d="M180 212C112 168 104 92 140 70c18-10 34 2 40 16 6-14 22-26 40-16 36 22 28 98-40 142z" fill="#F2D9C4" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></path>
     <path d="M140 104q10-16 24-12" fill="none" stroke="#FEFEF2" stroke-width="6" stroke-linecap="round"></path>
@@ -356,7 +356,7 @@ const ROOM_COVERS = {
   game4: `
     <div class="game-cover cover2 cover2-g4">
       <div class="gc-icon">
-        <svg viewBox="0 0 230 200" aria-hidden="true">
+        <svg viewBox="-15 -10 260 220" aria-hidden="true">
     <g fill="#FEFEF2" stroke="#1f2740" stroke-width="3">
       <circle cx="44" cy="112" r="20"></circle>
       <path d="M12 176a32 32 0 0 1 64 0z"></path>
@@ -379,7 +379,7 @@ const ROOM_COVERS = {
   game5: `
     <div class="game-cover cover2 cover2-g5">
       <div class="gc-icon">
-        <svg viewBox="0 0 230 200" aria-hidden="true">
+        <svg viewBox="-15 -10 260 220" aria-hidden="true">
     <path d="M115 62C92 46 52 42 18 50v112c34-8 74-4 97 12z" fill="#FEFEF2" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></path>
     <path d="M115 62c23-16 63-20 97-12v112c-34-8-74-4-97 12z" fill="#1f2740" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></path>
     <g stroke="#1f2740" stroke-width="5" stroke-linecap="round">
@@ -403,7 +403,7 @@ const ROOM_COVERS = {
   game6: `
     <div class="game-cover cover-g6">
       <div class="gc-icon">
-        <svg viewBox="0 0 220 190" aria-hidden="true">
+        <svg viewBox="-20 -15 260 220" aria-hidden="true">
           <path d="M18 30a22 22 0 0 1 22-22h76a22 22 0 0 1 22 22v44a22 22 0 0 1-22 22H62l-26 22 6-22h-2a22 22 0 0 1-22-22z" fill="#1f2740"/>
           <path d="M82 92a22 22 0 0 1 22-22h76a22 22 0 0 1 22 22v44a22 22 0 0 1-22 22h-2l6 22-26-22h-54a22 22 0 0 1-22-22z" fill="#FEFEF2" stroke="#1f2740" stroke-width="3"/>
           <circle cx="146" cy="62" r="21" fill="#F2D965" stroke="#1f2740" stroke-width="3"/>
@@ -411,7 +411,7 @@ const ROOM_COVERS = {
         </svg>
       </div>
       <div class="gc-label eyebrow">WORD SYNC</div>
-      <div class="gc-label bottom">2–6 PLAYERS</div>
+      <div class="gc-label bottom">Sync 唔 Sync</div>
     </div>
   `
 };
