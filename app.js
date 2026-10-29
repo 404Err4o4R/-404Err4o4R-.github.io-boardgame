@@ -441,8 +441,8 @@ const ROOM_COVERS = {
           <text x="110" y="196" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="15" fill="#1f2740">37 — 68</text>
         </svg>
       </div>
-      <div class="gc-label eyebrow">NUMBER BOMB</div>
-      <div class="gc-label bottom">數字炸彈</div>
+      <div class="gc-label eyebrow">GUESS · DODGE · BOOM</div>
+      <div class="gc-label bottom">Number Bomb 數字炸彈</div>
     </div>
   `
 };
@@ -464,7 +464,7 @@ const GAME_NAMES = {
   game4: "Most Likely To 邊個至似",
   game5: "故事接龍",
   game6: "Sync 唔 Sync",
-  game7: "數字炸彈"
+  game7: "Number Bomb 數字炸彈"
 };
 
 function renderRoomVisual() {

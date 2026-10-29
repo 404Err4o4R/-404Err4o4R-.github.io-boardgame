@@ -834,6 +834,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .cherry-card{background:#F7577A;color:#1f2740}.cherry-card .tag-row span{background:rgba(31,39,64,.12)}
 .cherry-card .game-icon svg{display:block}
+.cherry-card h3 .h3-sub{display:inline-block;margin-top:4px;font-size:.62em}
 
 .cover-g7{background:#F7577A}
 .cover-g7 .gc-icon{top:52%;width:72%}
