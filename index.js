@@ -53,7 +53,7 @@ const G6_VOTE_MS_DEFAULT = 10000;
 const G6_SUCCESS_MS = 10000; // 成功 sync 之後停留 10 秒，畀大家 cap 圖
 const G6_VOID_MS = 5000;
 const G6_MAX_ATTEMPTS = 5;
-const G6_MAX_UNITS = 8; // 中文字算 2 個單位，英文字元算 1 個：即係中文最多 4 字、英文最多 8 個字元
+const G6_MAX_UNITS = 105; // 中文字算 15 個單位，英文字元算 7 個：即係中文最多 7 字、英文最多 15 個字元（中英夾雜按比例計）
 const G6_BASE_POINTS = 50;
 const G6_SPEED_POINTS = 50;
 
@@ -145,7 +145,7 @@ const G6_S2T = (() => {
 })();
 function g6Units(text) {
   let units = 0;
-  for (const ch of text) units += /[\u0000-\u024F]/.test(ch) ? 1 : 2;
+  for (const ch of text) units += /[\u0000-\u024F]/.test(ch) ? 7 : 15;
   return units;
 }
 // 去空格、全形轉半形、大細楷、簡轉繁，之後完全相同就當同一個答案。
@@ -2281,7 +2281,7 @@ async onG1Next(playerId){
     const norm=g6Normalize(clean);
     if(!norm) return this.errorPlayer(playerId,"答案唔可以留空。");
     if(g6Units(clean.replace(/\s+/g,""))>G6_MAX_UNITS){
-      return this.errorPlayer(playerId,"答案太長：中文最多 4 字，英文最多 8 個字元。");
+      return this.errorPlayer(playerId,"答案太長：中文最多 7 字，英文最多 15 個字元。");
     }
 
     const t=Math.max(0,Math.min(g.answerMs,Date.now()-g.startedAt));

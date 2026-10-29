@@ -3707,13 +3707,13 @@ const G6_TEXT = {
     answerSub: "同其他人撞啱同一個字就 Sync 咗",
     yourAnswer: "你嘅答案",
     placeholder: "第一個諗到嘅字",
-    limit: "中文最多 4 字 · 英文最多 8 個字元",
+    limit: "中文最多 7 字 · 英文最多 15 個字元",
     lock: "鎖定答案",
     lockNote: "交咗就唔可以改",
     locked: "已鎖定",
     waitOthers: "等緊其他人交答案……",
     answered: "已作答",
-    tooLong: "太長喇：中文最多 4 字，英文最多 8 個字元",
+    tooLong: "太長喇：中文最多 7 字，英文最多 15 個字元",
     empty: "打個字先",
     mergeTitle: "有冇答案應該算同一個？",
     mergeHint: "揀兩個你覺得意思一樣嘅答案，再撳「提議合併」。完全相同嘅已經自動歸埋一齊。",
@@ -3781,13 +3781,13 @@ const G6_TEXT = {
     answerSub: "和其他人寫出同一個詞就 Sync 了",
     yourAnswer: "你的答案",
     placeholder: "第一個想到的詞",
-    limit: "中文最多 4 字 · 英文最多 8 個字元",
+    limit: "中文最多 7 字 · 英文最多 15 個字元",
     lock: "鎖定答案",
     lockNote: "送出後就不能修改",
     locked: "已鎖定",
     waitOthers: "等待其他人送出答案……",
     answered: "已作答",
-    tooLong: "太長了：中文最多 4 字，英文最多 8 個字元",
+    tooLong: "太長了：中文最多 7 字，英文最多 15 個字元",
     empty: "請先輸入",
     mergeTitle: "有沒有答案應該算同一個？",
     mergeHint: "選兩個你覺得意思相同的答案，再按「提議合併」。完全相同的已自動歸在一起。",
@@ -3856,11 +3856,11 @@ function g6T() {
   return G6_TEXT[S.room?.language === "zh" ? "zh" : "yue"];
 }
 
-// 中文字算 2 個單位、英文字元算 1 個，上限 8 個單位（同伺服器一樣計法）。
+// 中文字算 15 個單位、英文字元算 7 個，上限 105（即中文 7 字、英文 15 字元；同伺服器一樣計法）。
 function g6Units(text) {
   let units = 0;
   for (const ch of String(text || "").replace(/\s+/g, "")) {
-    units += /[\u0000-ɏ]/.test(ch) ? 1 : 2;
+    units += /[\u0000-ɏ]/.test(ch) ? 7 : 15;
   }
   return units;
 }
@@ -3869,7 +3869,7 @@ function g6CountLabel(text) {
   const clean = String(text || "").replace(/\s+/g, "");
   const units = g6Units(clean);
   const hasCjk = [...clean].some((ch) => !/[\u0000-ɏ]/.test(ch));
-  return hasCjk ? `${Math.ceil(units / 2)} / 4` : `${clean.length} / 8`;
+  return hasCjk ? `${Math.ceil(units / 15)} / 7` : `${clean.length} / 15`;
 }
 
 function g6Head(game, extraPill = "") {
@@ -3943,12 +3943,12 @@ function renderGame6Answering(game) {
           <label class="g6-field">
             <span>${esc(t.yourAnswer)}</span>
             <span class="g6-input-row">
-              <input id="g6Input" type="text" maxlength="8" autocomplete="off" placeholder="${esc(t.placeholder)}">
+              <input id="g6Input" type="text" maxlength="15" autocomplete="off" placeholder="${esc(t.placeholder)}">
               <button id="g6Submit" type="button" class="btn btn-dark g6-lock-btn" disabled>${esc(t.lock)}</button>
             </span>
             <span class="g6-hint">
               <span id="g6Limit">${esc(t.limit)} · ${esc(t.lockNote)}</span>
-              <span id="g6Units">0 / 4</span>
+              <span id="g6Units">0 / 7</span>
             </span>
           </label>
         `
@@ -3967,7 +3967,7 @@ function renderGame6Answering(game) {
     const update = () => {
       const clean = input.value.replace(/\s+/g, "");
       const units = g6Units(clean);
-      const tooLong = units > 8;
+      const tooLong = units > 105;
       $("#g6Units").textContent = g6CountLabel(input.value);
       $("#g6Limit").textContent = tooLong ? t.tooLong : `${t.limit} · ${t.lockNote}`;
       $("#g6Limit").classList.toggle("g6-warn", tooLong);
@@ -3976,7 +3976,7 @@ function renderGame6Answering(game) {
     const submit = () => {
       const value = input.value.trim();
       if (!value) return flash(t.empty);
-      if (g6Units(value) > 8) return flash(t.tooLong);
+      if (g6Units(value) > 105) return flash(t.tooLong);
       button.disabled = true;
       send({ type: "g6:submit", text: value });
     };
