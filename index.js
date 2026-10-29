@@ -679,6 +679,7 @@ results:g.results||null
         const no=Object.values(pr.votes).filter(v=>v===false).length;
         return {
           id:pr.id,
+          kind:pr.kind||"pair",
           a:pr.a,
           b:pr.b,
           wordsA:pr.wordsA,
@@ -911,6 +912,7 @@ export class GameRoom extends DurableObject {
       case "g6:propose": return this.onG6Propose(session.playerId,msg.a,msg.b);
       case "g6:vote": return this.onG6Vote(session.playerId,msg.proposalId,msg.agree);
       case "g6:skip": return this.onG6Skip(session.playerId);
+      case "g6:propose-all": return this.onG6ProposeAll(session.playerId);
       case "g6:next": return this.onG6Next(session.playerId);
       case "g6:end": return this.onG6End(session.playerId);
       case "g6:restart": return this.onG6Restart(session.playerId);
@@ -2326,7 +2328,7 @@ async onG1Next(playerId){
     g.autoPair=g.groups.length===2;
     if(g.autoPair){
       const [a,b]=g.groups;
-      const {list,unanimous}=this.g6EligibleVoters(g,a.id,b.id);
+      const {list,unanimous}=this.g6EligibleVoters();
       g.proposals.push({
         id:"p1",a:a.id,b:b.id,wordsA:a.words,wordsB:b.words,
         by:null,eligible:list,unanimous,votes:{},status:"open"
@@ -2338,13 +2340,10 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
 
-  g6EligibleVoters(g,a,b){
-    const ga=g.groups.find(x=>x.id===a), gb=g.groups.find(x=>x.id===b);
-    const involved=new Set([...(ga?.members||[]),...(gb?.members||[])]);
+  // 全部在線玩家都可以投票（包括今次冇交到答案嘅人），過半數同意就合併；二人局即係要兩個都同意。
+  g6EligibleVoters(){
     const connected=this.room.players.filter(p=>p.connected).map(p=>p.id);
-    const outsiders=connected.filter(id=>!involved.has(id));
-    // 冇第三者可以投（例如 2 人局），就要答呢兩個答案嘅人全部同意。
-    return outsiders.length ? {list:outsiders,unanimous:false} : {list:connected.filter(id=>involved.has(id)),unanimous:true};
+    return {list:connected,unanimous:false};
   }
 
   async onG6Propose(playerId,a,b){
@@ -2357,7 +2356,7 @@ async onG1Next(playerId){
     if(exists) return;
     if(g.proposals.length>=8) return this.errorPlayer(playerId,"今 round 提議太多，唔可以再加。");
 
-    const {list,unanimous}=this.g6EligibleVoters(g,a,b);
+    const {list,unanimous}=this.g6EligibleVoters();
     const pr={
       id:"p"+(g.proposals.length+1),
       a,b,
@@ -2372,6 +2371,33 @@ async onG1Next(playerId){
     if(list.includes(playerId)) pr.votes[playerId]=true; // 提議人自己當投咗同意
     g.proposals.push(pr);
     // 有新提議就重新計時，等大家有時間投票。
+    g.skip={};
+    g.endsAt=Date.now()+g.voteMs;
+    await this.resolveProposalsGame6(false);
+  }
+
+  // 大家寫得好接近：提議「全部人都算 Sync」，所有答案一齊合併。
+  async onG6ProposeAll(playerId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game6" || g.phase!=="merging" || g.autoPair) return;
+    if(g.groups.length<3) return;
+    if(g.proposals.some(pr=>pr.status==="open" && pr.kind==="all")) return;
+    if(g.proposals.length>=8) return this.errorPlayer(playerId,"今 round 提議太多，唔可以再加。");
+    const {list,unanimous}=this.g6EligibleVoters();
+    const pr={
+      id:"p"+(g.proposals.length+1),
+      kind:"all",
+      a:null,b:null,
+      wordsA:g.groups.flatMap(gr=>gr.words),
+      wordsB:[],
+      by:playerId,
+      eligible:list,
+      unanimous,
+      votes:{},
+      status:"open"
+    };
+    if(list.includes(playerId)) pr.votes[playerId]=true;
+    g.proposals.push(pr);
     g.skip={};
     g.endsAt=Date.now()+g.voteMs;
     await this.resolveProposalsGame6(false);
@@ -2408,7 +2434,15 @@ async onG1Next(playerId){
       const need=pr.unanimous ? n : Math.floor(n/2)+1;
       if(yes>=need) pr.status="passed";
       else if(n-no<need || final) pr.status="failed";
-      if(pr.status==="passed") this.mergeGroupsGame6(pr.a,pr.b);
+      if(pr.status==="passed"){
+        if(pr.kind==="all"){
+          // 「全部人都算 Sync」：所有答案併做一組。
+          const [first,...rest]=g.groups;
+          for(const gr of rest) this.mergeGroupsGame6(first.id,gr.id);
+        }else{
+          this.mergeGroupsGame6(pr.a,pr.b);
+        }
+      }
     }
 
     const open=g.proposals.some(pr=>pr.status==="open");
@@ -2434,6 +2468,7 @@ async onG1Next(playerId){
     g.groups=g.groups.filter(x=>x.id!==b);
     // 指住被合併組別嘅提議改指新組別；變成同一組嘅就作廢。
     for(const pr of g.proposals){
+      if(pr.kind==="all") continue;
       if(pr.a===b) pr.a=a;
       if(pr.b===b) pr.b=a;
       if(pr.status==="open" && pr.a===pr.b) pr.status="failed";

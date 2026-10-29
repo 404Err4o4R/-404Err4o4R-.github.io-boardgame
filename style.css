@@ -817,3 +817,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .g6-log-word{font-family:"Fredoka",sans-serif;font-size:18px}
 .g6-log-meta{font-size:12px;color:#4b5470}
 .g6-log-round .g6-hist-row{background:#fff;margin-top:6px}
+.g6-allsync{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px}
+.g6-allsync small{font-weight:800;opacity:.85}
+.g6-record{margin-top:6px}
+.g6-record .g6-hist-row{background:#fff}
+.g6-log-head{list-style:none;cursor:pointer;min-height:44px;align-items:center}
+.g6-log-head::-webkit-details-marker{display:none}
+.g6-log-head::after{content:"＋";margin-left:auto;font-weight:900}
+.g6-log[open] > .g6-log-head::after{content:"－"}
+.g6-log{display:block}
+.g6-log[open] > .g6-log-round{margin-top:8px}

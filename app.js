@@ -3720,13 +3720,13 @@ const G6_TEXT = {
     slotEmpty: "揀答案",
     propose: "提議合併",
     pairQ: "呢兩個答案算唔算同一個？",
-    pairNote: "要全部人都話「算」先會合併",
+    pairNote: "過半數話「算」就會合併",
     picked: "已揀",
     mine: "你嘅答案",
     proposeBy: (n) => `${n} 提議合併`,
     agree: "算同一個",
     disagree: "唔算",
-    notEligible: "你答咗其中一個，唔使投",
+    notEligible: "你今次唔使投",
     youVoted: (v) => (v ? "你投咗：算同一個" : "你投咗：唔算"),
     passed: "✓ 已合併",
     failed: "✗ 唔合併",
@@ -3779,7 +3779,11 @@ const G6_TEXT = {
     logHint: "撳每個 round 睇返大家估過咩",
     logRound: (r) => `Round ${r}`,
     logSuccess: (a) => `第 ${a} 次 Sync 到`,
-    logVoid: "作廢"
+    logVoid: "作廢",
+    allSync: "全部人都算 Sync",
+    allSyncQ: "全部答案算同一個？",
+    allSyncHint: "大家寫得好接近？一鍵提議全部合併",
+    roundRecord: "呢輪紀錄"
   },
   zh: {
     answerTitle: "想到什麼，就打什麼！",
@@ -3799,13 +3803,13 @@ const G6_TEXT = {
     slotEmpty: "選答案",
     propose: "提議合併",
     pairQ: "這兩個答案算不算同一個？",
-    pairNote: "要所有人都說「算」才會合併",
+    pairNote: "過半數說「算」就會合併",
     picked: "已選",
     mine: "你的答案",
     proposeBy: (n) => `${n} 提議合併`,
     agree: "算同一個",
     disagree: "不算",
-    notEligible: "你寫了其中一個，不用投票",
+    notEligible: "你這次不用投票",
     youVoted: (v) => (v ? "你投了：算同一個" : "你投了：不算"),
     passed: "✓ 已合併",
     failed: "✗ 不合併",
@@ -3858,7 +3862,11 @@ const G6_TEXT = {
     logHint: "點選每個回合查看大家猜過什麼",
     logRound: (r) => `第 ${r} 回合`,
     logSuccess: (a) => `第 ${a} 次 Sync`,
-    logVoid: "作廢"
+    logVoid: "作廢",
+    allSync: "所有人都算 Sync",
+    allSyncQ: "所有答案算同一個？",
+    allSyncHint: "大家寫得很接近？一鍵提議全部合併",
+    roundRecord: "本回合紀錄"
   }
 };
 
@@ -3896,14 +3904,15 @@ function g6Head(game, extraPill = "") {
 }
 
 // 之前幾次估咗咩：新嘅放上面。
-function g6HistoryHtml(game) {
+function g6HistoryHtml(game, opts = {}) {
   const t = g6T();
   const history = game.history || [];
   if (!history.length) return "";
+  const rows = opts.chronological ? history : [...history].reverse();
   return `
-    <div class="g6-history">
-      <div class="eyebrow">${esc(t.historyTitle)}</div>
-      ${[...history].reverse().map((h) => `
+    <div class="g6-history ${opts.cls || ""}">
+      <div class="eyebrow">${esc(opts.title || t.historyTitle)}</div>
+      ${rows.map((h) => `
         <div class="g6-hist-row">
           <span class="g6-hist-n">${esc(t.attemptN(h.attempt))}</span>
           <span class="g6-chips">
@@ -4043,7 +4052,11 @@ function renderGame6Merging(game) {
       <div class="g6-proposal ${pr.status}">
         <div class="eyebrow">${esc(t.proposeBy(pr.byNickname))}</div>
         <div class="g6-pr-words">
-          <span>${g6Words(pr.wordsA)}</span><b>=</b><span>${g6Words(pr.wordsB)}</span><b>？</b>
+          ${
+            pr.kind === "all"
+              ? `${pr.wordsA.map((w) => `<span>${esc(w)}</span>`).join("<b>=</b>")}<b>？</b>`
+              : `<span>${g6Words(pr.wordsA)}</span><b>=</b><span>${g6Words(pr.wordsB)}</span><b>？</b>`
+          }
         </div>
         ${action}
         <div class="g6-pr-count">已投 ${pr.yes + pr.no} / ${pr.eligibleCount}</div>
@@ -4065,6 +4078,14 @@ function renderGame6Merging(game) {
       }).join('<b class="g6-eq">=</b>')}
       <button type="button" class="btn btn-dark g6-propose" onclick="g6ProposePick()" ${S.g6Pick.length === 2 ? "" : "disabled"}>${esc(t.propose)}</button>
     </div>
+    ${
+      (game.groups || []).length >= 3 && !(game.proposals || []).some((p) => p.kind === "all" && p.status === "open")
+        ? `<div class="g6-allsync">
+            <small>${esc(t.allSyncHint)}</small>
+            <button type="button" class="btn btn-yellow" onclick="g6ProposeAll()">${esc(t.allSync)}</button>
+          </div>`
+        : ""
+    }
     ${proposalsHtml}
     <div class="g6-status">
       ${
@@ -4090,6 +4111,10 @@ window.g6PickGroup = (id) => {
     S.g6Pick = [...S.g6Pick, id].slice(-2);
   }
   renderGame6Merging(game);
+};
+
+window.g6ProposeAll = () => {
+  send({ type: "g6:propose-all" });
 };
 
 window.g6ProposePick = () => {
@@ -4178,9 +4203,9 @@ function renderGame6Reveal(game) {
       <div class="g6-win g6-void">
         <div class="g6-win-word g6-none">${esc(t.voidTitle)}</div>
         <p class="g6-sub" style="text-align:center">${esc(t.voidSub(game.maxAttempts || 5))}</p>
+        ${g6HistoryHtml(game, { chronological: true, title: t.roundRecord, cls: "g6-record" })}
       </div>
       ${g6NextHtml(game)}
-      ${g6HistoryHtml(game)}
     `;
     if (game.endsAt) startTimer($("#time"), game.endsAt);
     return;
@@ -4228,11 +4253,11 @@ function renderGame6Reveal(game) {
         </div>
       `).join("")}
       <small class="g6-cap">${esc(t.capHint)} · ${esc(t.sec(winner.syncAt))} Sync</small>
+      ${g6HistoryHtml(game, { chronological: true, title: t.roundRecord, cls: "g6-record" })}
     </div>
     ${g6NextHtml(game)}
     ${othersHtml ? `<div class="eyebrow g6-section-label">${esc(t.others)}</div>${othersHtml}` : ""}
     ${result.noAnswer?.length ? `<p class="g6-sub">${esc(t.noAnswer(result.noAnswer.join("、")))}</p>` : ""}
-    ${(game.history || []).length > 1 ? g6HistoryHtml({ ...game, history: game.history.slice(0, -1) }) : ""}
   `;
 
   if (game.endsAt) startTimer($("#time"), game.endsAt);
@@ -4386,11 +4411,11 @@ function renderGame6Gameover(game) {
   const log = game.log || [];
   const logHtml = log.length
     ? `
-      <div class="g6-log">
-        <div class="g6-chart-head">
+      <details class="g6-log">
+        <summary class="g6-chart-head g6-log-head">
           <strong>${esc(t.logTitle)}</strong>
           <small>${esc(t.logHint)}</small>
-        </div>
+        </summary>
         ${log.map((r) => `
           <details class="g6-log-round">
             <summary>
@@ -4412,7 +4437,7 @@ function renderGame6Gameover(game) {
             `).join("")}
           </details>
         `).join("")}
-      </div>
+      </details>
     `
     : "";
 
