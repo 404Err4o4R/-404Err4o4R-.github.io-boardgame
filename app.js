@@ -2376,63 +2376,7 @@ if (game.phase === "intro") {
       }
     </p>
 
-    <div class="chat-panel">
-      <div class="eyebrow">
-        TALK IT OUT
-      </div>
-
-      <div
-        class="row"
-        style="margin-top:8px"
-      >
-        <input
-          id="chat1"
-          placeholder="講下你點諗…"
-        >
-
-        <button
-          id="chat1Send"
-          class="btn btn-send"
-          disabled
-          onclick="chat1()"
-        >
-          SEND
-        </button>
-      </div>
-
-      <div
-        id="chatBox"
-        class="chat"
-      >
-        ${renderChatHtml()}
-      </div>
-    </div>
   `;
-  const chatInput = $("#chat1");
-  const chatSend = $("#chat1Send");
-
-  if (chatInput && chatSend) {
-    const updateSendButton = () => {
-      const hasText =
-        chatInput.value.trim().length > 0;
-
-      chatSend.disabled = !hasText;
-
-      chatSend.classList.toggle(
-        "ready",
-        hasText
-      );
-    };
-
-    chatInput.addEventListener(
-      "input",
-      updateSendButton
-    );
-
-    updateSendButton();
-  }
-
-  scrollChat();
 }
 
 window.vote1 = async (index) => {
@@ -2449,30 +2393,6 @@ window.vote1 = async (index) => {
     type: "g1:vote",
     option: index
   });
-};
-
-window.chat1 = () => {
-  const input = $("#chat1");
-  const button = $("#chat1Send");
-
-  if (!input) return;
-
-  const text =
-    input.value.trim();
-
-  if (!text) return;
-
-  send({
-    type: "g1:chat",
-    text
-  });
-
-  input.value = "";
-
-  if (button) {
-    button.disabled = true;
-    button.classList.remove("ready");
-  }
 };
 
 window.next1 = () => {
@@ -2978,6 +2898,12 @@ function renderGame2(game) {
         </span>
       </div>
 
+      ${
+        S.room.g2Settings?.mode === "offline"
+          ? `<p class="notice" style="margin-top:12px">
+              線下版：${mine ? "輪到你當面講解釋。" : "請聽佢當面講解釋。"}計時完會自動輪到下一位。
+            </p>`
+          : `
       <div
         id="chatBox"
         class="chat"
@@ -3011,7 +2937,8 @@ function renderGame2(game) {
         >
           SEND
         </button>
-      </div>
+      </div>`
+      }
     `;
 
     const chatInput = $("#chat2");

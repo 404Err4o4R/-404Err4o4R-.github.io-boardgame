@@ -1258,12 +1258,11 @@ export class GameRoom extends DurableObject {
   );
       case "leave": return this.onLeave(session.playerId);
       case "g1:vote": return this.onG1Vote(session.playerId,msg.option);
-      case "g1:chat": return this.onChat(session.playerId,msg.text,"chat");
       case "g1:next": return this.onG1Next(session.playerId);
       case "g1:finish": return this.onG1Finish(session.playerId);
       case "g2:ready": return this.onG2PrepReady(session.playerId);
       case "g2:pick": return this.onG2Pick(session.playerId,msg.targetId);
-      case "g2:chat": return this.onChat(session.playerId,msg.text,"speaking");
+      case "g2:chat": return this.room.g2Mode==="offline" ? undefined : this.onChat(session.playerId,msg.text,"speaking");
       case "g2:judge": return this.onG2Judge(session.playerId,msg.targetId);
       case "g2:next": return this.onG2Next(session.playerId);
       case "g2:restart": return this.onG2Restart(session.playerId);
@@ -1565,7 +1564,7 @@ if (notReady.length > 0) {
   await this.broadcastRoom();
 }
 
-  // Game 1 同 Game 2 嘅聊天室共用呢個方法：淨係喺啱嘅 phase 先接受發言，
+  // 9upper（線上版）發言階段用呢個方法：淨係喺啱嘅 phase 先接受發言，
   // 並將最近 100 條留喺房間狀態入面，等新加入／重連嘅玩家都睇到歷史記錄。
   async onChat(playerId,text,expectedPhase){
     const g=this.room.gameState;if(!g||g.phase!==expectedPhase)return;
