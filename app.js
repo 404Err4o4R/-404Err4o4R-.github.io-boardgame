@@ -6063,6 +6063,19 @@ const G9_TEXT = {
     hintHelp: (l, r) => `諗一樣嘢，喺「${l} ↔ ${r}」之間啱啱好落喺藍色 4 分位`,
     send: "送出提示",
     swap: "換題",
+    custom: "自己出光譜",
+    customTitle: "自己出一條光譜",
+    customLeft: "左邊（黃色）",
+    customRight: "右邊（藍色）",
+    customLeftPh: "例如：唔使諗",
+    customRightPh: "例如：諗到頭痕",
+    customRule: "每邊最多 8 個中文字或者 16 個英文字母。用自己條光譜唔會扣換題次數，目標位置唔變。",
+    customUse: "用呢條光譜",
+    customCancel: "取消",
+    customTag: "自訂光譜",
+    errCustomEmpty: "光譜兩邊都要打字。",
+    errCustomLong: "每邊最多 8 個中文字或者 16 個英文字母。",
+    errCustomSame: "兩邊唔可以一樣。",
     thinking: (n) => `${n} 諗緊提示…`,
     waitHint: "等出題人出提示，可以先諗吓呢條光譜",
     hintOf: (n) => `${n} 嘅提示`,
@@ -6116,6 +6129,19 @@ const G9_TEXT = {
     hintHelp: (l, r) => `想一樣事物，在「${l} ↔ ${r}」之間剛好落在藍色 4 分區`,
     send: "送出提示",
     swap: "換題",
+    custom: "自訂光譜",
+    customTitle: "自行設定一條光譜",
+    customLeft: "左邊（黃色）",
+    customRight: "右邊（藍色）",
+    customLeftPh: "例如：不用思考",
+    customRightPh: "例如：想破頭",
+    customRule: "每邊最多 8 個中文字或 16 個英文字母。使用自訂光譜不會扣除換題次數，目標位置不變。",
+    customUse: "使用這條光譜",
+    customCancel: "取消",
+    customTag: "自訂光譜",
+    errCustomEmpty: "光譜兩邊都要填寫。",
+    errCustomLong: "每邊最多 8 個中文字或 16 個英文字母。",
+    errCustomSame: "兩邊不能一樣。",
     thinking: (n) => `${n} 正在想提示…`,
     waitHint: "等待出題人給提示，可以先想想這條光譜",
     hintOf: (n) => `${n} 的提示`,
@@ -6159,6 +6185,14 @@ const G9_TEXT = {
 };
 
 const G9_HINT_MAX = 20;
+const G9_SPEC_MAX_UNITS = 16;
+
+// 中文字（同全形符號）算 2，英文字母算 1；每邊上限 16，即係中文 8 字或者英文 16 個字母。
+function g9Units(str) {
+  let n = 0;
+  for (const ch of String(str || "")) n += ch.codePointAt(0) >= 0x2E80 ? 2 : 1;
+  return n;
+}
 const G9_ZONES = [
   { from: -10, to: -6, pts: 2, fill: "#F5B82E" },
   { from: -6, to: -2, pts: 3, fill: "#F26A3D" },
@@ -6303,6 +6337,7 @@ function g9SpectrumRow(sp) {
   return `
     <div class="g9-spec">
       <span class="g9-end left">← ${esc(sp.left)}</span>
+      ${sp.custom ? `<span class="g9-custom-tag">${esc(g9T().customTag)}</span>` : ""}
       <span class="g9-end right">${esc(sp.right)} →</span>
     </div>
   `;
@@ -6331,7 +6366,8 @@ function renderGame9(game) {
 
   // 估緊嘅時候，其他人鎖定唔使成個畫面重畫（費事打斷拖緊嘅指針），淨係更新數字。
   const key = JSON.stringify([
-    game.phase, game.turnNo, game.spectrum?.id, game.swapsLeft, game.hint, locked,
+    game.phase, game.turnNo, game.spectrum?.id, game.spectrum?.left, game.spectrum?.right, game.swapsLeft, game.hint, locked,
+    game.phase === "hint" && game.psychicId === me ? !!S.g9CustomOpen : false,
     game.target, S.room?.language, game.skipped,
     game.phase === "gameover" ? (game.ranking || []).map((p) => p.id + p.score).join() : ""
   ]);
@@ -6358,7 +6394,12 @@ function g9UpdateLockCount(game) {
 function renderGame9Psychic(game) {
   const t = g9T();
   const sp = game.spectrum;
-  S.g9Draft = S.g9DraftTurn === game.turnNo ? (S.g9Draft || "") : "";
+  if (S.g9DraftTurn !== game.turnNo) {
+    S.g9Draft = "";
+    S.g9CustomOpen = false;
+    S.g9CustomL = "";
+    S.g9CustomR = "";
+  }
   S.g9DraftTurn = game.turnNo;
 
   $("#gamePanel").innerHTML = `
@@ -6378,6 +6419,25 @@ function renderGame9Psychic(game) {
           </button>
           <span class="g9-end right">${esc(sp?.right || "")} →</span>
         </div>
+        ${S.g9CustomOpen ? `
+          <form class="g9-custom" onsubmit="event.preventDefault();g9UseCustom()">
+            <div class="g9-custom-title">${esc(t.customTitle)}</div>
+            <div class="g9-custom-fields">
+              <label><span>${esc(t.customLeft)}</span><input id="g9CustomL" type="text" maxlength="40" autocomplete="off" placeholder="${esc(t.customLeftPh)}" value="${esc(S.g9CustomL || "")}"></label>
+              <label><span>${esc(t.customRight)}</span><input id="g9CustomR" type="text" maxlength="40" autocomplete="off" placeholder="${esc(t.customRightPh)}" value="${esc(S.g9CustomR || "")}"></label>
+            </div>
+            <p class="g9-help">${esc(t.customRule)}</p>
+            <div class="g9-custom-actions">
+              <button type="button" class="btn btn-outline" onclick="g9ToggleCustom(false)">${esc(t.customCancel)}</button>
+              <button type="submit" class="btn btn-dark">${esc(t.customUse)}</button>
+            </div>
+          </form>
+        ` : `
+          <button type="button" class="g9-custom-open" onclick="g9ToggleCustom(true)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+            ${esc(sp?.custom ? t.customTag + " · " + t.custom : t.custom)}
+          </button>
+        `}
       </div>
       <form class="g9-hint-form" onsubmit="event.preventDefault();g9SendHint()">
         <label class="g9-hint-field">
@@ -6400,7 +6460,16 @@ function renderGame9Psychic(game) {
       len.classList.toggle("over", n > G9_HINT_MAX);
     }
   });
-  if (input && window.matchMedia("(pointer:fine)").matches) input.focus();
+  for (const [id, key] of [["g9CustomL", "g9CustomL"], ["g9CustomR", "g9CustomR"]]) {
+    const el = $("#" + id);
+    el?.addEventListener("input", () => {
+      S[key] = el.value;
+      el.classList.toggle("over", g9Units(el.value.trim()) > G9_SPEC_MAX_UNITS);
+    });
+    el?.classList.toggle("over", g9Units((el?.value || "").trim()) > G9_SPEC_MAX_UNITS);
+  }
+  if (S.g9CustomOpen) $("#g9CustomL")?.focus();
+  else if (input && window.matchMedia("(pointer:fine)").matches) input.focus();
   startTimer($("#time"), game.endsAt);
 }
 
@@ -6424,7 +6493,7 @@ function g9HintCard(game) {
   const t = g9T();
   return `
     <div class="g9-hint-card">
-      <div class="g9-hint-eyebrow">${esc(t.hintOf(g9Nick(game.psychicId)))}</div>
+      <div class="g9-hint-eyebrow">${esc(t.hintOf(g9Nick(game.psychicId)))}${game.spectrum?.custom ? ` · ${esc(t.customTag)}` : ""}</div>
       <div class="g9-hint-text">${esc(game.hint)}</div>
     </div>
   `;
@@ -6650,6 +6719,29 @@ function renderGame9Gameover(game) {
 
 window.g9Swap = () => {
   send({ type: "g9:swap" });
+};
+
+window.g9ToggleCustom = (open) => {
+  const game = S.room?.gameState;
+  S.g9Draft = $("#g9Hint")?.value ?? S.g9Draft;
+  S.g9CustomOpen = !!open;
+  if (open && game?.spectrum?.custom) {
+    S.g9CustomL = S.g9CustomL || game.spectrum.left;
+    S.g9CustomR = S.g9CustomR || game.spectrum.right;
+  }
+  if (game) renderGame9(game);
+};
+
+window.g9UseCustom = () => {
+  const t = g9T();
+  const l = ($("#g9CustomL")?.value || "").replace(/\s+/g, " ").trim();
+  const r = ($("#g9CustomR")?.value || "").replace(/\s+/g, " ").trim();
+  if (!l || !r) { flash(t.errCustomEmpty); return; }
+  if (g9Units(l) > G9_SPEC_MAX_UNITS || g9Units(r) > G9_SPEC_MAX_UNITS) { flash(t.errCustomLong); return; }
+  if (l.toLowerCase() === r.toLowerCase()) { flash(t.errCustomSame); return; }
+  S.g9Draft = $("#g9Hint")?.value ?? S.g9Draft;
+  S.g9CustomOpen = false;
+  send({ type: "g9:custom", left: l, right: r });
 };
 
 window.g9SendHint = () => {

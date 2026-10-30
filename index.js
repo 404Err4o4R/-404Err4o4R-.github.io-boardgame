@@ -77,6 +77,7 @@ const G9_ROUND_OPTIONS = [1, 2, 3, 5, 8]; // 1 round ＝ 每人做一次出題�
 const G9_ROUND_DEFAULT = 2;
 const G9_SWAPS = 2;                // 每題出題人可以換光譜兩次
 const G9_HINT_MAX = 20;
+const G9_SPEC_MAX_UNITS = 16;     // 自訂光譜每邊：中文最多 8 字（每字算 2），英文最多 16 個字母
 const G9_REVEAL_MS = 9000;
 const G9_SKIP_MS = 4000;           // 出題人超時：跳過呢題
 const G9_OFFLINE_HINT_MS = 1500;   // 出題人斷線：好快就當佢超時
@@ -197,6 +198,12 @@ function clampG9Rounds(v) {
   return G9_ROUND_OPTIONS.includes(n) ? n : G9_ROUND_DEFAULT;
 }
 // 心中有數計分：同目標差 ≤2 → 4 分，≤6 → 3 分，≤10 → 2 分，再遠冇分。
+// 闊度單位：中日韓文字同全形符號算 2，其他算 1。
+function g9Units(str) {
+  let n = 0;
+  for (const ch of str) n += ch.codePointAt(0) >= 0x2E80 ? 2 : 1;
+  return n;
+}
 function g9Score(diff) {
   return diff <= 2 ? 4 : diff <= 6 ? 3 : diff <= 10 ? 2 : 0;
 }
@@ -922,7 +929,7 @@ results:g.results||null
       turnNo:g.turnNo||0,
       order:g.order||[],
       psychicId:g.psychicId||null,
-      spectrum:sp ? { id:sp.id, left:sp.text?.[lang]?.left||"", right:sp.text?.[lang]?.right||"" } : null,
+      spectrum:sp ? { id:sp.id, custom:!!sp.custom, left:sp.text?.[lang]?.left||"", right:sp.text?.[lang]?.right||"" } : null,
       hint:g.hint||"",
       swapsLeft:isPsychic ? (g.swapsLeft||0) : null,
       endsAt:g.endsAt||null,
@@ -1184,6 +1191,7 @@ export class GameRoom extends DurableObject {
       case "g7:restart": return this.onG7Restart(session.playerId);
       case "g9:swap": return this.onG9Swap(session.playerId);
       case "g9:hint": return this.onG9Hint(session.playerId,msg.text);
+      case "g9:custom": return this.onG9Custom(session.playerId,msg.left,msg.right);
       case "g9:guess": return this.onG9Guess(session.playerId,msg.value);
       case "g9:end": return this.onG9End(session.playerId);
       case "g9:restart": return this.onG9Restart(session.playerId);
@@ -3739,6 +3747,23 @@ async onG1Next(playerId){
     if(!(g.swapsLeft>0)) return this.errorPlayer(playerId,"今題已經冇得再換。");
     g.spectrum=this.pickSpectrumGame9();
     g.swapsLeft-=1;
+    await this.commitGame9();
+  }
+
+  // 出題人自己打一條光譜（唔使用換題次數；目標位置唔變）。
+  async onG9Custom(playerId,left,right){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9" || g.phase!=="hint") return;
+    if(g.psychicId!==playerId) return this.errorPlayer(playerId,"你唔係今題嘅出題人。");
+    const zh=this.room.language==="zh";
+    const clean=v=>String(v||"").replace(/\s+/g," ").trim();
+    const l=clean(left), r=clean(right);
+    if(!l || !r) return this.errorPlayer(playerId,zh?"光譜兩邊都要填寫。":"光譜兩邊都要打字。");
+    if(g9Units(l)>G9_SPEC_MAX_UNITS || g9Units(r)>G9_SPEC_MAX_UNITS){
+      return this.errorPlayer(playerId,zh?"每邊最多 8 個中文字或 16 個英文字母。":"每邊最多 8 個中文字或者 16 個英文字母。");
+    }
+    if(l.toLowerCase()===r.toLowerCase()) return this.errorPlayer(playerId,zh?"兩邊不能一樣。":"兩邊唔可以一樣。");
+    g.spectrum={id:"custom",custom:true,text:{yue:{left:l,right:r},zh:{left:l,right:r}}};
     await this.commitGame9();
   }
 
