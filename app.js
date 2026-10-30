@@ -2901,8 +2901,9 @@ function renderGame2(game) {
       ${
         S.room.g2Settings?.mode === "offline"
           ? `<p class="notice" style="margin-top:12px">
-              線下版：${mine ? "輪到你當面講解釋。" : "請聽佢當面講解釋。"}計時完會自動輪到下一位。
-            </p>`
+              線下版：${mine ? "輪到你當面講解釋，講完可以撳「講完」。" : "請聽佢當面講解釋。"}計時完會自動輪到下一位。
+            </p>
+            ${mine ? `<button class="btn btn-dark" style="margin-top:12px" onclick="done2()">講完</button>` : ""}`
           : `
       <div
         id="chatBox"
@@ -3093,6 +3094,10 @@ window.chat2 = () => {
     button.disabled = true;
     button.classList.remove("ready");
   }
+};
+
+window.done2 = () => {
+  send({ type: "g2:done" });
 };
 
 window.ready2 = () => {

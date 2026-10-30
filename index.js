@@ -1263,6 +1263,7 @@ export class GameRoom extends DurableObject {
       case "g2:ready": return this.onG2PrepReady(session.playerId);
       case "g2:pick": return this.onG2Pick(session.playerId,msg.targetId);
       case "g2:chat": return this.room.g2Mode==="offline" ? undefined : this.onChat(session.playerId,msg.text,"speaking");
+      case "g2:done": return this.onG2SpeakDone(session.playerId);
       case "g2:judge": return this.onG2Judge(session.playerId,msg.targetId);
       case "g2:next": return this.onG2Next(session.playerId);
       case "g2:restart": return this.onG2Restart(session.playerId);
@@ -1975,6 +1976,13 @@ async onG1Next(playerId){
     await this.save();
     await this.ctx.storage.setAlarm(g.endsAt);
     await this.broadcastRoom();
+  }
+
+  // 線下版：發言者當面講完可以撳「講完」，唔使等計時完。
+  async onG2SpeakDone(playerId){
+    const g=this.room.gameState;
+    if(this.room.g2Mode!=="offline" || !g || g.phase!=="speaking" || g.currentPlayerId!==playerId) return;
+    await this.advanceAfterSpeakingGame2();
   }
 
   async advanceAfterSpeakingGame2(){
