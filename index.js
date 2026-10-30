@@ -70,7 +70,9 @@ const G7_OFFLINE_STRIKES = 2;   // 斷線連續超時兩次就當淘汰
 const G7_CARDS = ["skip", "reverse", "assign"];
 const G7_HISTORY_MAX = 12;
 
-const G9_HINT_MS = 45000;          // 出題人出提示：固定 45 秒
+const G9_HINT_MS = 45000;          // 出題人出提示：45 秒
+const G9_BLANK_HINT_MS = 60000;    // 空白題（出題人自己出光譜＋提示）：60 秒
+const G9_BLANK_EVERY = 5;          // 大約每 5 題有 1 題空白題，每局最少 1 題
 const G9_GUESS_MS_OPTIONS = [20000, 30000, 45000, 60000];
 const G9_GUESS_MS_DEFAULT = 30000;
 const G9_ROUND_OPTIONS = [1, 2, 3, 5, 8]; // 1 round ＝ 每人做一次出題人
@@ -934,7 +936,8 @@ results:g.results||null
       swapsLeft:isPsychic ? (g.swapsLeft||0) : null,
       endsAt:g.endsAt||null,
       guessMs:g.guessMs,
-      hintMs:G9_HINT_MS,
+      hintMs:g.hintMs||G9_HINT_MS,
+      blank:!!g.blank,
       guesserIds:g.guesserIds||[],
       lockedIds:Object.keys(g.guesses||{}),
       myGuess:viewerId && g.guesses && viewerId in g.guesses ? g.guesses[viewerId] : null,
@@ -1190,8 +1193,7 @@ export class GameRoom extends DurableObject {
       case "g7:end": return this.onG7End(session.playerId);
       case "g7:restart": return this.onG7Restart(session.playerId);
       case "g9:swap": return this.onG9Swap(session.playerId);
-      case "g9:hint": return this.onG9Hint(session.playerId,msg.text);
-      case "g9:custom": return this.onG9Custom(session.playerId,msg.left,msg.right);
+      case "g9:hint": return this.onG9Hint(session.playerId,msg.text,msg.left,msg.right);
       case "g9:guess": return this.onG9Guess(session.playerId,msg.value);
       case "g9:end": return this.onG9End(session.playerId);
       case "g9:restart": return this.onG9Restart(session.playerId);
@@ -3673,6 +3675,11 @@ async onG1Next(playerId){
       usedIds:prev?.game==="game9" ? (prev.usedIds||[]) : [],
       psychicId:null
     };
+    // 隨機揀幾題做空白題：大約每 5 題 1 題，最少 1 題。
+    const g=this.room.gameState;
+    const total=g.order.length*g.totalRounds;
+    const count=Math.max(1,Math.round(total/G9_BLANK_EVERY));
+    g.blankTurns=shuffle(Array.from({length:total},(_,i)=>i+1)).slice(0,count);
     await this.nextTurnGame9();
   }
 
@@ -3718,9 +3725,13 @@ async onG1Next(playerId){
     g.round=next.round;
     g.turnNo=(g.turnNo||0)+1;
     g.psychicId=g.order[next.index];
-    g.spectrum=this.pickSpectrumGame9();
+    g.blank=(g.blankTurns||[]).includes(g.turnNo);
+    g.spectrum=g.blank
+      ? {id:"blank",custom:true,text:{yue:{left:"",right:""},zh:{left:"",right:""}}}
+      : this.pickSpectrumGame9();
     g.target=Math.floor(Math.random()*101);
-    g.swapsLeft=G9_SWAPS;
+    g.swapsLeft=g.blank ? 0 : G9_SWAPS;
+    g.hintMs=g.blank ? G9_BLANK_HINT_MS : G9_HINT_MS;
     g.hint="";
     g.guesses={};
     g.guesserIds=[];
@@ -3729,7 +3740,7 @@ async onG1Next(playerId){
     g.skipped=false;
     g.phase="hint";
     const p=this.room.players.find(x=>x.id===g.psychicId);
-    g.endsAt=Date.now()+(p?.connected ? G9_HINT_MS : G9_OFFLINE_HINT_MS);
+    g.endsAt=Date.now()+(p?.connected ? g.hintMs : G9_OFFLINE_HINT_MS);
     await this.commitGame9();
   }
 
@@ -3744,39 +3755,36 @@ async onG1Next(playerId){
     const g=this.room.gameState;
     if(!g || g.game!=="game9" || g.phase!=="hint") return;
     if(g.psychicId!==playerId) return this.errorPlayer(playerId,"你唔係今題嘅出題人。");
+    if(g.blank) return this.errorPlayer(playerId,"空白題要自己出光譜。");
     if(!(g.swapsLeft>0)) return this.errorPlayer(playerId,"今題已經冇得再換。");
     g.spectrum=this.pickSpectrumGame9();
     g.swapsLeft-=1;
     await this.commitGame9();
   }
 
-  // 出題人自己打一條光譜（唔使用換題次數；目標位置唔變）。
-  async onG9Custom(playerId,left,right){
+  async onG9Hint(playerId,text,left,right){
     const g=this.room.gameState;
     if(!g || g.game!=="game9" || g.phase!=="hint") return;
     if(g.psychicId!==playerId) return this.errorPlayer(playerId,"你唔係今題嘅出題人。");
     const zh=this.room.language==="zh";
-    const clean=v=>String(v||"").replace(/\s+/g," ").trim();
-    const l=clean(left), r=clean(right);
-    if(!l || !r) return this.errorPlayer(playerId,zh?"光譜兩邊都要填寫。":"光譜兩邊都要打字。");
-    if(g9Units(l)>G9_SPEC_MAX_UNITS || g9Units(r)>G9_SPEC_MAX_UNITS){
-      return this.errorPlayer(playerId,zh?"每邊最多 8 個中文字或 16 個英文字母。":"每邊最多 8 個中文字或者 16 個英文字母。");
+    // 空白題：出題人連光譜兩邊都要自己寫，同提示一齊送出。
+    let custom=null;
+    if(g.blank){
+      const clean=v=>String(v||"").replace(/\s+/g," ").trim();
+      const l=clean(left), r=clean(right);
+      if(!l || !r) return this.errorPlayer(playerId,zh?"光譜兩邊都要填寫。":"光譜兩邊都要打字。");
+      if(g9Units(l)>G9_SPEC_MAX_UNITS || g9Units(r)>G9_SPEC_MAX_UNITS){
+        return this.errorPlayer(playerId,zh?"每邊最多 8 個中文字或 16 個英文字母。":"每邊最多 8 個中文字或者 16 個英文字母。");
+      }
+      if(l.toLowerCase()===r.toLowerCase()) return this.errorPlayer(playerId,zh?"兩邊不能一樣。":"兩邊唔可以一樣。");
+      custom={id:"blank",custom:true,text:{yue:{left:l,right:r},zh:{left:l,right:r}}};
     }
-    if(l.toLowerCase()===r.toLowerCase()) return this.errorPlayer(playerId,zh?"兩邊不能一樣。":"兩邊唔可以一樣。");
-    g.spectrum={id:"custom",custom:true,text:{yue:{left:l,right:r},zh:{left:l,right:r}}};
-    await this.commitGame9();
-  }
-
-  async onG9Hint(playerId,text){
-    const g=this.room.gameState;
-    if(!g || g.game!=="game9" || g.phase!=="hint") return;
-    if(g.psychicId!==playerId) return this.errorPlayer(playerId,"你唔係今題嘅出題人。");
-    const zh=this.room.language==="zh";
     const hint=String(text||"").replace(/\s+/g," ").trim();
     const len=[...hint].length;
     if(!len) return this.errorPlayer(playerId,zh?"請先輸入提示。":"打咗提示先。");
     if(len>G9_HINT_MAX) return this.errorPlayer(playerId,zh?`提示最多 ${G9_HINT_MAX} 個字。`:`提示最多 ${G9_HINT_MAX} 個字。`);
     if(/^[\d\s.,%+\-－。，]+$/.test(hint)) return this.errorPlayer(playerId,zh?"提示不能只有數字。":"提示唔可以淨係數字。");
+    if(custom) g.spectrum=custom;
     g.hint=hint;
     g.guesserIds=this.room.players.filter(p=>p.connected && p.id!==g.psychicId).map(p=>p.id);
     g.guesses={};
