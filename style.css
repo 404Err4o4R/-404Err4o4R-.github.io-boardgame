@@ -1162,3 +1162,89 @@ button.g8-c:hover{border-color:#F2D965}
   .g8-root{min-height:0}
   .g8-titles{gap:6px}
 }
+
+/* =========================================================
+   首頁 hero（v25）：左邊遊戲封面格＋右邊開房／入房
+   桌面：封面 3 欄格仔；≤900px：封面變一行橫向滑動，放喺標題同表格中間
+========================================================= */
+.nav-tools{display:flex;align-items:center;gap:12px}
+.nav-pop{position:relative}
+.pill-btn{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:2px solid var(--ink);border-radius:999px;background:#fff;color:var(--ink);font-weight:800;font-size:14px}
+.pill-btn.icon-only{width:44px;padding:0;justify-content:center}
+.pill-btn .chev{transition:transform .15s}
+.pill-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.pop-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:60;min-width:170px;background:#fff;border:2px solid var(--ink);border-radius:16px;padding:6px;box-shadow:0 8px 0 rgba(31,39,64,.12);display:flex;flex-direction:column;gap:2px}
+.pop-item{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--ink);font-weight:800;font-size:15px;text-align:left}
+.pop-item:hover,.pop-item.active{background:#EEF0F6}
+.pop-item small{font-size:12px;font-weight:700;color:#4a5270}
+.nav-burger{display:none}
+
+.home-hero{max-width:1280px;margin:0 auto;padding:40px 32px 80px;display:grid;grid-template-columns:minmax(0,600px) minmax(0,560px);grid-template-areas:"games title" "games form";column-gap:56px;row-gap:22px;justify-content:center;align-items:start;scroll-margin-top:80px}
+.hh-title{grid-area:title}
+.hh-title h1{margin:14px 0 12px;display:flex;flex-direction:column;gap:10px}
+.hh-en{font-family:"Fredoka",sans-serif;font-weight:700;font-size:clamp(48px,6vw,76px);line-height:.95;letter-spacing:-.02em}
+.hh-en span{color:var(--game-accent,var(--blue-dark))}
+.hh-zh{font-weight:900;font-size:clamp(20px,2.4vw,30px);line-height:1.35}
+.hh-title p{margin:0;font-size:17px;line-height:1.7;color:#4a5270}
+
+.hh-games{grid-area:games;position:sticky;top:96px}
+.hh-games-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:14px}
+.hh-count{font-family:"Fredoka",sans-serif;font-weight:700;font-size:20px}
+.hh-hint{font-size:14px;font-weight:700;color:#4a5270}
+.hh-hint-mob{display:none}
+
+.cover-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.cover-tile{position:relative;display:block;width:100%;aspect-ratio:1/1;padding:0;border:2px solid var(--ink);border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 6px 0 rgba(31,39,64,.12);transition:transform .15s,box-shadow .15s}
+.cover-tile:hover{transform:translateY(-2px)}
+.cover-tile.selected{box-shadow:0 0 0 4px var(--pure),0 0 0 7px var(--ink)}
+.cover-tile:focus-visible{outline:3px solid var(--blue-dark);outline-offset:5px}
+.cover-tile .gc-label{display:none}
+.cover-tile .game-cover .gc-icon{top:57%;width:60%}
+.cover-tile .cover-g7 .gc-icon{top:62%;width:50%}
+.ct-name{position:absolute;left:8%;top:7%;z-index:1;max-width:84%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:3px 8px;border-radius:8px;font-family:"Fredoka",sans-serif;font-weight:700;font-size:12px;pointer-events:none}
+.ct-short{display:none}
+.cover-more{aspect-ratio:1/1;border:2px dashed #A6ADC8;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--blue-dark);text-align:center}
+.cm-en{font-family:"Fredoka",sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em}
+.cm-zh{font-weight:800;font-size:15px}
+
+.home-hero .room-form{grid-area:form;background:#fff;border:2px solid var(--ink);border-radius:28px;padding:22px 26px 26px;box-shadow:0 8px 0 var(--ink)}
+.home-hero .tabs{display:flex;gap:6px;margin:0 0 18px;padding:5px;background:#EEF0F6;border-radius:16px}
+.home-hero .tab{flex:1 1 0;min-height:48px;border-radius:12px;background:transparent;color:var(--ink);font-family:"Fredoka","Nunito",sans-serif;font-size:17px;font-weight:700}
+.home-hero .tab.active{background:var(--ink);color:#fff}
+.home-hero .room-form label{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.home-hero .room-form label .label-row{margin-bottom:0}
+.home-hero .room-form input,.home-hero .room-form select{width:100%;box-sizing:border-box;margin-top:0;min-height:50px;border-color:var(--ink);background:var(--pure)}
+.home-hero .room-form input:focus,.home-hero .room-form select:focus{border-color:var(--blue-dark)}
+.label-hint{font-size:12px;font-weight:700;color:#4a5270}
+#joinCode{font-family:"Fredoka",sans-serif;font-size:24px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;text-align:center}
+#joinCode::placeholder{font-family:"Nunito",sans-serif;font-size:15px;letter-spacing:0;font-weight:600;text-transform:none}
+.home-hero .btn.wide{min-height:54px;border:2px solid var(--ink);box-shadow:0 5px 0 var(--ink);font-family:"Fredoka","Nunito",sans-serif;font-size:18px;font-weight:700}
+
+@media (max-width:900px){
+  .home-hero{max-width:640px;grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "games" "form";padding:16px 20px 56px;row-gap:16px}
+  .hh-games{position:static;margin:0 -20px;min-width:0}
+  .hh-games-head{padding:0 20px;margin-bottom:4px}
+  .hh-hint-desk{display:none}
+  .hh-hint-mob{display:inline}
+  .hh-count{font-size:16px}
+  .cover-grid{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-inline:20px;padding:8px 20px 14px;scrollbar-width:none}
+  .cover-grid::-webkit-scrollbar{display:none}
+  .cover-tile{flex:0 0 124px;width:124px;border-radius:18px;scroll-snap-align:start}
+  .cover-tile:hover{transform:none}
+  .cover-tile.selected{box-shadow:0 0 0 3px var(--pure),0 0 0 6px var(--ink)}
+  .ct-name{font-size:11px;padding:2px 7px;border-radius:7px}
+  .ct-full{display:none}
+  .ct-short{display:inline}
+  .cover-more{display:none}
+  .home-hero .room-form{padding:14px 14px 18px;border-radius:22px;box-shadow:0 5px 0 var(--ink)}
+}
+
+@media (max-width:620px){
+  .nav-cta{display:none}
+  .nav-burger{display:block}
+  .nav-tools{gap:8px}
+  .hh-title .eyebrow,.hh-title p{display:none}
+  .hh-title h1{margin:0;gap:4px}
+  .hh-en{font-size:34px;line-height:1}
+  .hh-zh{font-size:17px;line-height:1.4}
+}

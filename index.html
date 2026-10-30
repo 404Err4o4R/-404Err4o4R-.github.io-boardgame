@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=24">
+  <link rel="stylesheet" href="./style.css?v=25">
 </head>
 
 <body>
@@ -32,164 +32,85 @@
     <a href="#about">About</a>
   </nav>
 
-  <button class="nav-cta" data-scroll="#room">
-    PLAY
-  </button>
+  <div class="nav-tools">
+    <button class="nav-cta" data-scroll="#room">
+      PLAY
+    </button>
+
+    <div class="nav-pop">
+      <button type="button" id="regionBtn" class="pill-btn" aria-haspopup="true" aria-expanded="false" aria-label="選擇地區">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg>
+        <span id="regionLabel">香港</span>
+        <svg class="chev" aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="regionMenu" class="pop-menu hidden">
+        <button type="button" class="pop-item" data-region="hk"><span>香港</span><small>目前</small></button>
+        <button type="button" class="pop-item" data-region="tw"><span>台灣</span><small></small></button>
+      </div>
+    </div>
+
+    <div class="nav-pop nav-burger">
+      <button type="button" id="navMenuBtn" class="pill-btn icon-only" aria-haspopup="true" aria-expanded="false" aria-label="選單">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+      </button>
+      <div id="navMenu" class="pop-menu hidden">
+        <a class="pop-item" href="#games">Games</a>
+        <a class="pop-item" href="#how">How to play</a>
+        <a class="pop-item" href="#about">About</a>
+      </div>
+    </div>
+  </div>
 </header>
 
 <main id="landing">
 
-  <!-- HERO -->
-  <section class="hero-section">
+  <!-- HERO：左邊遊戲封面格（由 app.js 嘅 ROOM_COVERS 自動生成），右邊開房／入房 -->
+  <section id="room" class="home-hero">
 
-    <div class="hero-banner" aria-hidden="true">
-
-      <div class="blob">
-        <svg viewBox="0 0 1200 312" preserveAspectRatio="none">
-          <path fill="#dbe2f0"
-            d="M0,115
-               C55,80 105,88 155,124
-               C218,170 267,116 318,135
-               C370,155 398,205 459,187
-               C515,170 546,111 607,113
-               C666,116 697,163 751,154
-               C818,143 832,86 899,89
-               C969,92 1002,133 1056,127
-               C1110,121 1142,76 1200,105
-               L1200,265
-               C1132,240 1084,276 1020,254
-               C956,232 920,277 852,262
-               C786,247 746,218 686,235
-               C625,252 590,284 526,262
-               C463,240 432,229 366,251
-               C298,275 252,236 190,247
-               C124,259 72,228 0,245 Z"/>
-          <path fill="#cbd5ea" opacity=".83"
-            d="M0,161
-               C76,130 130,165 197,155
-               C260,145 290,126 345,147
-               C411,173 458,232 523,218
-               C586,204 609,162 673,166
-               C730,169 753,213 811,208
-               C877,202 908,143 972,151
-               C1036,158 1076,203 1138,187
-               C1161,181 1182,172 1200,174
-               L1200,312 L0,312 Z"/>
-        </svg>
-      </div>
-
-      <div class="hb-dots top"></div>
-      <div class="hb-dots left"></div>
-
-      <div class="hb-wave one"></div>
-      <div class="hb-wave two"></div>
-
-      <div class="hb-orb o1"></div>
-      <div class="hb-orb o2"></div>
-      <div class="hb-orb o3"></div>
-      <div class="hb-orb o4"></div>
-      <div class="hb-orb o5"></div>
-
-      <div class="hb-ring"></div>
-      <div class="hb-circle-yellow"></div>
-
-      <div class="hb-card one"></div>
-      <div class="hb-card two"></div>
-
-      <div class="hb-die"></div>
-
-      <div class="hb-speech"><span></span></div>
-
-      <div class="hb-symbol check">✓</div>
-      <div class="hb-symbol cross">×</div>
-
-      <div class="hb-star one">✦</div>
-      <div class="hb-star two">✦</div>
-      <div class="hb-star three">✦</div>
-
-      <div class="hb-heart">♥</div>
-
-    </div>
-
-    <div class="hero-copy">
-
+    <div class="hh-title">
       <div class="eyebrow">
         LET THE GAMES BEGIN
       </div>
 
       <h1>
-        PLAY<br>
-        <span>TOGETHER.</span>
+        <span class="hh-en">PLAY <span>TOGETHER.</span></span>
+        <span class="hh-zh">朋友都在等你，輸入房號一起玩</span>
       </h1>
 
       <p>
-        兩款為朋友聚會設計的派對桌遊。
-        無需註冊，輸入暱稱和 6 位房間號，
-        直接透過 Cloudflare WebSocket 聯機。
+        <span data-game-count>8</span> 款派對遊戲，無需註冊。輸入暱稱和 6 位房號，就能用手機同步遊玩。
       </p>
-
-      <div class="hero-actions">
-
-        <button
-          class="btn btn-yellow"
-          data-scroll="#room"
-        >
-          CREATE A ROOM
-        </button>
-
-        <button
-          class="btn btn-outline"
-          data-scroll="#games"
-        >
-          EXPLORE GAMES
-        </button>
-
-      </div>
-
-      <div class="hero-note">
-        GitHub Pages · Cloudflare Durable Objects · WebSocket
-      </div>
-
     </div>
 
-  </section>
 
-
-  <!-- GAMES -->
-  <!-- ROOM -->
-  <section id="room" class="section room-section">
-
-    <div class="room-panel">
-
-      <div class="room-visual" id="roomVisual">
+    <div class="hh-games">
+      <div class="hh-games-head">
+        <span class="hh-count"><span data-game-count>8</span> 款遊戲</span>
+        <span class="hh-hint hh-hint-desk">點選封面即可選擇遊戲</span>
+        <span class="hh-hint hh-hint-mob">左右滑動 →</span>
       </div>
 
+      <div id="coverGrid" class="cover-grid"></div>
+    </div>
 
-      <div class="room-form">
 
-        <div class="eyebrow">
-          LET'S GET STARTED
-        </div>
-
-        <h2>
-          CREATE OR <span>JOIN.</span>
-        </h2>
-
+    <div class="room-form">
 
         <div class="tabs">
 
           <button
-            class="tab active"
+            class="tab active" type="button"
             data-tab="create"
           >
-            CREATE ROOM
+            建立房間
           </button>
 
           <button
             class="tab"
+            type="button"
             data-tab="join"
           >
-            JOIN ROOM
+            加入房間
           </button>
 
         </div>
@@ -202,18 +123,7 @@
         >
 
           <label>
-            你的暱稱
-
-            <input
-              id="createName"
-              maxlength="20"
-              placeholder="例如：小米"
-            >
-          </label>
-
-
-          <label>
-            遊戲
+            <span class="label-row"><span>已選遊戲</span><span class="label-hint" data-zh="點選封面即可更換">點選封面即可更換</span></span>
 
             <select id="gameSelect">
 
@@ -261,6 +171,7 @@
 
             <div class="label-row">
               <span>語言</span>
+              <span id="langHint" class="label-hint">預設跟隨右上角地區</span>
             </div>
 
             <div
@@ -594,11 +505,22 @@
           </div>
 
 
+          <label>
+            你的暱稱
+
+            <input
+              id="createName"
+              maxlength="20"
+              placeholder="例如：小米"
+            >
+          </label>
+
+
           <button
             id="createBtn"
             class="btn btn-yellow wide"
           >
-            CREATE ROOM
+            建立房間
           </button>
 
         </div>
@@ -611,18 +533,7 @@
         >
 
           <label>
-            你的暱稱
-
-            <input
-              id="joinName"
-              maxlength="20"
-              placeholder="例如：阿哲"
-            >
-          </label>
-
-
-          <label>
-            房間號
+            6 位房間號
 
             <input
               id="joinCode"
@@ -633,11 +544,22 @@
           </label>
 
 
+          <label>
+            你的暱稱
+
+            <input
+              id="joinName"
+              maxlength="20"
+              placeholder="例如：阿哲"
+            >
+          </label>
+
+
           <button
             id="joinBtn"
             class="btn btn-blue wide"
           >
-            JOIN ROOM
+            加入房間
           </button>
 
 
@@ -653,8 +575,6 @@
           id="lobbyError"
           class="status hidden"
         ></div>
-
-      </div>
 
     </div>
 
@@ -1139,7 +1059,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=43" defer></script>
+<script src="./app.js?v=44" defer></script>
 
 </body>
 </html>

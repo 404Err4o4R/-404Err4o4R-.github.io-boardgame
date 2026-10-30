@@ -508,8 +508,96 @@ function renderRoomVisual() {
     "--game-accent",
     GAME_ACCENTS[S.selectedGame] || GAME_ACCENTS.game1
   );
+
+  document.querySelectorAll("#coverGrid .cover-tile").forEach((tile) => {
+    const on = tile.dataset.game === S.selectedGame;
+    tile.classList.toggle("selected", on);
+    tile.setAttribute("aria-pressed", on ? "true" : "false");
+  });
 }
 
+/* =========================
+   首頁封面格
+   由 ROOM_COVERS 自動生成：以後加新遊戲，只要喺 ROOM_COVERS 加封面，
+   首頁封面格同「X 款遊戲」數字都會自動更新。
+   COVER_TILE_LABELS 揀左上角標籤嘅名同顏色；冇設定就用 GAME_NAMES 同預設深色。
+========================= */
+const COVER_TILE_LABELS = {
+  game1: { full: "心有靈犀一點通", short: "心有靈犀", bg: "#1f2740", fg: "#F2D965" },
+  game2: { full: "9upper 瞎掰王", short: "9upper", bg: "#004643", fg: "#F0EDE5" },
+  game3: { full: "He/She's a 10", short: "He/She's a 10", bg: "#1f2740", fg: "#FFB59F" },
+  game4: { full: "誰最有可能", short: "誰最有可能", bg: "#FFD166", fg: "#4a2f7a" },
+  game5: { full: "故事接龍", short: "故事接龍", bg: "#1f2740", fg: "#AFCBE3" },
+  game6: { full: "Sync 唔 Sync", short: "Sync 唔 Sync", bg: "#1f2740", fg: "#B9DD5B" },
+  game7: { full: "Number Bomb 數字炸彈", short: "數字炸彈", bg: "#1f2740", fg: "#FFD3DD" },
+  game8: { full: "Battleship 海戰棋", short: "海戰棋", bg: "#F2D965", fg: "#1f2740" }
+};
+const COVER_GRID_COLUMNS = 3;
+
+function selectGameFromCover(game) {
+  S.selectedGame = game;
+
+  const select = $("#gameSelect");
+  if (select) select.value = game;
+
+  S.filters = [];
+  renderCategories();
+  renderRoomVisual();
+
+  document.querySelector('[data-tab="create"]')?.click();
+
+  // 手機版：封面係一行橫向滑動，揀完將嗰格滑返入畫面
+  const tile = document.querySelector(`#coverGrid .cover-tile[data-game="${game}"]`);
+  tile?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+}
+
+function renderCoverGrid() {
+  const grid = $("#coverGrid");
+  const games = Object.keys(ROOM_COVERS);
+
+  document.querySelectorAll("[data-game-count]").forEach((el) => {
+    el.textContent = String(games.length);
+  });
+
+  if (!grid) return;
+
+  const tiles = games.map((game) => {
+    const label = COVER_TILE_LABELS[game] || {};
+    const full = label.full || GAME_NAMES[game] || game;
+    const short = label.short || full;
+    const bg = label.bg || "#1f2740";
+    const fg = label.fg || "#FEFEF2";
+
+    return `
+      <button type="button" class="cover-tile" data-game="${game}" aria-pressed="false" aria-label="選擇 ${esc(full)}">
+        ${ROOM_COVERS[game]}
+        <span class="ct-name" style="background:${bg};color:${fg}">
+          <span class="ct-full">${esc(full)}</span><span class="ct-short">${esc(short)}</span>
+        </span>
+      </button>
+    `;
+  });
+
+  // 最後一行唔夠位就補「更多遊戲即將推出」，令格仔永遠整齊（手機版橫向滑動時會隱藏）
+  const remainder = games.length % COVER_GRID_COLUMNS;
+  const fillers = remainder ? COVER_GRID_COLUMNS - remainder : 0;
+  for (let i = 0; i < fillers; i += 1) {
+    tiles.push(`
+      <div class="cover-more" aria-hidden="true">
+        <span class="cm-en">MORE SOON</span>
+        <span class="cm-zh">更多遊戲即將推出</span>
+      </div>
+    `);
+  }
+
+  grid.innerHTML = tiles.join("");
+
+  grid.querySelectorAll(".cover-tile").forEach((tile) => {
+    tile.addEventListener("click", () => selectGameFromCover(tile.dataset.game));
+  });
+}
+
+renderCoverGrid();
 renderRoomVisual();
 
 document.querySelectorAll("[data-start]").forEach((button) => {
@@ -613,6 +701,101 @@ $("#langBox")?.addEventListener("click", (event) => {
 
   S.selectedLanguage = chip.dataset.lang || "yue";
   applyFormLanguage();
+  updateLangHint();
+});
+
+/* =========================
+   右上角地區（香港／台灣）
+   只影響開房表格嘅預設語言，首頁本身唔轉語言；開房時仍然可以手動改。
+   選擇會記喺 localStorage，下次打開網頁沿用。
+========================= */
+const REGION_LANG = { hk: "yue", tw: "zh" };
+const REGION_LABEL = { hk: "香港", tw: "台灣" };
+
+function readSavedRegion() {
+  try {
+    const saved = localStorage.getItem("pt_region");
+    return REGION_LANG[saved] ? saved : "hk";
+  } catch {
+    return "hk";
+  }
+}
+
+S.region = readSavedRegion();
+
+function updateLangHint() {
+  const hint = $("#langHint");
+  if (!hint) return;
+  const followsRegion = (S.selectedLanguage || "yue") === REGION_LANG[S.region];
+  hint.textContent = followsRegion ? "預設跟隨右上角地區" : "已手動更改";
+}
+
+function applyRegion(region) {
+  S.region = REGION_LANG[region] ? region : "hk";
+
+  const label = $("#regionLabel");
+  if (label) label.textContent = REGION_LABEL[S.region];
+
+  document.querySelectorAll("#regionMenu [data-region]").forEach((item) => {
+    const on = item.dataset.region === S.region;
+    item.classList.toggle("active", on);
+    const mark = item.querySelector("small");
+    if (mark) mark.textContent = on ? "目前" : "";
+  });
+
+  S.selectedLanguage = REGION_LANG[S.region];
+  document.querySelectorAll("#langBox .lang-chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.lang === S.selectedLanguage);
+  });
+  applyFormLanguage();
+  updateLangHint();
+}
+
+function setPopOpen(button, menu, open) {
+  if (!button || !menu) return;
+  menu.classList.toggle("hidden", !open);
+  button.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function closeNavPops() {
+  setPopOpen($("#regionBtn"), $("#regionMenu"), false);
+  setPopOpen($("#navMenuBtn"), $("#navMenu"), false);
+}
+
+$("#regionBtn")?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const open = $("#regionMenu")?.classList.contains("hidden");
+  closeNavPops();
+  setPopOpen($("#regionBtn"), $("#regionMenu"), open);
+});
+
+$("#navMenuBtn")?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const open = $("#navMenu")?.classList.contains("hidden");
+  closeNavPops();
+  setPopOpen($("#navMenuBtn"), $("#navMenu"), open);
+});
+
+$("#regionMenu")?.addEventListener("click", (event) => {
+  const item = event.target.closest("[data-region]");
+  if (!item) return;
+  try {
+    localStorage.setItem("pt_region", item.dataset.region);
+  } catch {}
+  applyRegion(item.dataset.region);
+  closeNavPops();
+});
+
+$("#navMenu")?.addEventListener("click", (event) => {
+  if (event.target.closest("a")) closeNavPops();
+});
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".nav-pop")) closeNavPops();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeNavPops();
 });
 
 // 開房表格：揀「台灣」時，有 data-zh 嘅說明文字轉做書面語；揀返「香港」就還原。
@@ -5988,3 +6171,6 @@ function g8LobbyHtml(room) {
     </div>
   `;
 }
+
+// 首頁地區：要等全部函數同常數準備好先套用
+applyRegion(S.region);
