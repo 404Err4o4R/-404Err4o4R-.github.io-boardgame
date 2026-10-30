@@ -5,7 +5,8 @@ import {
   GAME1_CATEGORIES,
   GAME2_CATEGORIES,
   GAME4_QUESTIONS,
-  GAME5_OPENERS
+  GAME5_OPENERS,
+  GAME9_SPECTRA
 } from "./question-bank/loader.js";
 import { G6_S2T_PAIRS } from "./question-bank/g6-chars.js";
 
@@ -69,6 +70,17 @@ const G7_OFFLINE_STRIKES = 2;   // 斷線連續超時兩次就當淘汰
 const G7_CARDS = ["skip", "reverse", "assign"];
 const G7_HISTORY_MAX = 12;
 
+const G9_HINT_MS = 45000;          // 出題人出提示：固定 45 秒
+const G9_GUESS_MS_OPTIONS = [20000, 30000, 45000, 60000];
+const G9_GUESS_MS_DEFAULT = 30000;
+const G9_ROUND_OPTIONS = [1, 2, 3, 5, 8]; // 1 round ＝ 每人做一次出題人
+const G9_ROUND_DEFAULT = 2;
+const G9_SWAPS = 2;                // 每題出題人可以換光譜兩次
+const G9_HINT_MAX = 20;
+const G9_REVEAL_MS = 9000;
+const G9_SKIP_MS = 4000;           // 出題人超時：跳過呢題
+const G9_OFFLINE_HINT_MS = 1500;   // 出題人斷線：好快就當佢超時
+
 const G8_TURN_MS_OPTIONS = [15000, 20000, 30000];
 const G8_ROUND_MIN = 1;
 const G8_ROUND_MAX = 5;
@@ -121,7 +133,7 @@ function shuffle(a) {
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7" || v==="game8"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7" || v==="game8" || v==="game9"; }
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
@@ -175,6 +187,18 @@ function clampG7Rounds(v) {
   const n = Math.round(Number(v));
   if (!Number.isFinite(n) || n <= 0) return 5;
   return Math.min(G7_ROUND_MAX, Math.max(G7_ROUND_MIN, n));
+}
+function clampG9GuessMs(v) {
+  const n = Number(v);
+  return G9_GUESS_MS_OPTIONS.includes(n) ? n : G9_GUESS_MS_DEFAULT;
+}
+function clampG9Rounds(v) {
+  const n = Number(v);
+  return G9_ROUND_OPTIONS.includes(n) ? n : G9_ROUND_DEFAULT;
+}
+// 心中有數計分：同目標差 ≤2 → 4 分，≤6 → 3 分，≤10 → 2 分，再遠冇分。
+function g9Score(diff) {
+  return diff <= 2 ? 4 : diff <= 6 ? 3 : diff <= 10 ? 2 : 0;
 }
 function clampG8TurnMs(v) {
   const n = Number(v);
@@ -367,6 +391,10 @@ export default {
                 body.g8TurnSeconds ? body.g8TurnSeconds*1000 : null,
               g8Rounds:
                 body.g8Rounds || null,
+              g9GuessMs:
+                body.g9GuessSeconds ? body.g9GuessSeconds*1000 : null,
+              g9Rounds:
+                body.g9Rounds || null,
               roomTtl: ROOM_TTL
             })
           }
@@ -481,6 +509,11 @@ function publicRoom(room, viewerId=null) {
       turnMs: room.g8TurnMs||20000,
       rounds: room.g8Rounds||3,
       mode: room.g8Mode||null
+    } : null,
+    g9Settings: room.game==="game9" ? {
+      guessMs: room.g9GuessMs||G9_GUESS_MS_DEFAULT,
+      hintMs: G9_HINT_MS,
+      rounds: room.g9Rounds||G9_ROUND_DEFAULT
     } : null,
     g7Settings: room.game==="game7" ? {
       turnMs: room.g7TurnMs||G7_TURN_MS_OPTIONS[0],
@@ -875,6 +908,45 @@ results:g.results||null
     return base8;
   }
 
+  if(room.game==="game9") {
+    const lang=room.language==="zh" ? "zh" : "yue";
+    const sp=g.spectrum;
+    const isPsychic=!!viewerId && viewerId===g.psychicId;
+    const open=g.phase==="reveal" || g.phase==="gameover";
+    const base9={
+      phase:g.phase,
+      round:g.round,
+      totalRounds:g.totalRounds,
+      turnIndex:g.turnIndex,
+      turnCount:(g.order||[]).length,
+      turnNo:g.turnNo||0,
+      order:g.order||[],
+      psychicId:g.psychicId||null,
+      spectrum:sp ? { id:sp.id, left:sp.text?.[lang]?.left||"", right:sp.text?.[lang]?.right||"" } : null,
+      hint:g.hint||"",
+      swapsLeft:isPsychic ? (g.swapsLeft||0) : null,
+      endsAt:g.endsAt||null,
+      guessMs:g.guessMs,
+      hintMs:G9_HINT_MS,
+      guesserIds:g.guesserIds||[],
+      lockedIds:Object.keys(g.guesses||{}),
+      myGuess:viewerId && g.guesses && viewerId in g.guesses ? g.guesses[viewerId] : null,
+      // 目標只有出題人睇到；揭曉之後先公開。
+      target:(isPsychic || open) ? (g.target ?? null) : null,
+      skipped:!!g.skipped,
+      result:g.phase==="reveal" ? (g.result||null) : null,
+      next:g.phase==="reveal" ? (g.next||null) : null,
+      endedEarly:!!g.endedEarly
+    };
+    if(g.phase==="gameover"){
+      const stats=room.g9Stats||{};
+      base9.ranking=[...room.players]
+        .sort((a,b)=>(b.score||0)-(a.score||0))
+        .map(p=>({id:p.id,nickname:p.nickname,score:p.score||0,bulls:stats[p.id]?.bulls||0}));
+    }
+    return base9;
+  }
+
   if(room.game==="game7") {
     const alive=g.alive||[];
     const viewerAlive=!!(viewerId && alive.includes(viewerId));
@@ -990,6 +1062,8 @@ export class GameRoom extends DurableObject {
         g8TurnMs:clampG8TurnMs(body.g8TurnMs),
         g8Rounds:clampG8Rounds(body.g8Rounds),
         g8Mode:null,
+        g9GuessMs:clampG9GuessMs(body.g9GuessMs),
+        g9Rounds:clampG9Rounds(body.g9Rounds),
         hostId:null,
         players:[],
         gameState:null,
@@ -1034,7 +1108,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
-    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7" || game==="game8") return [];
+    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7" || game==="game8" || game==="game9") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -1108,6 +1182,11 @@ export class GameRoom extends DurableObject {
       case "g7:card": return this.onG7Card(session.playerId,msg.targetId);
       case "g7:end": return this.onG7End(session.playerId);
       case "g7:restart": return this.onG7Restart(session.playerId);
+      case "g9:swap": return this.onG9Swap(session.playerId);
+      case "g9:hint": return this.onG9Hint(session.playerId,msg.text);
+      case "g9:guess": return this.onG9Guess(session.playerId,msg.value);
+      case "g9:end": return this.onG9End(session.playerId);
+      case "g9:restart": return this.onG9Restart(session.playerId);
       case "reconnect": return this.onReconnect(ws,session.playerId);
       default: return this.safeSend(ws,{type:"error",message:"未知操作。"});
     }
@@ -1246,6 +1325,7 @@ async onReady(playerId, ready){
       if(await this.g6AfterDisconnect()) return;
       if(await this.g7AfterDisconnect()) return;
       if(await this.g8AfterDisconnect()) return;
+      if(await this.g9AfterDisconnect()) return;
     }
 
     await this.save();
@@ -1292,6 +1372,7 @@ if (notReady.length > 0) {
     else if(this.room.game==="game6") await this.startGame6();
     else if(this.room.game==="game7") await this.startGame7();
     else if(this.room.game==="game8") await this.startGame8();
+    else if(this.room.game==="game9") await this.startGame9();
     else await this.startGame2();
   }
 
@@ -3563,6 +3644,244 @@ async onG1Next(playerId){
     await this.startGame7();
   }
 
+  /* =========================
+     Game 9 · 心中有數
+  ========================= */
+
+  async startGame9(){
+    for(const p of this.room.players) p.score=0;
+    this.room.g9Stats={};
+    const prev=this.room.gameState;
+    this.room.gameState={
+      game:"game9",
+      phase:"hint",
+      round:1,
+      totalRounds:this.room.g9Rounds||G9_ROUND_DEFAULT,
+      guessMs:this.room.g9GuessMs||G9_GUESS_MS_DEFAULT,
+      // 開局時喺線嘅人，按座位排；每個 round 每人輪流做一次出題人。
+      order:this.room.players.filter(p=>p.connected).map(p=>p.id),
+      turnIndex:-1,
+      turnNo:0,
+      usedIds:prev?.game==="game9" ? (prev.usedIds||[]) : [],
+      psychicId:null
+    };
+    await this.nextTurnGame9();
+  }
+
+  pickSpectrumGame9(){
+    const g=this.room.gameState;
+    let used=new Set(g.usedIds||[]);
+    let pool=GAME9_SPECTRA.filter(x=>!used.has(x.id) && x.id!==g.spectrum?.id);
+    if(!pool.length){
+      g.usedIds=[];
+      used=new Set();
+      pool=GAME9_SPECTRA.filter(x=>x.id!==g.spectrum?.id);
+    }
+    const pick=pool[Math.floor(Math.random()*pool.length)];
+    g.usedIds=[...(g.usedIds||[]),pick.id];
+    return pick;
+  }
+
+  // 由而家個位置開始，搵下一個喺線嘅出題人；跨過 round 尾就入下一個 round。
+  // 回傳 {index, round}；冇下一題就回傳 null。
+  peekNextGame9(){
+    const g=this.room.gameState;
+    const n=(g.order||[]).length;
+    let idx=g.turnIndex, round=g.round;
+    for(let k=0;k<n*2+1;k++){
+      idx++;
+      if(idx>=n){ idx=0; round++; }
+      if(round>g.totalRounds) return null;
+      const p=this.room.players.find(x=>x.id===g.order[idx]);
+      if(p?.connected) return {index:idx,round};
+    }
+    return null;
+  }
+
+  async nextTurnGame9(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9") return;
+    if(this.room.players.filter(p=>p.connected).length<MIN_PLAYERS){
+      return this.finishGame9(g.turnNo>0);
+    }
+    const next=this.peekNextGame9();
+    if(!next) return this.finishGame9(false);
+    g.turnIndex=next.index;
+    g.round=next.round;
+    g.turnNo=(g.turnNo||0)+1;
+    g.psychicId=g.order[next.index];
+    g.spectrum=this.pickSpectrumGame9();
+    g.target=Math.floor(Math.random()*101);
+    g.swapsLeft=G9_SWAPS;
+    g.hint="";
+    g.guesses={};
+    g.guesserIds=[];
+    g.result=null;
+    g.next=null;
+    g.skipped=false;
+    g.phase="hint";
+    const p=this.room.players.find(x=>x.id===g.psychicId);
+    g.endsAt=Date.now()+(p?.connected ? G9_HINT_MS : G9_OFFLINE_HINT_MS);
+    await this.commitGame9();
+  }
+
+  async commitGame9(){
+    const g=this.room.gameState;
+    await this.save();
+    if(g?.endsAt) await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async onG9Swap(playerId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9" || g.phase!=="hint") return;
+    if(g.psychicId!==playerId) return this.errorPlayer(playerId,"你唔係今題嘅出題人。");
+    if(!(g.swapsLeft>0)) return this.errorPlayer(playerId,"今題已經冇得再換。");
+    g.spectrum=this.pickSpectrumGame9();
+    g.swapsLeft-=1;
+    await this.commitGame9();
+  }
+
+  async onG9Hint(playerId,text){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9" || g.phase!=="hint") return;
+    if(g.psychicId!==playerId) return this.errorPlayer(playerId,"你唔係今題嘅出題人。");
+    const zh=this.room.language==="zh";
+    const hint=String(text||"").replace(/\s+/g," ").trim();
+    const len=[...hint].length;
+    if(!len) return this.errorPlayer(playerId,zh?"請先輸入提示。":"打咗提示先。");
+    if(len>G9_HINT_MAX) return this.errorPlayer(playerId,zh?`提示最多 ${G9_HINT_MAX} 個字。`:`提示最多 ${G9_HINT_MAX} 個字。`);
+    if(/^[\d\s.,%+\-－。，]+$/.test(hint)) return this.errorPlayer(playerId,zh?"提示不能只有數字。":"提示唔可以淨係數字。");
+    g.hint=hint;
+    g.guesserIds=this.room.players.filter(p=>p.connected && p.id!==g.psychicId).map(p=>p.id);
+    g.guesses={};
+    if(!g.guesserIds.length) return this.revealGame9();
+    g.phase="guess";
+    g.endsAt=Date.now()+(g.guessMs||G9_GUESS_MS_DEFAULT);
+    await this.commitGame9();
+  }
+
+  allLockedGame9(){
+    const g=this.room.gameState;
+    const waiting=(g.guesserIds||[]).filter(id=>{
+      const p=this.room.players.find(x=>x.id===id);
+      return p?.connected && !(id in (g.guesses||{}));
+    });
+    return waiting.length===0;
+  }
+
+  async onG9Guess(playerId,value){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9" || g.phase!=="guess") return;
+    if(!(g.guesserIds||[]).includes(playerId)) return this.errorPlayer(playerId,"今題你唔使估。");
+    if(playerId in (g.guesses||{})) return;
+    const n=Number(value);
+    if(!Number.isInteger(n) || n<0 || n>100) return this.errorPlayer(playerId,"指針位置無效。");
+    g.guesses={...(g.guesses||{}),[playerId]:n};
+    if(this.allLockedGame9()) return this.revealGame9();
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async revealGame9(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9" || (g.phase!=="guess" && g.phase!=="hint")) return;
+    const stats=this.room.g9Stats||(this.room.g9Stats={});
+    const st=(id)=>stats[id]||(stats[id]={bulls:0,guesses:0,diffSum:0,psyPoints:0,psyTurns:0});
+    const rows=[];
+    for(const id of g.guesserIds||[]){
+      if(!(id in (g.guesses||{}))) continue;
+      const value=g.guesses[id];
+      const diff=Math.abs(value-g.target);
+      const points=g9Score(diff);
+      const p=this.room.players.find(x=>x.id===id);
+      if(p) p.score=(p.score||0)+points;
+      const s=st(id);
+      s.guesses+=1; s.diffSum+=diff; if(points===4) s.bulls+=1;
+      rows.push({id,value,diff,points});
+    }
+    rows.sort((a,b)=>a.diff-b.diff);
+    const missing=(g.guesserIds||[]).filter(id=>!(id in (g.guesses||{})));
+    // 出題人攞所有估咗嘅人嘅平均分（四捨五入）；冇人估就冇分。
+    const psychicPoints=rows.length ? Math.round(rows.reduce((a,r)=>a+r.points,0)/rows.length) : 0;
+    const psy=this.room.players.find(x=>x.id===g.psychicId);
+    if(psy) psy.score=(psy.score||0)+psychicPoints;
+    const ps=st(g.psychicId); ps.psyPoints+=psychicPoints; ps.psyTurns+=1;
+    g.result={target:g.target,guesses:rows,missing,psychicPoints};
+    g.phase="reveal";
+    g.skipped=false;
+    g.next=this.revealNextInfoGame9();
+    g.endsAt=Date.now()+G9_REVEAL_MS;
+    await this.commitGame9();
+  }
+
+  revealNextInfoGame9(){
+    const next=this.peekNextGame9();
+    if(!next) return {last:true};
+    const g=this.room.gameState;
+    return {last:false,psychicId:g.order[next.index],round:next.round,turnIndex:next.index};
+  }
+
+  // 出題人夠鐘都未出提示（或者斷咗線）：跳過呢題，冇人有分。
+  async skipTurnGame9(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9" || g.phase!=="hint") return;
+    g.phase="reveal";
+    g.skipped=true;
+    g.result=null;
+    g.next=this.revealNextInfoGame9();
+    g.endsAt=Date.now()+G9_SKIP_MS;
+    await this.commitGame9();
+  }
+
+  async finishGame9(endedEarly){
+    const g=this.room.gameState && this.room.gameState.game==="game9"
+      ? this.room.gameState
+      : {game:"game9",round:0,totalRounds:this.room.g9Rounds||G9_ROUND_DEFAULT,order:[],turnIndex:0,turnNo:0};
+    g.phase="gameover";
+    g.endsAt=null;
+    g.endedEarly=!!endedEarly;
+    this.room.gameState=g;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async g9AfterDisconnect(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9") return false;
+    if(g.phase==="hint"){
+      const p=this.room.players.find(x=>x.id===g.psychicId);
+      if(!p || p.connected) return false;
+      const soon=Date.now()+G9_OFFLINE_HINT_MS;
+      if(g.endsAt && g.endsAt<=soon) return false;
+      g.endsAt=soon;
+      await this.commitGame9();
+      return true;
+    }
+    if(g.phase==="guess" && this.allLockedGame9()){
+      await this.revealGame9();
+      return true;
+    }
+    return false;
+  }
+
+  async onG9End(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9" || g.phase==="gameover") return;
+    await this.finishGame9(true);
+  }
+
+  async onG9Restart(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game9" || g.phase!=="gameover") return;
+    if(this.room.players.filter(p=>p.connected).length<MIN_PLAYERS){
+      return this.errorPlayer(playerId,"最少要 2 位在線玩家先可以再玩。");
+    }
+    await this.startGame9();
+  }
+
   async errorPlayer(playerId,message){
     this.sendToPlayer(playerId,{type:"error",message});
   }
@@ -3616,6 +3935,7 @@ async onG1Next(playerId){
     if(await this.g6AfterDisconnect()) return;
     if(await this.g7AfterDisconnect()) return;
     if(await this.g8AfterDisconnect()) return;
+    if(await this.g9AfterDisconnect()) return;
 
     await this.save();
     await this.broadcastRoom();
@@ -3725,6 +4045,12 @@ async onG1Next(playerId){
     if(g?.game==="game7" && g.phase==="boom" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.afterBoomGame7();
       return;
+    }
+
+    if(g?.game==="game9" && g.endsAt && Date.now()+50>=g.endsAt){
+      if(g.phase==="hint") { await this.skipTurnGame9(); return; }
+      if(g.phase==="guess") { await this.revealGame9(); return; }
+      if(g.phase==="reveal") { await this.nextTurnGame9(); return; }
     }
 
     if(this.room.players.every(x=>!x.connected) && (!g || g.phase==="waiting" || g.phase==="result" || g.phase==="gameover")){

@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=24">
+  <link rel="stylesheet" href="./style.css?v=25">
 </head>
 
 <body>
@@ -247,6 +247,10 @@
 
               <option value="game8">
                 Battleship 海戰棋
+              </option>
+
+              <option value="game9">
+                Wavelength 心中有數
               </option>
 
             </select>
@@ -521,6 +525,41 @@
             </div>
             <p class="notice" style="margin:6px 0 0" data-zh="模式（1v1／大亂鬥／分隊）在大廳等人到齊後再選擇。2–6 人。">
               模式（1v1／大亂鬥／分隊）喺大廳等齊人之後先揀。2–6 人。
+            </p>
+          </div>
+
+
+          <div
+            id="g9Section"
+            class="hidden"
+          >
+            <div class="label-row">
+              <span>回合數</span>
+            </div>
+            <div id="g9RoundsBox" class="filter-box">
+              <button type="button" class="filter-chip g9-rounds-chip" data-rounds="1">1</button>
+              <button type="button" class="filter-chip g9-rounds-chip active" data-rounds="2">2</button>
+              <button type="button" class="filter-chip g9-rounds-chip" data-rounds="3">3</button>
+              <button type="button" class="filter-chip g9-rounds-chip" data-rounds="5">5</button>
+              <button type="button" class="filter-chip g9-rounds-chip" data-rounds="8">8</button>
+            </div>
+            <div id="g9Preview" class="g9-preview" aria-live="polite"></div>
+            <p class="notice" style="margin:6px 0 0" data-zh="每一回合中，每人輪流擔任一次出題人。人數確定後，大廳會顯示實際題數及時間。">
+              每個 round 入面，每人輪流做一次出題人。人齊之後，大廳會顯示實際題數同時間。
+            </p>
+
+            <div class="label-row" style="margin-top:14px">
+              <span data-zh="猜測時間">估嘅時間</span>
+              <span class="g9-sub">出提示固定 45 秒</span>
+            </div>
+            <div id="g9TimeBox" class="filter-box">
+              <button type="button" class="filter-chip g9-time-chip" data-sec="20">20 秒</button>
+              <button type="button" class="filter-chip g9-time-chip active" data-sec="30">30 秒</button>
+              <button type="button" class="filter-chip g9-time-chip" data-sec="45">45 秒</button>
+              <button type="button" class="filter-chip g9-time-chip" data-sec="60">60 秒</button>
+            </div>
+            <p class="notice" style="margin:6px 0 0" data-zh="出題人看到目標位置後給一個提示，其他人轉動指針猜位置，越近分數越高。2–6 人。">
+              出題人睇到目標位置，俾一個提示，其他人轉指針估位置，越近分越高。2–6 人。
             </p>
           </div>
 
@@ -1016,6 +1055,50 @@
 
       </article>
 
+      <article class="game-card dial-card">
+
+        <div class="sticker">
+          09
+        </div>
+
+        <div class="game-icon">
+          <svg width="60" height="40" viewBox="0 0 60 40" aria-hidden="true">
+            <path d="M4 34 A26 26 0 0 1 56 34 Z" fill="#FEFEF2" stroke="#1f2740" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M30 34 L36.0 10.8 A24 24 0 0 1 38.8 11.7 Z" fill="#F5B82E"/>
+            <path d="M30 34 L38.8 11.7 A24 24 0 0 1 41.6 13.0 Z" fill="#F26A3D"/>
+            <path d="M30 34 L41.6 13.0 A24 24 0 0 1 44.1 14.6 Z" fill="#5FA8C6"/>
+            <path d="M30 34 L44.1 14.6 A24 24 0 0 1 46.4 16.5 Z" fill="#F26A3D"/>
+            <path d="M30 34 L46.4 16.5 A24 24 0 0 1 48.5 18.7 Z" fill="#F5B82E"/>
+            <path d="M30 34 L14.6 21.3" stroke="#E0284A" stroke-width="3.5" stroke-linecap="round"/>
+            <circle cx="30" cy="34" r="5" fill="#E0284A" stroke="#1f2740" stroke-width="2"/>
+          </svg>
+        </div>
+
+        <h3>
+          Wave<br>
+          length<br>
+          <span class="h3-sub">心中有數</span>
+        </h3>
+
+        <p>
+          出題人睇到目標，俾一個提示；其他人轉指針估位置，越近越高分。
+        </p>
+
+        <div class="tag-row">
+          <span>HINT</span>
+          <span>DIAL</span>
+          <span>2–6</span>
+        </div>
+
+        <button
+          class="btn btn-dark"
+          data-start="game9"
+        >
+          PLAY THIS GAME
+        </button>
+
+      </article>
+
     </div>
 
   </section>
@@ -1139,7 +1222,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=43" defer></script>
+<script src="./app.js?v=44" defer></script>
 
 </body>
 </html>
