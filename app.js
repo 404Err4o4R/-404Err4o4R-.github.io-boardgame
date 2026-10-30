@@ -168,7 +168,7 @@ function renderCategories() {
   if (S.selectedGame === "game3") {
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.remove("hidden");
-    if (langSection) langSection.classList.add("hidden");
+    if (langSection) langSection.classList.remove("hidden");
     if (g4Section) g4Section.classList.add("hidden");
     if (g5Section) g5Section.classList.add("hidden");
     return;
@@ -201,7 +201,7 @@ function renderCategories() {
   if (langSection) {
     langSection.classList.toggle(
       "hidden",
-      S.selectedGame !== "game1" && S.selectedGame !== "game4"
+      S.selectedGame !== "game1" && S.selectedGame !== "game2" && S.selectedGame !== "game4"
     );
   }
 
@@ -231,7 +231,7 @@ function renderCategories() {
         data-category="${esc(category)}"
         style="${filterChipStyle(category, active)}"
       >
-        ${esc(category)}
+        ${esc(categoryLabel(category))}
       </button>
     `;
   }).join("");
@@ -616,8 +616,17 @@ $("#langBox")?.addEventListener("click", (event) => {
 });
 
 // 開房表格：揀「台灣」時，有 data-zh 嘅說明文字轉做書面語；揀返「香港」就還原。
+// 題庫分類名本身係篩選用嘅 key，唔改；台灣版淨係轉顯示文字。
+const CATEGORY_LABEL_ZH = { "網絡梗起源": "網路梗起源" };
+function categoryLabel(category) {
+  return S.selectedLanguage === "zh" ? (CATEGORY_LABEL_ZH[category] || category) : category;
+}
+
 function applyFormLanguage() {
   const zh = S.selectedLanguage === "zh";
+  document.querySelectorAll("#catBox .filter-chip").forEach((el) => {
+    el.textContent = categoryLabel(el.dataset.category);
+  });
   document.querySelectorAll("#createTab [data-zh]").forEach((el) => {
     if (el.dataset.yue === undefined) el.dataset.yue = el.textContent.trim();
     el.textContent = zh ? el.dataset.zh : el.dataset.yue;
@@ -899,7 +908,7 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8") ? (S.selectedLanguage || "yue") : null,
+        language: (S.selectedGame === "game1" || S.selectedGame === "game2" || S.selectedGame === "game3" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8") ? (S.selectedLanguage || "yue") : null,
         g1VoteSeconds: S.selectedGame === "game1" ? S.g1VoteSeconds : null,
         g1Rounds: S.selectedGame === "game1" ? S.g1Rounds : null,
         g2SpeakSeconds: S.selectedGame === "game2" ? S.g2SpeakSeconds : null,
@@ -2519,9 +2528,9 @@ function roleBlock() {
 
   const label =
     S.role === "judge"
-      ? "諗樣（公開）"
+      ? lz("諗樣（公開）", "猜題者（公開）")
       : S.role === "truth"
-        ? "老實人"
+        ? lz("老實人", "老實人")
         : "9upper";
 
   return `
@@ -2542,7 +2551,7 @@ function roleBlock() {
         S.explanation
           ? `
             <p>
-              <b>正確解釋：</b>
+              <b>${lz("正確解釋：", "正確解釋：")}</b>
               ${esc(S.explanation)}
             </p>
           `
@@ -2558,7 +2567,7 @@ function renderGame2(game) {
     const isHost = S.room.hostId === S.playerId;
     $("#gamePanel").innerHTML = `
       <div class="eyebrow">GAME OVER · ${game.round} ROUNDS</div>
-      <h2 class="title">瞎掰王<br><span>最終排名</span></h2>
+      <h2 class="title">瞎掰王<br><span>${lz("最終排名", "最終排名")}</span></h2>
       <div class="g6-rank">
         ${ranking.map((p, i) => `
           <div class="g6-rank-row ${i === 0 ? "first" : ""} ${p.id === S.playerId ? "me" : ""}">
@@ -2567,8 +2576,8 @@ function renderGame2(game) {
         `).join("")}
       </div>
       <div class="g6-end-actions">
-        ${isHost ? `<button type="button" class="btn btn-yellow" onclick="restart2()">再玩一局</button>` : `<p class="notice">等房主決定再玩一局定散 Band</p>`}
-        <button type="button" class="btn btn-outline" onclick="leaveRoom()">返大廳</button>
+        ${isHost ? `<button type="button" class="btn btn-yellow" onclick="restart2()">${lz("再玩一局", "再玩一局")}</button>` : `<p class="notice">${lz("等房主決定再玩一局定散 Band", "等房主決定要再玩一局還是解散")}</p>`}
+        <button type="button" class="btn btn-outline" onclick="leaveRoom()">${lz("返大廳", "回大廳")}</button>
       </div>
     `;
     clearInterval(S.timer);
@@ -2613,8 +2622,7 @@ function renderGame2(game) {
 
     html += `
       <div class="status">
-        睇題目 30 秒。
-        只有老實人收到正確解釋。
+        ${lz("睇題目 30 秒。只有老實人收到正確解釋。", "看題目 30 秒。只有老實人會收到正確解釋。")}
       </div>
 
       <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -2624,12 +2632,11 @@ function renderGame2(game) {
           ${myReady ? "disabled" : ""}
           onclick="ready2()"
         >
-          ${myReady ? "✓ Ready" : "準備好"}
+          ${myReady ? "✓ Ready" : lz("準備好", "準備好了")}
         </button>
 
         <span class="notice">
-          ${game.prepReadyCount || 0}/${game.prepTotal || 0} 人準備好，
-          全部準備好就唔使等夠 30 秒。
+          ${game.prepReadyCount || 0}/${game.prepTotal || 0} ${lz("人準備好，全部準備好就唔使等夠 30 秒。", "人準備好，全部準備好就不必等滿 30 秒。")}
         </span>
       </div>
     `;
@@ -2651,8 +2658,7 @@ function renderGame2(game) {
         isJudge
           ? `
             <div class="status">
-              10 秒內揀下一位發言。
-              唔揀就隨機。
+              ${lz("10 秒內揀下一位發言。唔揀就隨機。", "請在 10 秒內選出下一位發言者，不選就隨機。")}
             </div>
 
             <div class="choice-grid">
@@ -2674,7 +2680,7 @@ function renderGame2(game) {
           `
           : `
             <div class="status">
-              諗樣揀緊下一位發言（仲有 ${left} 位未講）。
+              ${lz(`諗樣揀緊下一位發言（仲有 ${left} 位未講）。`, `猜題者正在選下一位發言者（還有 ${left} 位未發言）。`)}
             </div>
           `
       }
@@ -2694,7 +2700,7 @@ function renderGame2(game) {
 
     html += `
       <div class="status">
-        而家發言：
+        ${lz("而家發言：", "目前發言：")}
         <b>
           ${esc(
             active?.nickname || ""
@@ -2703,12 +2709,12 @@ function renderGame2(game) {
 
         ${
           mine
-            ? " · 輪到你喇，30 秒。"
+            ? lz(" · 輪到你喇，30 秒。", " · 輪到你了，30 秒。")
             : ""
         }
 
         <span class="muted">
-          （${(game.spokenIds || []).length}/${(game.order || []).length} 已發言）
+          （${(game.spokenIds || []).length}/${(game.order || []).length} ${lz("已發言", "已發言")}）
         </span>
       </div>
 
@@ -2732,8 +2738,8 @@ function renderGame2(game) {
           }
           placeholder="${
             mine
-              ? "打你嘅解釋…"
-              : "等緊發言…"
+              ? lz("打你嘅解釋…", "輸入你的解釋…")
+              : lz("等緊發言…", "等待發言中…")
           }"
         >
 
@@ -2787,15 +2793,14 @@ function renderGame2(game) {
         class="eyebrow"
         style="margin-top:18px"
       >
-        WHO IS THE 老實人
+        WHO IS THE ${lz("老實人", "老實人")}
       </div>
 
       ${
         isJudge
           ? `
             <div class="status">
-              2 分鐘內揀出你認為嘅老實人。
-              唔揀就隨機。
+              ${lz("2 分鐘內揀出你認為嘅老實人。唔揀就隨機。", "請在 2 分鐘內選出你認為的老實人，不選就隨機。")}
             </div>
 
             <div class="choice-grid">
@@ -2819,7 +2824,7 @@ function renderGame2(game) {
           `
           : `
             <div class="status">
-              諗樣有 2 分鐘揀出老實人。
+              ${lz("諗樣有 2 分鐘揀出老實人。", "猜題者有 2 分鐘選出老實人。")}
             </div>
           `
       }
@@ -2832,13 +2837,13 @@ function renderGame2(game) {
       <div class="result">
         ${
           game.correct
-            ? "✅ 諗樣估中咗！"
-            : "❌ 諗樣估錯咗！"
+            ? lz("✅ 諗樣估中咗！", "✅ 猜題者猜對了！")
+            : lz("❌ 諗樣估錯咗！", "❌ 猜題者猜錯了！")
         }
       </div>
 
       <p class="notice">
-        真正嘅老實人：
+        ${lz("真正嘅老實人：", "真正的老實人：")}
         <b>
           ${esc(
             game.truthNickname
@@ -2846,7 +2851,7 @@ function renderGame2(game) {
         </b>
         <br>
 
-        正確解釋：
+        ${lz("正確解釋：", "正確解釋：")}
         ${esc(
           game.correctExplanation
         )}
@@ -2861,7 +2866,7 @@ function renderGame2(game) {
               style="margin-top:15px"
               onclick="next2()"
             >
-              ${game.round >= game.totalRounds ? "睇最終結果" : "NEXT ROUND"}
+              ${game.round >= game.totalRounds ? lz("睇最終結果", "查看最終結果") : "NEXT ROUND"}
             </button>
           `
           : ""
@@ -2947,12 +2952,12 @@ function renderGame3Writing(game) {
   // state 廣播打斷）；之後淨係update進度/timer呢啲細位。
   if (S.g3RenderKey === renderKey && $("#g3AnswerBox")) {
     const counter = $("#g3SubmitCount");
-    if (counter) counter.textContent = `已交：${game.submittedCount} / ${game.totalToSubmit}`;
+    if (counter) counter.textContent = `${lz("已交", "已提交")}：${game.submittedCount} / ${game.totalToSubmit}`;
 
     const btn = document.querySelector('[onclick="g3Submit()"]');
     if (btn && game.mySubmitted && btn.dataset.submitted !== "1") {
       btn.dataset.submitted = "1";
-      btn.textContent = "✓ 你已交題";
+      btn.textContent = lz("✓ 你已交題", "✓ 你已提交");
       btn.classList.remove("btn-yellow");
       btn.classList.add("btn-green");
       btn.disabled = true;
@@ -2972,8 +2977,8 @@ function renderGame3Writing(game) {
       </div>
 
       <p class="notice">
-        今輪你係莊家，唔使寫嘢。等緊其他人交題…
-        <span id="g3SubmitCount">已交：${game.submittedCount} / ${game.totalToSubmit}</span>
+        ${lz("今輪你係莊家，唔使寫嘢。等緊其他人交題…", "這一輪你是莊家，不用寫。正在等其他人提交…")}
+        <span id="g3SubmitCount">${lz("已交", "已提交")}：${game.submittedCount} / ${game.totalToSubmit}</span>
       </p>
     `;
   } else {
@@ -2986,26 +2991,26 @@ function renderGame3Writing(game) {
         <div id="time" class="timer"></div>
       </div>
 
-      <p class="notice">莊家：${esc(game.raterNickname)}</p>
+      <p class="notice">${lz("莊家", "莊家")}：${esc(game.raterNickname)}</p>
 
       <div class="question">
-        莊家心水數字係
+        ${lz("莊家心水數字係", "莊家心中的數字是")}
         <b class="g3-target">${game.myTarget}</b>
-        分。寫一句「佢係十分，但係___」，愈貼近呢個分，你嘅分數先會愈高。
+        ${lz("分。寫一句「佢係十分，但係___」，愈貼近呢個分，你嘅分數先會愈高。", "分。寫一句「他是十分，但是___」，越貼近這個分數，你的得分就越高。")}
       </div>
 
       <div class="answerbox">
         <textarea
           id="g3AnswerBox"
           maxlength="25"
-          placeholder="佢係十分，但係……"
+          placeholder="${lz("佢係十分，但係……", "他是十分，但是……")}"
           oninput="g3UpdateCount()"
           ${game.mySubmitted ? "disabled" : ""}
         ></textarea>
       </div>
 
       <p class="notice">
-        <span id="g3SubmitCount">已交：${game.submittedCount} / ${game.totalToSubmit}</span>
+        <span id="g3SubmitCount">${lz("已交", "已提交")}：${game.submittedCount} / ${game.totalToSubmit}</span>
         ·
         <span id="g3CharCount">0 / 25</span>
       </p>
@@ -3016,7 +3021,7 @@ function renderGame3Writing(game) {
         data-submitted="${game.mySubmitted ? "1" : "0"}"
         ${game.mySubmitted ? "disabled" : ""}
       >
-        ${game.mySubmitted ? "✓ 你已交題" : "交題"}
+        ${game.mySubmitted ? lz("✓ 你已交題", "✓ 你已提交") : lz("交題", "提交")}
       </button>
     `;
   }
@@ -3044,7 +3049,7 @@ window.g3Submit = async () => {
   if (!text) return;
 
   const ok = await askConfirm(
-    `確定要交呢句？交咗就唔可以再改：「${text}」`
+    lz(`確定要交呢句？交咗就唔可以再改：「${text}」`, `確定要提交這句嗎？提交後就不能再修改：「${text}」`)
   );
   if (!ok) return;
 
@@ -3062,9 +3067,9 @@ function renderGame3Rating(game) {
 
       ${
         game.ratingStage === "preview"
-          ? `<p class="notice">莊家未開始評分，投一票你覺得最WTF嗰句：</p>`
+          ? `<p class="notice">${lz("莊家未開始評分，投一票你覺得最WTF嗰句：", "莊家還沒開始評分，投票選出你覺得最WTF的一句：")}</p>`
           : `<p class="notice">
-              莊家 ${esc(game.raterNickname)} 評緊分…… (${idx + 1} / ${game.totalAnswers})
+              ${lz("莊家", "莊家")} ${esc(game.raterNickname)} ${lz("評緊分……", "正在評分……")} (${idx + 1} / ${game.totalAnswers})
             </p>`
       }
 
@@ -3092,7 +3097,7 @@ function renderGame3Rating(game) {
                         }"
                         onclick="g3Wtf(${i})"
                       >
-                        ${game.myWtfVote === i ? "✓ 最WTF" : "投WTF"}
+                        ${game.myWtfVote === i ? "✓ 最WTF" : lz("投WTF", "投WTF")}
                       </button>`
                     : ""
                 }
@@ -3112,7 +3117,7 @@ function renderGame3Rating(game) {
   if (game.ratingStage === "preview") {
     $("#gamePanel").innerHTML = `
       <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
-      <h2 class="title">評分時間<br><span>睇晒先評分。</span></h2>
+      <h2 class="title">${lz("評分時間", "評分時間")}<br><span>${lz("睇晒先評分。", "看完再評分。")}</span></h2>
 
       <div class="answers" style="flex-direction:column;gap:10px">
         ${(game.answers || [])
@@ -3127,7 +3132,7 @@ function renderGame3Rating(game) {
       </div>
 
       <button class="btn btn-yellow wide" onclick="g3StartRating()">
-        開始逐句評分
+        ${lz("開始逐句評分", "開始逐句評分")}
       </button>
     `;
     return;
@@ -3140,8 +3145,8 @@ function renderGame3Rating(game) {
   $("#gamePanel").innerHTML = `
     <div class="row" style="justify-content:space-between;align-items:end">
       <div>
-        <div class="eyebrow">評分 ${idx + 1} / ${game.totalAnswers}</div>
-        <h2 class="title">呢句幾多分？</h2>
+        <div class="eyebrow">${lz("評分", "評分")} ${idx + 1} / ${game.totalAnswers}</div>
+        <h2 class="title">${lz("呢句幾多分？", "這句幾分？")}</h2>
       </div>
       <div id="time" class="timer"></div>
     </div>
@@ -3162,7 +3167,7 @@ function renderGame3Rating(game) {
     </div>
 
     <button class="btn btn-yellow wide" onclick="g3Score(${idx})">
-      確認評分
+      ${lz("確認評分", "確認評分")}
     </button>
   `;
 
@@ -3194,7 +3199,7 @@ function renderGame3Reveal(game) {
     <div class="row" style="justify-content:space-between;align-items:end">
       <div>
         <div class="eyebrow">ROUND ${game.round} / ${game.totalRounds}</div>
-        <h2 class="title">結果<br><span>揭曉。</span></h2>
+        <h2 class="title">${lz("結果", "結果")}<br><span>${lz("揭曉。", "揭曉。")}</span></h2>
       </div>
       <div id="time" class="timer"></div>
     </div>
@@ -3203,8 +3208,8 @@ function renderGame3Reveal(game) {
 
     ${
       game.isFinalRound
-        ? `<p class="notice">最後一round！結算緊……</p>`
-        : `<p class="notice">下一round就快開始……</p>`
+        ? `<p class="notice">${lz("最後一round！結算緊……", "最後一回合！正在結算……")}</p>`
+        : `<p class="notice">${lz("下一round就快開始……", "下一回合即將開始……")}</p>`
     }
   `;
 
@@ -3219,9 +3224,9 @@ function renderGame3Reveal(game) {
       <div style="display:flex;align-items:center;gap:12px">
         <div style="flex:1">
           <b>${i === 0 ? "★ " : ""}${esc(r.nickname)}</b>
-          ${game.wtfWinnerId === r.playerId ? '<span class="notice" style="margin:0 0 0 6px">🤯 全場最WTF</span>' : ""}
+          ${game.wtfWinnerId === r.playerId ? '<span class="notice" style="margin:0 0 0 6px">🤯 ' + lz("全場最WTF", "全場最WTF") + '</span>' : ""}
           <div class="notice" style="margin:2px 0">${esc(r.text)}</div>
-          <div class="notice" style="margin:0">心水 ${r.target} 分 · 莊家俾 ${r.score} 分</div>
+          <div class="notice" style="margin:0">${lz("心水", "目標")} ${r.target} 分 · ${lz("莊家俾", "莊家給")} ${r.score} 分</div>
           <div style="display:flex;gap:8px;margin-top:6px">
             <button
               class="btn btn-outline"
@@ -3283,24 +3288,24 @@ function renderGame3Gameover(game) {
 
   $("#gamePanel").innerHTML = `
     <div class="eyebrow">GAME OVER</div>
-    <h2 class="title">結算<br><span>He/She's a 10.</span></h2>
+    <h2 class="title">${lz("結算", "結算")}<br><span>He/She's a 10.</span></h2>
 
     ${
       champion
         ? `<div class="question" style="text-align:center">
-            <div style="font-size:13px;opacity:.85">十分知己</div>
+            <div style="font-size:13px;opacity:.85">${lz("十分知己", "十分知己")}</div>
             <div style="font-family:'Fredoka';font-size:28px">${esc(champion.nickname)}</div>
-            <div style="font-size:13px;opacity:.85">總分 ${champion.score} 分</div>
+            <div style="font-size:13px;opacity:.85">${lz("總分", "總分")} ${champion.score} 分</div>
           </div>`
         : ""
     }
 
     <div class="answerbox" style="text-align:center;margin-top:10px">
-      <div style="font-size:13px;color:var(--game-accent)">全場最WTF</div>
+      <div style="font-size:13px;color:var(--game-accent)">${lz("全場最WTF", "全場最WTF")}</div>
       ${
         wtfChampion
           ? `<div style="font-family:'Fredoka';font-size:22px">${esc(wtfChampion.nickname)}</div>
-             <div class="notice" style="margin:0">攞咗 ${wtfChampion.wtfCount} 次最WTF</div>`
+             <div class="notice" style="margin:0">${lz("攞咗", "獲得")} ${wtfChampion.wtfCount} ${lz("次最WTF", "次最WTF")}</div>`
           : `<div class="notice" style="margin:6px 0 0">本局沒人玩WTF</div>`
       }
     </div>
@@ -3321,7 +3326,7 @@ function renderGame3Gameover(game) {
     ${
       history.length
         ? `
-          <div class="eyebrow" style="margin-top:20px">逐ROUND回顧</div>
+          <div class="eyebrow" style="margin-top:20px">${lz("逐ROUND回顧", "逐回合回顧")}</div>
 
           <div class="tabs" style="margin:8px 0" id="g3HistoryTabs">
             ${history
@@ -3358,7 +3363,7 @@ function renderGame3HistoryDetail(index) {
   if (!h || !detail) return;
 
   detail.innerHTML = `
-    <p class="notice">莊家：${esc(h.raterNickname)} · 心水數字 ${h.target} 分</p>
+    <p class="notice">${lz("莊家", "莊家")}：${esc(h.raterNickname)} · ${lz("心水數字", "目標數字")} ${h.target} 分</p>
 
     ${h.results
       .map(
@@ -3370,7 +3375,7 @@ function renderGame3HistoryDetail(index) {
                 ${h.wtfWinnerId === r.playerId ? '<span class="notice" style="margin:0 0 0 6px">🤯 最WTF</span>' : ""}
                 <div class="notice" style="margin:2px 0">${esc(r.text)}</div>
                 <div class="notice" style="margin:0">
-                  莊家俾 ${r.score} 分 · 貼近度 +${r.roundPoints}
+                  ${lz("莊家俾", "莊家給")} ${r.score} 分 · ${lz("貼近度", "貼近度")} +${r.roundPoints}
                   · 👍 ${r.reactions?.up || 0} 👎 ${r.reactions?.down || 0}
                 </div>
               </div>

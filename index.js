@@ -1653,10 +1653,10 @@ async onG1Next(playerId){
       phase: "prep",
       round: (this.room.gameState?.round || 0) + 1,
       totalRounds: this.room.g2Rounds || 5,
-      term: q.term,
+      term: q.text?.[this.room.language==="zh" ? "zh" : "yue"]?.term || q.term,
       category: q.category,
       privateExplanation:
-        q.explanation || null,
+        q.text?.[this.room.language==="zh" ? "zh" : "yue"]?.explanation || q.explanation || null,
       judgeId: judge.id,
       truthId: truth.id,
       roles,

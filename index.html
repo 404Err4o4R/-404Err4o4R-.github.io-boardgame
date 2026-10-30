@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=23">
+  <link rel="stylesheet" href="./style.css?v=24">
 </head>
 
 <body>
@@ -322,7 +322,7 @@
               <button type="button" class="filter-chip rounds-chip" data-rounds="custom">自訂</button>
             </div>
 
-            <p class="notice" style="margin:6px 0 0">
+            <p class="notice" style="margin:6px 0 0" data-zh="預設：每人輪流當一次莊家">
               預設：每人輪流做一次莊家
             </p>
 
@@ -345,7 +345,7 @@
               class="filter-box"
             >
               <button type="button" class="filter-chip write-chip active" data-write="60">1分鐘</button>
-              <button type="button" class="filter-chip write-chip" data-write="90">1分半鐘</button>
+              <button type="button" data-zh="1分半" class="filter-chip write-chip" data-write="90">1分半鐘</button>
               <button type="button" class="filter-chip write-chip" data-write="120">2分鐘</button>
             </div>
 
@@ -435,7 +435,7 @@
               <button type="button" class="filter-chip g2-rounds-chip" data-rounds="3">3輪</button>
               <button type="button" class="filter-chip g2-rounds-chip active" data-rounds="5">5輪</button>
               <button type="button" class="filter-chip g2-rounds-chip" data-rounds="8">8輪</button>
-              <button type="button" class="filter-chip g2-rounds-chip" data-rounds="custom">自定義</button>
+              <button type="button" data-zh="自訂" class="filter-chip g2-rounds-chip" data-rounds="custom">自定義</button>
             </div>
             <input
               id="g2RoundsCustom"
@@ -1139,7 +1139,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=42" defer></script>
+<script src="./app.js?v=43" defer></script>
 
 </body>
 </html>
