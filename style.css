@@ -554,6 +554,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 #gameShell[data-game="game4"]{--card:#7B57CE;--card-fg:#fff;--sel:#FFD166;--sel-fg:#1f2740;--deep:#FFD166;--strip:#FFD166;--strip-fg:#4a2f7a;--ring:#FFD166}
 #gameShell[data-game="game5"]{--card:#AFCBE3;--card-fg:#1f2740;--sel:#2f5a7a;--sel-fg:#fff;--deep:#2f5a7a;--strip:#AFCBE3;--strip-fg:#1f2740}
 #gameShell[data-game="game6"]{--card:#B9DD5B;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#3C5A1E;--strip:#B9DD5B;--strip-fg:#1f2740}
+#gameShell[data-game="game8"]{--card:#22408C;--card-fg:#FEFEF2;--sel:#F2D965;--sel-fg:#1f2740;--deep:#F2D965;--strip:#C9D6F2;--strip-fg:#1f2740;--ring:#F2D965;--g8-sea:#3459AD}
+#gameShell[data-game="game8"][data-g8team="navy"]{--card:#3D69C8;--g8-sea:#1F3D86}
+#gameShell[data-game="game8"][data-g8team="pirate"]{--card:#C53D3D;--g8-sea:#1F3D86}
+#gameShell[data-game="game8"][data-g8team="tie"]{--card:#22408C}
 #gameShell[data-game="game7"]{--card:#F7577A;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#7A1030;--strip:#FFD3DD;--strip-fg:#7A1030}
 
 .game-pill{font-size:12px;font-weight:900;padding:6px 12px;border-radius:999px;background:var(--strip);color:var(--strip-fg);white-space:nowrap}
@@ -762,7 +766,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 /* 封面統一尺寸：開房卡固定最少 920px 高（夠放最長嗰隻 game 嘅設定），
    六隻 game 嘅封面同插圖大小一樣；手機版封面固定 340px 高。 */
 .room-panel{min-height:970px}
-.room-visual .cover2 .gc-icon,.room-visual .cover-g6 .gc-icon,.room-visual .cover-g7 .gc-icon{width:min(72%,340px)}
+.room-visual .cover2 .gc-icon,.room-visual .cover-g6 .gc-icon,.room-visual .cover-g7 .gc-icon,.room-visual .cover-g8 .gc-icon{width:min(72%,340px)}
 .room-visual:has(.cover-g1){background:var(--g1-a)}
 .room-visual:has(.cover-g2){background:var(--g2-a)}
 .room-visual:has(.cover-g3){background:var(--g3-a)}
@@ -773,6 +777,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .room-visual:has(.cover2-g5){background:#AFCBE3}
 .room-visual:has(.cover-g6){background:#B9DD5B}
 .room-visual:has(.cover-g7){background:#F7577A}
+.room-visual:has(.cover-g8){background:#22408C}
 @media (max-width:900px){
   .room-panel{min-height:0}
   .room-visual{min-height:0;height:340px}
@@ -967,4 +972,182 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   .g7-root{min-height:0}
   .g7-who{min-height:92px}
   .g7-burst-wrap{width:min(230px,60vw);margin:-10px 0 -14px}
+}
+
+/* ===== Game 8 · Battleship 海戰棋 ===== */
+.navy-card{background:#22408C;color:#FEFEF2}.navy-card .tag-row span{background:rgba(254,254,242,.18)}
+.navy-card .game-icon svg{display:block}
+.navy-card h3 .h3-sub{display:inline-block;margin-top:4px;font-size:.62em}
+.navy-card .sticker{background:rgba(254,254,242,.18)}
+
+.cover-g8{background:#22408C}
+.cover-g8 .gc-icon{top:52%;width:72%}
+.cover-g8 .gc-icon svg{width:100%;height:auto;display:block;overflow:visible}
+.cover-g8 .gc-label{opacity:1}
+.cover-g8 .gc-label.eyebrow{top:6%;background:#F2D965;color:#1f2740}
+.cover-g8 .gc-label.bottom{bottom:6%;background:#FEFEF2;color:#1f2740}
+
+.g8-lobby{margin-top:14px}
+.g8-modes{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.g8-mode{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:56px;padding:10px 14px;border:2px solid #e4e8f2;border-radius:16px;background:#fff;color:#1f2740;cursor:pointer}
+.g8-mode strong{font-family:"Fredoka",sans-serif;font-size:17px}
+.g8-mode small{font-size:12px;font-weight:800;opacity:.75}
+.g8-mode.on{background:#F2D965;border-color:#1f2740;box-shadow:0 4px 0 #1f2740}
+.g8-mode:disabled{cursor:default}
+.g8-mode:disabled:not(.on){opacity:.45}
+.sb-tag.g8-sb-navy{background:#22408C;color:#FEFEF2}
+.sb-tag.g8-sb-pirate{background:#B3192B;color:#FEFEF2}
+
+.g8-root{display:flex;flex-direction:column;gap:12px;min-height:476px}
+.g8-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.g8-head .eyebrow{margin:6px 0 4px}
+.g8-big{font-family:"Fredoka",sans-serif;font-weight:700;font-size:clamp(28px,4.2vw,40px);line-height:1.05;letter-spacing:-.02em;margin:0}
+.g8-note{margin:0;font-size:13px;font-weight:800;opacity:.9}
+.g8-note.center{text-align:center}
+.g8-hint{background:rgba(242,217,101,.18);border-radius:12px;padding:8px 12px}
+.g8-vs{display:flex;align-items:center;gap:8px;font-weight:900;font-size:13px}
+.g8-vs-x{opacity:.6}
+.g8-badge{border-radius:50%;display:inline-grid;place-items:center;border:2px solid #FEFEF2;color:#FEFEF2;flex-shrink:0;box-sizing:border-box}
+.g8-badge-navy{background:#22408C}
+.g8-badge-pirate{background:#B3192B}
+.g8-mems{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.g8-mem{padding:6px 10px;border-radius:999px;background:rgba(254,254,242,.14);font-size:13px;font-weight:800}
+.g8-mem.shoot{background:#F2D965;color:#1f2740}
+.g8-cycle{margin-left:auto;font-size:11px;font-weight:800;opacity:.8}
+.g8-log{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(254,254,242,.14);border-radius:12px;padding:7px 12px;font-size:13px;font-weight:800}
+.g8-log b{flex-shrink:0;font-size:11px;font-weight:900;padding:2px 9px;border-radius:999px;background:#FEFEF2;color:#1f2740}
+.g8-log.boom b{background:#FF7A59}
+.g8-log.air{background:rgba(242,217,101,.16);border:2px dashed #F2D965;color:inherit}
+.g8-log.air svg{color:#F2D965;flex-shrink:0}
+.g8-tabs{display:flex;gap:6px}
+.g8-tab{flex:1;min-height:52px;border:2px solid transparent;border-radius:14px;background:rgba(254,254,242,.14);color:inherit;font-weight:900;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer}
+.g8-tab small{font-size:11px;font-weight:800;opacity:.8}
+.g8-tab.on{background:#FEFEF2;color:#1f2740;border-color:#F2D965}
+.g8-tab:disabled{opacity:.4;text-decoration:line-through;cursor:default}
+.g8-board-head{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.12em;font-weight:900}
+.g8-link{margin-left:auto;background:none;border:0;color:inherit;font-weight:900;font-size:12px;letter-spacing:0;text-decoration:underline;cursor:pointer;min-height:32px}
+
+.g8-board{display:grid;gap:3px;width:100%;max-width:420px;align-self:center}
+.g8-board.small{gap:2px;max-width:none}
+.g8-lab{display:grid;place-items:center;font-size:11px;font-weight:900;opacity:.75;aspect-ratio:1}
+.g8-c{position:relative;aspect-ratio:1;box-sizing:border-box;border-radius:6px;background:var(--g8-sea);border:2px solid var(--g8-sea);display:grid;place-items:center;color:#FEFEF2;padding:0;font:inherit;min-width:0}
+.g8-board.small .g8-c{border-radius:3px;border-width:1px}
+button.g8-c{cursor:pointer}
+button.g8-c:hover{border-color:#F2D965}
+.g8-c.ship{background:#C9D6F2;border-color:#1f2740}
+.g8-c.ship.mate{background:#94A9DA}
+.g8-c.ship.sel{background:#F2D965}
+.g8-c.hit{background:#FF7A59;border-color:#1f2740;color:#1f2740}
+.g8-c.sunk{background:#B4381F;border-color:#1f2740;color:#FEFEF2}
+.g8-dot{display:block;width:28%;aspect-ratio:1;border-radius:50%;background:#FEFEF2;opacity:.75}
+.g8-c.air{border-color:#F2D965;border-style:dashed}
+.g8-c.radar{box-shadow:inset 0 0 0 2px rgba(242,217,101,.55)}
+.g8-radar-n{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:999px;display:grid;place-items:center;font-family:"Fredoka",sans-serif;font-size:12px;line-height:1;color:#1f2740;background:#F2D965;border:2px solid #1f2740;z-index:1}
+.g8-board.small .g8-radar-n{display:none}
+.g8-c.aim{border-color:#F2D965;color:#F2D965}
+.g8-c.aimrow{border-color:rgba(242,217,101,.7)}
+.g8-c.preview{border-color:#F2D965;border-style:dashed}
+.g8-c.ping{border-color:#F2D965;border-style:dashed;background:rgba(242,217,101,.18)}
+.g8-ping-n{font-size:11px;color:#F2D965}
+.g8-pingline{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;flex-wrap:wrap}
+.g8-pingkey{width:14px;height:14px;border-radius:4px;border:2px dashed #F2D965;box-sizing:border-box}
+
+.g8-fleet{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px}
+.g8-fl{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800}
+.g8-seg{display:flex;gap:2px}
+.g8-seg i{display:block;width:9px;height:9px;border-radius:2px;background:#C9D6F2}
+.g8-fl.dead{opacity:.55;text-decoration:line-through}
+.g8-fl.dead .g8-seg i{background:#FF7A59}
+
+.g8-tray{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.g8-ship{display:flex;align-items:center;gap:8px;min-height:44px;border:2px solid transparent;border-radius:12px;padding:6px 10px;background:rgba(254,254,242,.14);color:inherit;font-weight:800;font-size:13px;text-align:left;cursor:pointer}
+.g8-ship .g8-seg i{width:12px;height:12px;border-radius:3px}
+.g8-ship-name{flex:1}
+.g8-ship.sel{background:#F2D965;color:#1f2740;border-color:#1f2740}
+.g8-ship.sel .g8-seg i{background:#1f2740}
+.g8-ship.mate{opacity:.6;cursor:default}
+.g8-tools{display:flex;gap:8px}
+.g8-tool{flex:1;min-height:48px;border:2px solid currentColor;border-radius:16px;background:transparent;color:inherit;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.g8-tool:disabled{opacity:.45;cursor:default}
+.g8-bottom{margin-top:auto;display:flex;flex-direction:column;gap:6px}
+#gameShell.is-playing #gamePanel .g8-main-btn{min-height:54px;font-size:16px}
+#gameShell.is-playing #gamePanel .g8-main-btn:disabled{opacity:.55;cursor:not-allowed}
+
+.g8-cards{margin-top:auto;display:flex;flex-direction:column;gap:6px}
+.g8-cards-lbl{opacity:.85}
+.g8-cards-row{display:flex;gap:8px}
+.g8-card{flex:1;display:flex;align-items:center;gap:8px;background:#1f2740;color:#FEFEF2;border-radius:16px;padding:8px 10px;border:2px solid transparent;min-width:0}
+.g8-card.on{border-color:#F2D965}
+.g8-card.empty{justify-content:center;font-size:13px;font-weight:800;opacity:.8;min-height:44px}
+.g8-card-face{width:32px;height:42px;border-radius:8px;background:#F2D965;color:#1f2740;display:grid;place-items:center;flex-shrink:0}
+.g8-card-text{flex:1;min-width:0}
+.g8-card-text strong{font-family:"Fredoka",sans-serif;font-size:15px;display:block}
+.g8-card-text small{font-size:11px;font-weight:800;opacity:.75;display:block}
+.g8-card button{min-height:40px;padding:0 10px;border:2px solid #FEFEF2;border-radius:10px;background:transparent;color:#FEFEF2;font-weight:900;font-size:12px;cursor:pointer;flex-shrink:0}
+.g8-mini{display:flex;align-items:center;gap:12px;background:#1f2740;color:#FEFEF2;border-radius:18px;padding:10px 12px}
+.g8-mini .g8-board{width:92px;flex-shrink:0}
+.g8-mini strong{font-family:"Fredoka",sans-serif;font-size:17px}
+
+/* 白熱化：橙框順時針轉 */
+.g8-hotbar{display:flex;align-items:center;gap:8px;background:#FF7A59;color:#1f2740;border-radius:14px;padding:8px 12px;font-weight:900;font-size:13px}
+.g8-flick{animation:g8-flick .7s ease-in-out infinite alternate}
+@property --g8-a{syntax:'<angle>';inherits:false;initial-value:0deg}
+#gameShell.is-playing #gamePanel.g8-hot{position:relative;animation:g8-glow 1.4s ease-in-out infinite}
+#gamePanel.g8-hot::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:4px;pointer-events:none;
+  background:conic-gradient(from var(--g8-a),#FF7A59 0deg,#F2D965 45deg,#FF7A59 90deg,rgba(255,122,89,.22) 140deg,rgba(255,122,89,.22) 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:g8-spin 1.4s linear infinite}
+@keyframes g8-spin{to{--g8-a:360deg}}
+@keyframes g8-glow{0%,100%{box-shadow:0 0 0 0 rgba(255,122,89,0)}50%{box-shadow:0 0 22px 2px rgba(255,122,89,.55)}}
+@keyframes g8-flick{from{transform:scale(1)}to{transform:scale(1.18) rotate(-6deg)}}
+@media (prefers-reduced-motion:reduce){
+  #gameShell.is-playing #gamePanel.g8-hot,#gamePanel.g8-hot::before,.g8-flick{animation:none}
+  #gamePanel.g8-hot::before{background:#FF7A59}
+}
+
+/* 回合完結 */
+.g8-reveals{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.g8-reveal{display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,.12);border-radius:16px;padding:10px}
+.g8-next{margin-top:auto;display:flex;justify-content:space-between;align-items:center;background:#F2D965;color:#1f2740;border-radius:18px;padding:12px 16px;font-weight:900}
+.g8-next strong{font-family:"Fredoka",sans-serif;font-size:32px}
+
+/* 結算 */
+.g8-hero{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.g8-hero .g8-badge{border-width:3px;box-shadow:0 5px 0 #1f2740}
+.g8-hero-tie{display:flex;gap:8px}
+.g8-score{display:flex;align-items:center;gap:14px;font-weight:900}
+.g8-score strong{font-family:"Fredoka",sans-serif;font-size:38px;line-height:1}
+.g8-crew{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.g8-crew span{padding:6px 12px;border-radius:999px;background:#FEFEF2;color:#1f2740;font-weight:900;font-size:13px}
+.g8-winners{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.g8-win{min-width:150px;background:#F2D965;color:#1f2740;border:2px solid #1f2740;box-shadow:0 5px 0 #1f2740;border-radius:20px;padding:12px;display:flex;flex-direction:column;align-items:center}
+.g8-win strong{font-family:"Fredoka",sans-serif;font-size:24px}
+.g8-win small{font-size:12px;font-weight:900}
+.g8-titles{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.g8-stat{background:#FEFEF2;color:#1f2740;border-radius:16px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.g8-stat small{font-size:11px;font-weight:900;opacity:.75}
+.g8-stat strong{font-family:"Fredoka",sans-serif;font-size:17px}
+.g8-stat > span:last-child{font-size:11px;font-weight:800}
+.g8-medal{width:40px;height:40px;border-radius:50%;background:#F2D965;border:2px solid #1f2740;display:grid;place-items:center;margin-bottom:2px}
+.g8-section{display:flex;flex-direction:column;gap:6px}
+.g8-rounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.g8-rd{border-radius:12px;padding:7px 6px;font-size:12px;font-weight:900;text-align:center;background:rgba(254,254,242,.16);border:2px solid #FEFEF2}
+.g8-rd.team-navy{background:#22408C;color:#FEFEF2}
+.g8-rd.team-pirate{background:#B3192B;color:#FEFEF2}
+.g8-rank{display:flex;flex-direction:column;gap:6px}
+.g8-rank-row{display:flex;align-items:center;gap:10px;background:rgba(254,254,242,.14);border-radius:14px;padding:9px 14px;font-weight:800;font-size:14px}
+.g8-rank-row.first{background:#F2D965;color:#1f2740}
+.g8-rank-row.me{outline:2px solid #FEFEF2}
+.g8-rank-name{flex:1}
+.g8-rank-row b{font-family:"Fredoka",sans-serif;font-size:18px}
+.g8-actions{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center}
+.g8-actions .btn{min-height:54px}
+
+.g8-tray.team{grid-template-columns:1fr}
+@media (max-width:520px){
+  .g8-cards-row.multi .g8-card-text small{display:none}
+}
+@media (max-width:900px){
+  .g8-root{min-height:0}
+  .g8-titles{gap:6px}
 }

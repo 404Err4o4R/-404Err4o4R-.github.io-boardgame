@@ -152,10 +152,11 @@ function renderCategories() {
 
   if (g6Section) g6Section.classList.toggle("hidden", S.selectedGame !== "game6");
   $("#g7Section")?.classList.toggle("hidden", S.selectedGame !== "game7");
+  $("#g8Section")?.classList.toggle("hidden", S.selectedGame !== "game8");
   $("#g1Section")?.classList.toggle("hidden", S.selectedGame !== "game1");
   $("#g2Section")?.classList.toggle("hidden", S.selectedGame !== "game2");
 
-  if (S.selectedGame === "game6" || S.selectedGame === "game7") {
+  if (S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8") {
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.add("hidden");
     if (langSection) langSection.classList.remove("hidden");
@@ -444,6 +445,34 @@ const ROOM_COVERS = {
       <div class="gc-label eyebrow">GUESS · DODGE · BOOM</div>
       <div class="gc-label bottom">Number Bomb 數字炸彈</div>
     </div>
+  `,
+  game8: `
+    <div class="game-cover cover-g8">
+      <div class="gc-icon">
+        <svg viewBox="-20 -15 260 220" aria-hidden="true">
+          <rect x="10" y="40" width="200" height="150" rx="18" fill="#3459AD" stroke="#1f2740" stroke-width="3"/>
+          <path d="M35 40v150M60 40v150M85 40v150M110 40v150M135 40v150M160 40v150M185 40v150M10 65h200M10 90h200M10 115h200M10 140h200M10 165h200" stroke="#FEFEF2" stroke-opacity=".22" stroke-width="2"/>
+          <circle cx="47" cy="77" r="5" fill="#FEFEF2" opacity=".8"/>
+          <circle cx="197" cy="177" r="5" fill="#FEFEF2" opacity=".8"/>
+          <circle cx="22" cy="177" r="5" fill="#FEFEF2" opacity=".8"/>
+          <circle cx="122" cy="52" r="5" fill="#FEFEF2" opacity=".8"/>
+          <path d="M28 142h128l-16 24H44z" fill="#FEFEF2" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M56 142v-20h46l14 20" fill="#C9D6F2" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M78 122V88" stroke="#1f2740" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M78 88l22 9-22 8" fill="#F2D965" stroke="#1f2740" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M102 131h22" stroke="#1f2740" stroke-width="4" stroke-linecap="round"/>
+          <rect x="64" y="128" width="8" height="8" rx="2" fill="#1f2740"/>
+          <rect x="84" y="128" width="8" height="8" rx="2" fill="#1f2740"/>
+          <polygon points="146,108 152,124 168,116 160,131 178,134 160,140 168,156 152,148 146,164 140,148 124,156 132,140 114,134 132,131 124,116 140,124" fill="#FF7A59" stroke="#1f2740" stroke-width="2.5" stroke-linejoin="round"/>
+          <polygon points="146,122 149,131 157,128 152,135 160,138 152,141 156,148 149,145 146,153 143,145 136,148 140,141 132,138 140,135 135,128 143,131" fill="#F2D965"/>
+          <circle cx="176" cy="78" r="26" fill="none" stroke="#F2D965" stroke-width="5"/>
+          <circle cx="176" cy="78" r="9" fill="#F2D965" stroke="#1f2740" stroke-width="2.5"/>
+          <path d="M176 40v18M176 98v18M138 78h18M196 78h18" stroke="#F2D965" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="gc-label eyebrow">AIM · FIRE · SINK</div>
+      <div class="gc-label bottom">Battleship 海戰棋</div>
+    </div>
   `
 };
 
@@ -454,7 +483,8 @@ const GAME_ACCENTS = {
   game4: "#7B57CE",
   game5: "#5c8fb0",
   game6: "#3C5A1E",
-  game7: "#7A1030"
+  game7: "#7A1030",
+  game8: "#22408C"
 };
 
 const GAME_NAMES = {
@@ -464,7 +494,8 @@ const GAME_NAMES = {
   game4: "Most Likely To 邊個至似",
   game5: "故事接龍",
   game6: "Sync 唔 Sync",
-  game7: "Number Bomb 數字炸彈"
+  game7: "Number Bomb 數字炸彈",
+  game8: "Battleship 海戰棋"
 };
 
 function renderRoomVisual() {
@@ -791,6 +822,12 @@ $("#g7RoundsCustom")?.addEventListener("input", () => {
   }
 });
 
+/* Game 8 · Battleship 開房設定 */
+S.g8Rounds = 3;
+S.g8TurnSeconds = 20;
+bindChips("#g8RoundsBox", ".g8-rounds-chip", (chip) => { S.g8Rounds = Number(chip.dataset.rounds) || 3; });
+bindChips("#g8TimeBox", ".g8-time-chip", (chip) => { S.g8TurnSeconds = Number(chip.dataset.sec) || 20; });
+
 /* =========================
    房間
 ========================= */
@@ -847,7 +884,7 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7") ? (S.selectedLanguage || "yue") : null,
+        language: (S.selectedGame === "game1" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8") ? (S.selectedLanguage || "yue") : null,
         g1VoteSeconds: S.selectedGame === "game1" ? S.g1VoteSeconds : null,
         g1Rounds: S.selectedGame === "game1" ? S.g1Rounds : null,
         g2SpeakSeconds: S.selectedGame === "game2" ? S.g2SpeakSeconds : null,
@@ -857,6 +894,8 @@ async function createRoom() {
         g6VoteSeconds: S.selectedGame === "game6" ? S.g6VoteSeconds : null,
         g7TurnSeconds: S.selectedGame === "game7" ? S.g7TurnSeconds : null,
         g7Rounds: S.selectedGame === "game7" ? S.g7Rounds : null,
+        g8TurnSeconds: S.selectedGame === "game8" ? S.g8TurnSeconds : null,
+        g8Rounds: S.selectedGame === "game8" ? S.g8Rounds : null,
         g4Rounds: S.selectedGame === "game4" ? (S.selectedG4Rounds || 20) : null,
         g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null,
         g5Mode: S.selectedGame === "game5" ? (S.selectedG5Mode || "sentence") : null,
@@ -1324,6 +1363,12 @@ function renderRoom() {
             炸彈範圍 1–100 ·
             ${room.language === "zh" ? "台灣版" : "香港版"}
           </p>`
+        : room.game === "game8" && room.g8Settings
+        ? `<p class="notice" style="margin:10px 0 0">
+            ${room.g8Settings.rounds} 輪 ·
+            每炮 ${Math.round(room.g8Settings.turnMs / 1000)} 秒 ·
+            ${room.language === "zh" ? "台灣版" : "香港版"}
+          </p>${g8LobbyHtml(room)}`
         : ""
     }
 
@@ -1547,9 +1592,13 @@ function renderScoreboard(room) {
           const g7 = room.game === "game7" && room.gameState && room.gameState.phase !== "gameover" ? room.gameState : null;
           const g7Out = !!(g7 && Array.isArray(g7.alive) && !g7.alive.includes(p.id));
           const g7Turn = !!(g7 && g7.phase === "turn" && g7.currentId === p.id);
+          const g8 = room.game === "game8" && room.gameState && room.gameState.phase !== "gameover" ? room.gameState : null;
+          const g8Team = g8 && g8.mode === "team" ? (g8.teams?.navy || []).includes(p.id) ? "navy" : (g8.teams?.pirate || []).includes(p.id) ? "pirate" : "" : "";
+          const g8Out = !!(g8 && g8.mode === "brawl" && g8.boards?.find((b) => b.id === p.id)?.dead);
+          const g8Turn = !!(g8 && g8.phase === "turn" && g8.shooter === p.id);
 
           return `
-            <div class="sb-row ${isMe ? "me" : ""} ${g7Out ? "g7-out" : ""} ${g7Turn ? "g7-turn" : ""}" style="opacity:${p.connected ? (g7Out ? ".55" : "1") : ".5"}">
+            <div class="sb-row ${isMe ? "me" : ""} ${g7Out || g8Out ? "g7-out" : ""} ${g7Turn || g8Turn ? "g7-turn" : ""}" style="opacity:${p.connected ? (g7Out || g8Out ? ".55" : "1") : ".5"}">
               <span class="sb-rank">${index + 1}</span>
               <span class="sb-name">
                 ${
@@ -1561,6 +1610,9 @@ function renderScoreboard(room) {
                 ${isNextRater ? '<span class="sb-tag">下一位莊家</span>' : ""}
                 ${g7Out ? `<span class="sb-tag">${esc(g7T().outTag)}</span>` : ""}
                 ${g7Turn ? `<span class="sb-tag">${esc(g7T().turnTag)}</span>` : ""}
+                ${g8Team ? `<span class="sb-tag g8-sb-${g8Team}">${esc(g8T().teams[g8Team])}</span>` : ""}
+                ${g8Out ? `<span class="sb-tag">${esc(g8T().out)}</span>` : ""}
+                ${g8Turn ? `<span class="sb-tag">${esc(g8T().shooterTag)}</span>` : ""}
               </span>
               <b class="sb-score">${p.score || 0}</b>
             </div>
@@ -1577,6 +1629,20 @@ function renderScoreboard(room) {
             class="btn btn-outline"
             style="margin-top:8px;font-size:13px;padding:10px"
             onclick="g6EndEarly()"
+          >
+            提前結算
+          </button>`
+        : ""
+    }
+
+    ${
+      S.room?.game === "game8" &&
+      room.hostId === S.playerId &&
+      room.gameState?.phase !== "gameover"
+        ? `<button
+            class="btn btn-outline"
+            style="margin-top:8px;font-size:13px;padding:10px"
+            onclick="g8EndEarly()"
           >
             提前結算
           </button>`
@@ -1655,6 +1721,12 @@ function renderGame() {
   const game =
     S.room?.gameState;
 
+  if (S.room?.game !== "game8" || !game || game.phase === "waiting") {
+    $("#gamePanel")?.classList.remove("g8-hot");
+    const shell = $("#gameShell");
+    if (shell) shell.dataset.g8team = "";
+  }
+
   if (!game || game.phase === "waiting") {
     $("#gamePanel").innerHTML = `
       <div class="eyebrow">
@@ -1686,6 +1758,8 @@ function renderGame() {
     renderGame6(game);
   } else if (S.room.game === "game7") {
     renderGame7(game);
+  } else if (S.room.game === "game8") {
+    renderGame8(game);
   } else {
     renderGame2(game);
   }
@@ -5145,3 +5219,746 @@ window.g7EndEarly = async () => {
   if (!ok) return;
   send({ type: "g7:end" });
 };
+
+/* =========================
+   Game 8 · Battleship 海戰棋
+========================= */
+
+const G8_TEXT = {
+  yue: {
+    modes: { duel: "1v1 對決", brawl: "大亂鬥", team: "分隊" },
+    modeDesc: {
+      duel: "兩個人對打，先打沉晒對方艦隊就贏",
+      brawl: "每人一塊板，打沉晒就出局，剩最後一個贏",
+      team: "系統隨機分隊，每隊共用一塊板，輪流做炮手"
+    },
+    onlyTwo: "只限 2 人",
+    needFour: "要 4 人或以上",
+    pickMode: "揀模式",
+    hostPicks: "房主揀緊模式",
+    nowPlayers: (n) => `而家 ${n} 人`,
+    teams: { navy: "海軍", pirate: "海盜" },
+    vs: "對",
+    roundLabel: (r, t) => `ROUND ${r} / ${t}`,
+    cycleHint: (c, h) => `第 ${c} 輪 · 第 ${h} 輪起白熱化`,
+    hotBanner: "白熱化 · 思考時間減半 · 每輪完結空襲",
+    placeTitle: "擺好你嘅船",
+    placeTeamTitle: "擺好你負責嘅船",
+    placeHint: "撳船揀選，再撳格仔擺位；撳「旋轉」轉方向",
+    rotate: "旋轉",
+    random: "隨機擺",
+    ready: "準備好",
+    unready: "取消準備",
+    readyCount: (a, b) => `${a} / ${b} 準備好 · 全部準備好就即刻開始`,
+    teammateShip: (n) => `${n} 負責`,
+    picked: "揀咗",
+    yourTurn: "輪到你開炮！",
+    yourShooter: "輪到你做炮手！",
+    shooterIs: (n) => `${n} 做炮手`,
+    thinking: (n) => `${n} 諗緊…`,
+    enemyFiring: (t) => `${t} 開緊炮…`,
+    whoTarget: "打邊個？",
+    waters: (n) => `${n} 嘅海域`,
+    yourWaters: "你嘅海域",
+    teamWaters: (t) => `${t} 嘅海域（你哋隊）`,
+    viewOwn: "睇自己塊板",
+    viewEnemy: "睇對手塊板",
+    fire: (cell) => `開炮 ${cell}`,
+    fireCard: (card, cell) => `用${card} ${cell}`,
+    pickCell: "揀一格先",
+    pickRow: "揀一行",
+    pingHint: "撳格仔標記想打嘅位，淨係隊友睇到",
+    pingLegend: "隊友標記",
+    pinged: (n, cell) => `${n} 標咗 ${cell}`,
+    cards: { radar: "雷達", cross: "十字炮", torpedo: "魚雷" },
+    cardDesc: { radar: "睇 3×3 範圍有幾多格有船", cross: "一次打 5 格", torpedo: "揀一行，打到中為止" },
+    yourCard: "你嘅技能卡",
+    teamCards: "隊伍技能卡 · 炮手先用得",
+    noCard: "呢輪張卡已經用咗",
+    use: "使用",
+    cancel: "取消",
+    shipsLeft: (a, b) => `剩 ${a} / ${b} 隻`,
+    out: "出局",
+    sunkTag: "已擊沉",
+    myFleet: "你嘅艦隊",
+    lastShot: (n, cell, res) => `${n} 打 ${cell} · ${res}`,
+    lastCard: (n, card, cell) => `${n} 用${card}打 ${cell}`,
+    lastRadar: (n, cell, k) => `${n} 用雷達掃 ${cell} 附近：${k} 格有船`,
+    lastRadarOther: (n) => `${n} 用咗雷達`,
+    res: { hit: "打中", miss: "射空" },
+    sunk: (s) => `擊沉${s}！`,
+    auto: "（超時）",
+    air: (n) => `空襲炸中 ${n} 嘅船！`,
+    airMiss: "空襲冇炸中任何船",
+    roundWin: (n) => `${n} 贏咗呢輪！`,
+    roundWinTeam: (t) => `${t} 贏咗呢輪！`,
+    nextRound: (r) => `第 ${r} 輪準備開始`,
+    lastRound: "最後一輪完結",
+    roundsDone: (n) => `${n} 輪完結`,
+    endedEarly: "提前結算",
+    winTitle: "贏家！",
+    tieTitle: "並列贏家！",
+    teamWin: (t) => `${t}勝利！`,
+    teamTie: "平手！",
+    noWinner: "未有人贏到任何一輪",
+    roundsWon: (n) => `贏咗 ${n} 輪`,
+    perRound: "每輪贏家",
+    ranking: "排名",
+    titles: { sharp: "神射手", sinker: "擊沉王", unlucky: "最唔好彩" },
+    titleVal: { sharp: (p) => `命中率 ${p}%`, sinker: (n) => `擊沉 ${n} 隻`, unlucky: (n) => `被空襲中 ${n} 次` },
+    youAre: (t) => `你係${t}`,
+    yourTeamWon: "你嘅隊伍贏咗！",
+    revenge: "下次報仇！",
+    again: "再玩一場",
+    waitHost: "等房主決定再玩一場",
+    lobby: "返大廳",
+    you: "你",
+    shooterTag: "炮手",
+    confirmEnd: "肯定提前結算？之後就唔可以再繼續呢局。",
+    settingsNote: "每輪大約 5–10 分鐘，人越多越耐"
+  },
+  zh: {
+    modes: { duel: "1v1 對決", brawl: "大亂鬥", team: "分隊" },
+    modeDesc: {
+      duel: "兩人對戰，先擊沉對方整支艦隊就贏",
+      brawl: "每人一塊海域，船全沉就出局，撐到最後的人獲勝",
+      team: "系統隨機分隊，每隊共用一塊海域，輪流當砲手"
+    },
+    onlyTwo: "限 2 人",
+    needFour: "需要 4 人以上",
+    pickMode: "選擇模式",
+    hostPicks: "房主正在選擇模式",
+    nowPlayers: (n) => `目前 ${n} 人`,
+    teams: { navy: "海軍", pirate: "海盜" },
+    vs: "對",
+    roundLabel: (r, t) => `ROUND ${r} / ${t}`,
+    cycleHint: (c, h) => `第 ${c} 輪 · 第 ${h} 輪起白熱化`,
+    hotBanner: "白熱化 · 思考時間減半 · 每輪結束空襲",
+    placeTitle: "擺好你的船",
+    placeTeamTitle: "擺好你負責的船",
+    placeHint: "點船選取，再點格子放置；按「旋轉」改方向",
+    rotate: "旋轉",
+    random: "隨機擺放",
+    ready: "準備好了",
+    unready: "取消準備",
+    readyCount: (a, b) => `${a} / ${b} 準備好 · 全部準備好就馬上開始`,
+    teammateShip: (n) => `${n} 負責`,
+    picked: "已選",
+    yourTurn: "輪到你開砲！",
+    yourShooter: "輪到你當砲手！",
+    shooterIs: (n) => `${n} 當砲手`,
+    thinking: (n) => `${n} 思考中…`,
+    enemyFiring: (t) => `${t} 正在開砲…`,
+    whoTarget: "要打誰？",
+    waters: (n) => `${n} 的海域`,
+    yourWaters: "你的海域",
+    teamWaters: (t) => `${t} 的海域（你們隊）`,
+    viewOwn: "看自己的海域",
+    viewEnemy: "看對手的海域",
+    fire: (cell) => `開砲 ${cell}`,
+    fireCard: (card, cell) => `用${card} ${cell}`,
+    pickCell: "先選一格",
+    pickRow: "選一行",
+    pingHint: "點格子標記想打的位置，只有隊友看得到",
+    pingLegend: "隊友標記",
+    pinged: (n, cell) => `${n} 標記了 ${cell}`,
+    cards: { radar: "雷達", cross: "十字砲", torpedo: "魚雷" },
+    cardDesc: { radar: "看 3×3 範圍內有幾格有船", cross: "一次打 5 格", torpedo: "選一行，打到命中為止" },
+    yourCard: "你的技能卡",
+    teamCards: "隊伍技能卡 · 只有砲手能用",
+    noCard: "這輪的卡已經用掉",
+    use: "使用",
+    cancel: "取消",
+    shipsLeft: (a, b) => `剩 ${a} / ${b} 艘`,
+    out: "出局",
+    sunkTag: "已擊沉",
+    myFleet: "你的艦隊",
+    lastShot: (n, cell, res) => `${n} 打 ${cell} · ${res}`,
+    lastCard: (n, card, cell) => `${n} 用${card}打 ${cell}`,
+    lastRadar: (n, cell, k) => `${n} 用雷達掃描 ${cell} 附近：${k} 格有船`,
+    lastRadarOther: (n) => `${n} 使用了雷達`,
+    res: { hit: "命中", miss: "落空" },
+    sunk: (s) => `擊沉${s}！`,
+    auto: "（逾時）",
+    air: (n) => `空襲炸中 ${n} 的船！`,
+    airMiss: "空襲沒有炸中任何船",
+    roundWin: (n) => `${n} 贏得這一輪！`,
+    roundWinTeam: (t) => `${t} 贏得這一輪！`,
+    nextRound: (r) => `第 ${r} 輪準備開始`,
+    lastRound: "最後一輪結束",
+    roundsDone: (n) => `${n} 輪結束`,
+    endedEarly: "提前結算",
+    winTitle: "贏家！",
+    tieTitle: "並列贏家！",
+    teamWin: (t) => `${t}勝利！`,
+    teamTie: "平手！",
+    noWinner: "還沒有人贏得任何一輪",
+    roundsWon: (n) => `贏了 ${n} 輪`,
+    perRound: "每輪贏家",
+    ranking: "排名",
+    titles: { sharp: "神射手", sinker: "擊沉王", unlucky: "最倒楣" },
+    titleVal: { sharp: (p) => `命中率 ${p}%`, sinker: (n) => `擊沉 ${n} 艘`, unlucky: (n) => `被空襲命中 ${n} 次` },
+    youAre: (t) => `你是${t}`,
+    yourTeamWon: "你的隊伍贏了！",
+    revenge: "下次再報仇！",
+    again: "再玩一場",
+    waitHost: "等房主決定要不要再玩一場",
+    lobby: "回大廳",
+    you: "你",
+    shooterTag: "砲手",
+    confirmEnd: "確定提前結算？之後就不能再繼續這一局。",
+    settingsNote: "每輪大約 5–10 分鐘，人越多越久"
+  }
+};
+
+const G8_LETTERS = "ABCDEFGH";
+const G8_ICONS = {
+  anchor: '<circle cx="12" cy="5" r="2.5"></circle><path d="M12 7.5V21M7 11h10M4 14c0 4 4 7 8 7s8-3 8-7"></path>',
+  skull: '<path d="M12 3c-4 0-6.5 2.6-6.5 6 0 2 1 3.4 2.5 4.2V16h8v-2.8c1.5-.8 2.5-2.2 2.5-4.2 0-3.4-2.5-6-6.5-6z"></path><circle cx="9.5" cy="9.5" r="1.3" fill="currentColor"></circle><circle cx="14.5" cy="9.5" r="1.3" fill="currentColor"></circle><path d="M10 16v2M14 16v2M4 19l16 2M20 19L4 21"></path>',
+  radar: '<circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 12l6-6"></path>',
+  cross: '<path d="M12 3v18M3 12h18"></path>',
+  torpedo: '<path d="M3 12h14M13 8l4 4-4 4M20 9v6"></path>',
+  aim: '<circle cx="12" cy="12" r="6"></circle><path d="M12 2v5M12 17v5M2 12h5M17 12h5"></path>',
+  x: '<path d="M6 6l12 12M18 6L6 18"></path>',
+  fire: '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"></path>',
+  rotate: '<path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"></path>',
+  shuffle: '<path d="M3 7h4l10 10h4M3 17h4l3-3M14 10l3-3h4M18 4l3 3-3 3M18 14l3 3-3 3"></path>'
+};
+const G8_MEDALS = {
+  sharp: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f2740" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="#1f2740"></circle><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"></path></svg>',
+  sinker: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f2740" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 14.5L16 7l2.2 3.6-12.5 7.5z"></path><path d="M18.2 10.6l1.6-1-2.2-3.6-1.6 1"></path><circle cx="8" cy="17" r="3.5"></circle><circle cx="8" cy="17" r="1" fill="#1f2740"></circle><path d="M13 21H3"></path><circle cx="21" cy="3.5" r="1.6" fill="#1f2740"></circle></svg>',
+  unlucky: '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="14" r="7.5" fill="#1f2740"></circle><rect x="13" y="4.8" width="5" height="3.8" rx="1" transform="rotate(40 15.5 6.7)" fill="#1f2740"></rect><path d="M17.2 4.6c.9-1.9 2.7-2.4 4.2-1.5" fill="none" stroke="#1f2740" stroke-width="1.8" stroke-linecap="round"></path><circle cx="21.4" cy="3.1" r="1.5" fill="#FF7A59"></circle><circle cx="8.2" cy="11.2" r="1.7" fill="#FEFEF2" opacity=".75"></circle></svg>'
+};
+
+function g8T() {
+  return G8_TEXT[S.room?.language === "zh" ? "zh" : "yue"];
+}
+
+function g8Icon(name, size = 20, extra = "") {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${G8_ICONS[name] || ""}</svg>`;
+}
+
+function g8Nick(id) {
+  if (id && id === S.playerId) return g8T().you;
+  return S.room?.players?.find((p) => p.id === id)?.nickname || "玩家";
+}
+
+function g8KeyName(game, key) {
+  if (game.mode === "team") return g8T().teams[key] || key;
+  return g8Nick(key);
+}
+
+function g8Cell(r, c) {
+  return `${G8_LETTERS[c]}${r + 1}`;
+}
+
+function g8Badge(team, size = 30) {
+  return `<span class="g8-badge g8-badge-${team}" style="width:${size}px;height:${size}px">${g8Icon(team === "navy" ? "anchor" : "skull", Math.round(size * 0.6))}</span>`;
+}
+
+// 一塊板：shots／船／標記／雷達；clickable 決定撳格會做咩。
+function g8BoardHtml(game, board, opts = {}) {
+  const n = game.size;
+  const state = {};
+  for (const [r, c, res, air] of board.shots || []) state[r + "," + c] = { res, air: !!air };
+  const shipAt = {};
+  for (const s of board.ships || []) for (const [r, c] of s.cells || []) shipAt[r + "," + c] = s;
+  const pingAt = {};
+  for (const p of opts.pings || []) (pingAt[p.r + "," + p.c] ||= []).push(p.id);
+  const radarCenter = {};
+  const radarArea = new Set();
+  for (const x of opts.radar || []) {
+    if (x.board !== board.id) continue;
+    radarCenter[x.r + "," + x.c] = x.count;
+    for (let r = x.r - 1; r <= x.r + 1; r++) for (let c = x.c - 1; c <= x.c + 1; c++) radarArea.add(r + "," + c);
+  }
+  const preview = new Set(opts.preview || []);
+  const cells = [];
+  if (!opts.small) {
+    cells.push('<span class="g8-lab"></span>');
+    for (let c = 0; c < n; c++) cells.push(`<span class="g8-lab">${G8_LETTERS[c]}</span>`);
+  }
+  for (let r = 0; r < n; r++) {
+    if (!opts.small) cells.push(`<span class="g8-lab">${r + 1}</span>`);
+    for (let c = 0; c < n; c++) {
+      const k = r + "," + c;
+      const st = state[k];
+      const ship = shipAt[k];
+      const cls = ["g8-c"];
+      let inner = "";
+      if (st?.res === "hit") {
+        cls.push(ship?.sunk ? "sunk" : "hit");
+        inner = g8Icon("x", opts.small ? 10 : 16, 'stroke-width="4"');
+      } else if (st?.res === "miss") {
+        cls.push("miss");
+        inner = '<i class="g8-dot"></i>';
+      } else if (ship) {
+        cls.push(ship.sunk ? "sunk" : "ship");
+        if (opts.mineOwner && ship.owner && ship.owner !== opts.mineOwner) cls.push("mate");
+        if (opts.selShip && ship.id === opts.selShip) cls.push("sel");
+      }
+      if (st?.air) cls.push("air");
+      if (radarArea.has(k)) cls.push("radar");
+      if (preview.has(k)) cls.push("preview");
+      if (opts.aim && opts.aim.r === r && opts.aim.c === c) {
+        cls.push("aim");
+        inner = g8Icon("aim", opts.small ? 12 : 20);
+      } else if (opts.aimRow !== undefined && opts.aimRow === r && !st) {
+        cls.push("aimrow");
+      }
+      if (pingAt[k] && !st) {
+        cls.push("ping");
+        if (!inner) inner = `<b class="g8-ping-n">${esc([...g8Nick(pingAt[k][0])][0] || "?")}</b>`;
+      }
+      if (radarCenter[k] !== undefined) inner += `<b class="g8-radar-n">${radarCenter[k]}</b>`;
+      const label = `${g8Cell(r, c)}${st ? " " + g8T().res[st.res] : ""}`;
+      if (opts.click) {
+        cells.push(`<button type="button" class="${cls.join(" ")}" aria-label="${esc(label)}" onclick="g8CellClick('${board.id}',${r},${c})">${inner}</button>`);
+      } else {
+        cells.push(`<span class="${cls.join(" ")}">${inner}</span>`);
+      }
+    }
+  }
+  const cols = opts.small ? n : n + 1;
+  return `<div class="g8-board ${opts.small ? "small" : ""} ${opts.dim ? "dim" : ""}" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${cells.join("")}</div>`;
+}
+
+function g8ShipStrip(board, game) {
+  const t = g8T();
+  const defs = game.size === 6 ? [3, 2, 2] : [4, 3, 3, 2];
+  const sunk = (board.ships || []).filter((s) => s.sunk);
+  const names = game.size === 6 ? ["巡洋艦", "驅逐艦", "巡邏艇"] : ["戰艦", "巡洋艦", "潛艇", "驅逐艦"];
+  const sunkLeft = [...sunk];
+  return `<div class="g8-fleet">${defs.map((len, i) => {
+    const idx = sunkLeft.findIndex((s) => s.len === len);
+    const dead = idx >= 0;
+    if (dead) sunkLeft.splice(idx, 1);
+    return `<span class="g8-fl ${dead ? "dead" : ""}"><span class="g8-seg">${"<i></i>".repeat(len)}</span>${esc(names[i])}${dead ? " · " + esc(t.sunkTag) : ""}</span>`;
+  }).join("")}</div>`;
+}
+
+function g8Head(game, eyebrow, title) {
+  const t = g8T();
+  const teamLine = game.mode === "team" && game.myKey
+    ? `<div class="g8-vs">${g8Badge(game.myKey)}<span>${esc(t.teams[game.myKey])}</span><span class="g8-vs-x">${esc(t.vs)}</span>${g8Badge(game.myKey === "navy" ? "pirate" : "navy")}<span>${esc(t.teams[game.myKey === "navy" ? "pirate" : "navy"])}</span></div>`
+    : "";
+  return `
+    <div class="g8-head">
+      <div>
+        ${teamLine}
+        <div class="eyebrow">${esc(eyebrow)}</div>
+        <h2 class="g8-big">${esc(title)}</h2>
+      </div>
+      ${game.endsAt && game.phase !== "gameover" ? `<div id="time" class="timer"></div>` : ""}
+    </div>
+  `;
+}
+
+function g8LastHtml(game) {
+  const t = g8T();
+  const L = game.last;
+  const rows = [];
+  if (L) {
+    const who = g8Nick(L.by);
+    let text;
+    if (L.card === "radar") {
+      text = L.key === game.myKey ? t.lastRadar(who, g8Cell(L.r, L.c), L.radar) : t.lastRadarOther(who);
+    } else if (L.card) {
+      text = t.lastCard(who, t.cards[L.card], g8Cell(L.r, L.c));
+    } else {
+      const res = L.cells?.[0]?.res;
+      text = t.lastShot(who, g8Cell(L.r, L.c), res ? t.res[res] : "");
+    }
+    if (game.mode === "brawl" && L.target) text += ` → ${g8KeyName(game, L.target)}`;
+    const sunk = (L.cells || []).filter((x) => x.sunk).map((x) => x.sunk);
+    const hits = (L.cells || []).filter((x) => x.res === "hit").length;
+    const tag = sunk.length ? t.sunk(sunk.join("、")) : L.card && L.card !== "radar" ? `${hits} ${t.res.hit}` : "";
+    rows.push(`<div class="g8-log ${sunk.length ? "boom" : ""}"><span>${esc(text)}${L.auto ? esc(t.auto) : ""}</span>${tag ? `<b>${esc(tag)}</b>` : ""}</div>`);
+  }
+  if (game.airLog) {
+    const hit = game.airLog.filter((x) => x.res === "hit");
+    rows.push(`<div class="g8-log air"><span>${esc(hit.length ? t.air(hit.map((x) => g8KeyName(game, x.board)).join("、")) : t.airMiss)}</span>${g8Icon("fire", 16)}</div>`);
+  }
+  return rows.join("");
+}
+
+function renderGame8(game) {
+  const shell = $("#gameShell");
+  const panel = $("#gamePanel");
+  const t = g8T();
+  let team = "";
+  if (game.mode === "team") {
+    if (game.phase === "gameover") {
+      const w = game.teamWins || {};
+      team = (w.navy || 0) > (w.pirate || 0) ? "navy" : (w.pirate || 0) > (w.navy || 0) ? "pirate" : "tie";
+    } else team = game.myKey || "";
+  }
+  if (shell) shell.dataset.g8team = team;
+  panel?.classList.toggle("g8-hot", !!game.hot && game.phase === "turn");
+
+  if (game.phase === "placing") return renderGame8Placing(game);
+  if (game.phase === "turn") return renderGame8Turn(game);
+  if (game.phase === "roundover") return renderGame8RoundOver(game);
+  if (game.phase === "gameover") return renderGame8Gameover(game);
+}
+
+function renderGame8Placing(game) {
+  const t = g8T();
+  const myBoard = game.boards.find((b) => b.id === game.myKey);
+  if (!myBoard) {
+    $("#gamePanel").innerHTML = `<div class="g8-root">${g8Head(game, t.roundLabel(game.round, game.totalRounds), t.placeTitle)}</div>`;
+    startTimer($("#time"), game.endsAt);
+    return;
+  }
+  const mine = (myBoard.myShips || []).filter((s) => s.owner === S.playerId);
+  if (!mine.some((s) => s.id === S.g8Sel)) S.g8Sel = (mine.find((s) => !s.placed) || mine[0])?.id || null;
+  if (S.g8Horiz === undefined) S.g8Horiz = true;
+  const eyebrow = `${t.roundLabel(game.round, game.totalRounds)} · ${t.modes[game.mode]}`;
+  const tray = (myBoard.myShips || []).map((s) => {
+    const isMine = s.owner === S.playerId;
+    const sel = isMine && s.id === S.g8Sel;
+    const status = !isMine ? t.teammateShip(g8Nick(s.owner)) : sel ? t.picked : s.placed ? "✓" : "";
+    return `<button type="button" class="g8-ship ${sel ? "sel" : ""} ${isMine ? "" : "mate"}" ${isMine ? `onclick="g8PickShip('${s.id}')"` : "disabled"}>
+      <span class="g8-seg">${"<i></i>".repeat(s.len)}</span><span class="g8-ship-name">${esc(s.name)}</span><span>${esc(status)}</span>
+    </button>`;
+  }).join("");
+
+  $("#gamePanel").innerHTML = `
+    <div class="g8-root">
+      ${g8Head(game, eyebrow, game.mode === "team" ? t.placeTeamTitle : t.placeTitle)}
+      <p class="g8-note">${esc(t.placeHint)}</p>
+      ${g8BoardHtml(game, myBoard, { click: !game.myReady, selShip: S.g8Sel, mineOwner: game.mode === "team" ? S.playerId : null })}
+      <div class="g8-tray ${game.mode === "team" ? "team" : ""}">${tray}</div>
+      <div class="g8-tools">
+        <button type="button" class="g8-tool" onclick="g8Rotate()" ${game.myReady ? "disabled" : ""}>${g8Icon("rotate", 18)}${esc(t.rotate)} · ${S.g8Horiz ? "↔" : "↕"}</button>
+        <button type="button" class="g8-tool" onclick="g8Random()" ${game.myReady ? "disabled" : ""}>${g8Icon("shuffle", 18)}${esc(t.random)}</button>
+      </div>
+      <div class="g8-bottom">
+        <p class="g8-note center">${esc(t.readyCount(game.readyCount, game.readyTotal))}</p>
+        <button type="button" class="btn ${game.myReady ? "btn-outline" : "btn-yellow"} g8-main-btn" onclick="g8Ready(${game.myReady ? "false" : "true"})">${esc(game.myReady ? t.unready : t.ready)}</button>
+      </div>
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+}
+
+function g8DefaultView(game) {
+  const me = game.myKey;
+  if (game.mode === "brawl") {
+    const opps = game.order.filter((k) => k !== me);
+    const alive = opps.filter((k) => !game.boards.find((b) => b.id === k)?.dead);
+    if (!opps.includes(S.g8Target) || (game.cur === me && !alive.includes(S.g8Target))) {
+      S.g8Target = alive[0] || opps[0] || null;
+    }
+    return S.g8Target;
+  }
+  const enemy = game.order.find((k) => k !== me) || game.order[0];
+  if (S.g8ViewSeq !== game.turnSeq) {
+    S.g8ViewSeq = game.turnSeq;
+    S.g8ShowOwn = !!me && game.cur !== me;
+  }
+  return S.g8ShowOwn && me ? me : enemy;
+}
+
+function renderGame8Turn(game) {
+  const t = g8T();
+  const me = game.myKey;
+  const isShooter = game.shooter === S.playerId;
+  const myTurn = !!me && game.cur === me;
+  if (S.g8AimSeq !== game.turnSeq) {
+    S.g8AimSeq = game.turnSeq;
+    S.g8Aim = null;
+    S.g8Card = null;
+  }
+  const viewId = g8DefaultView(game);
+  const board = game.boards.find((b) => b.id === viewId);
+  const myBoard = game.boards.find((b) => b.id === me);
+  const viewingEnemy = viewId !== me;
+  const meOut = game.mode === "brawl" && myBoard?.dead;
+
+  let title;
+  if (isShooter) title = game.mode === "team" ? t.yourShooter : t.yourTurn;
+  else if (game.mode === "team" && myTurn) title = t.shooterIs(g8Nick(game.shooter));
+  else if (game.mode === "team") title = t.enemyFiring(t.teams[game.cur]);
+  else title = t.thinking(g8Nick(game.shooter));
+  if (isShooter && game.mode === "brawl") title = t.whoTarget;
+
+  let eyebrow = `${t.roundLabel(game.round, game.totalRounds)} · ${t.modes[game.mode]}`;
+  if (meOut) eyebrow += ` · ${t.out}`;
+
+  const hotBanner = game.hot
+    ? `<div class="g8-hotbar">${g8Icon("fire", 20, 'class="g8-flick"')}<span>${esc(t.hotBanner)}</span></div>`
+    : "";
+  const cycleHint = !game.hot && game.hotAt ? `<span class="g8-cycle">${esc(t.cycleHint(game.cycle, game.hotAt))}</span>` : "";
+
+  const teamChips = game.mode === "team" && me
+    ? `<div class="g8-mems">${(game.teams?.[me] || []).map((id) => `<span class="g8-mem ${myTurn && id === game.shooter ? "shoot" : ""}">${esc(g8Nick(id))}${myTurn && id === game.shooter ? " · " + esc(t.shooterTag) : ""}</span>`).join("")}${cycleHint}</div>`
+    : cycleHint ? `<div class="g8-mems">${cycleHint}</div>` : "";
+
+  const tabs = game.mode === "brawl"
+    ? `<div class="g8-tabs">${game.order.filter((k) => k !== me).map((k) => {
+        const b = game.boards.find((x) => x.id === k);
+        return `<button type="button" class="g8-tab ${k === viewId ? "on" : ""}" ${b.dead ? "disabled" : ""} onclick="g8PickTarget('${k}')">${esc(g8Nick(k))}<small>${esc(b.dead ? t.out : t.shipsLeft(b.shipsLeft, b.shipsTotal))}</small></button>`;
+      }).join("")}</div>`
+    : "";
+
+  const canAim = isShooter && viewingEnemy && !board.dead;
+  const canPing = game.mode === "team" && myTurn && !isShooter && viewingEnemy;
+  const aim = canAim ? S.g8Aim && S.g8Aim.board === viewId ? S.g8Aim : null : null;
+  const preview = [];
+  let aimRow;
+  if (aim && S.g8Card === "cross") for (const [r, c] of [[aim.r - 1, aim.c], [aim.r + 1, aim.c], [aim.r, aim.c - 1], [aim.r, aim.c + 1]]) preview.push(r + "," + c);
+  if (aim && S.g8Card === "radar") for (let r = aim.r - 1; r <= aim.r + 1; r++) for (let c = aim.c - 1; c <= aim.c + 1; c++) preview.push(r + "," + c);
+  if (aim && S.g8Card === "torpedo") aimRow = aim.r;
+
+  const boardTitle = viewingEnemy
+    ? (game.mode === "team" ? `${g8Badge(viewId, 24)}<span>${esc(t.waters(t.teams[viewId]))}</span>` : `<span>${esc(t.waters(g8Nick(viewId)))}</span>`)
+    : (game.mode === "team" ? `${g8Badge(me, 24)}<span>${esc(t.teamWaters(t.teams[me]))}</span>` : `<span>${esc(t.yourWaters)}</span>`);
+
+  const toggle = game.mode !== "brawl" && me
+    ? `<button type="button" class="g8-link" onclick="g8ToggleView()">${esc(viewingEnemy ? t.viewOwn : t.viewEnemy)}</button>`
+    : "";
+
+  const pings = game.pings || [];
+  const pingLine = game.mode === "team" && myTurn
+    ? `<div class="g8-pingline"><span class="g8-pingkey"></span>${esc(t.pingLegend)}${pings.length ? " · " + pings.map((p) => t.pinged(g8Nick(p.id), g8Cell(p.r, p.c))).map(esc).join(" · ") : ""}</div>`
+    : "";
+
+  const cards = game.cards || [];
+  let cardBar = "";
+  if (me && !meOut) {
+    const usable = isShooter;
+    const label = game.mode === "team" ? t.teamCards : t.yourCard;
+    cardBar = cards.length
+      ? `<div class="g8-cards"><div class="eyebrow g8-cards-lbl">${esc(label)}</div><div class="g8-cards-row ${cards.length > 1 ? "multi" : ""}">${cards.map((c, i) => `
+          <div class="g8-card ${S.g8Card === c ? "on" : ""}">
+            <span class="g8-card-face">${g8Icon(c, 18)}</span>
+            <span class="g8-card-text"><strong>${esc(t.cards[c])}</strong><small>${esc(t.cardDesc[c])}</small></span>
+            ${usable ? `<button type="button" onclick="g8UseCard('${c}')">${esc(S.g8Card === c ? t.cancel : t.use)}</button>` : ""}
+          </div>`).join("")}</div></div>`
+      : `<div class="g8-cards"><div class="g8-card empty">${esc(t.noCard)}</div></div>`;
+  }
+
+  const fireLabel = !aim ? (S.g8Card === "torpedo" ? t.pickRow : t.pickCell)
+    : S.g8Card ? t.fireCard(t.cards[S.g8Card], S.g8Card === "torpedo" ? `${aim.r + 1}` : g8Cell(aim.r, aim.c))
+    : t.fire(g8Cell(aim.r, aim.c));
+  const fireBtn = canAim
+    ? `<button type="button" class="btn btn-yellow g8-main-btn" ${aim ? "" : "disabled"} onclick="g8Fire()">${esc(fireLabel)}</button>`
+    : "";
+
+  const miniOwn = game.mode === "brawl" && myBoard
+    ? `<div class="g8-mini">${g8BoardHtml(game, myBoard, { small: true })}<div><div class="eyebrow">${esc(t.myFleet)}</div><strong>${esc(myBoard.dead ? t.out : t.shipsLeft(myBoard.shipsLeft, myBoard.shipsTotal))}</strong></div></div>`
+    : "";
+
+  $("#gamePanel").innerHTML = `
+    <div class="g8-root">
+      ${hotBanner}
+      ${g8Head(game, eyebrow, title)}
+      ${teamChips}
+      ${g8LastHtml(game)}
+      ${tabs}
+      ${canPing ? `<p class="g8-note g8-hint">${esc(t.pingHint)}</p>` : ""}
+      <div class="g8-board-head">${boardTitle}${toggle}</div>
+      ${g8BoardHtml(game, board, {
+        click: canAim || canPing,
+        aim, aimRow, preview,
+        pings: viewingEnemy ? pings : [],
+        radar: game.radar || []
+      })}
+      ${pingLine}
+      ${g8ShipStrip(board, game)}
+      ${canAim && S.g8Card ? `<p class="g8-note g8-hint">${esc(t.cards[S.g8Card])}：${esc(t.cardDesc[S.g8Card])}</p>` : ""}
+      ${fireBtn}
+      ${miniOwn}
+      ${cardBar}
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+}
+
+function renderGame8RoundOver(game) {
+  const t = g8T();
+  const w = game.roundWinners || [];
+  const title = !w.length ? t.noWinner
+    : game.mode === "team" ? t.roundWinTeam(t.teams[w[0]])
+    : t.roundWin(w.map((k) => g8Nick(k)).join("、"));
+  const boards = game.boards.map((b) => `
+    <div class="g8-reveal">
+      <div class="g8-board-head">${game.mode === "team" ? g8Badge(b.id, 22) : ""}<span>${esc(g8KeyName(game, b.id))}${b.dead ? " · " + esc(t.out) : ""}</span></div>
+      ${g8BoardHtml(game, b, { small: true })}
+    </div>`).join("");
+  $("#gamePanel").innerHTML = `
+    <div class="g8-root">
+      <div class="g8-head">
+        <div>
+          <div class="eyebrow">${esc(t.roundLabel(game.round, game.totalRounds))}</div>
+          <h2 class="g8-big">${esc(title)}</h2>
+        </div>
+      </div>
+      <div class="g8-reveals">${boards}</div>
+      <div class="g8-next"><span>${esc(game.round >= game.totalRounds ? t.lastRound : t.nextRound(game.round + 1))}</span><strong id="g8Count"></strong></div>
+    </div>
+  `;
+  clearInterval(S.timer);
+  const count = $("#g8Count");
+  const tick = () => { if (count) count.textContent = String(Math.max(0, Math.ceil(((game.endsAt || 0) - Date.now()) / 1000))); };
+  tick();
+  S.timer = setInterval(tick, 200);
+}
+
+function g8Titles(game) {
+  const stats = game.stats || {};
+  const ids = (game.ranking || []).map((p) => p.id);
+  const pick = (score, min = 1) => {
+    let best = null;
+    for (const id of ids) {
+      const v = score(stats[id] || {});
+      if (v === null || v < min) continue;
+      if (!best || v > best.v) best = { id, v };
+    }
+    return best;
+  };
+  const sharp = pick((s) => (s.cells >= 5 ? Math.round((s.hits / s.cells) * 100) : null), 0);
+  const sinker = pick((s) => s.sinks || 0);
+  const unlucky = pick((s) => s.airHit || 0);
+  return [
+    sharp && { key: "sharp", ...sharp },
+    sinker && { key: "sinker", ...sinker },
+    unlucky && { key: "unlucky", ...unlucky }
+  ].filter(Boolean);
+}
+
+function renderGame8Gameover(game) {
+  const t = g8T();
+  clearInterval(S.timer);
+  const ranking = game.ranking || [];
+  const isHost = S.room.hostId === S.playerId;
+  const rankOf = (score) => 1 + ranking.filter((p) => p.score > score).length;
+  const titles = g8Titles(game);
+  const rounds = game.winners || [];
+  let hero;
+  if (game.mode === "team") {
+    const w = game.teamWins || { navy: 0, pirate: 0 };
+    const win = w.navy > w.pirate ? "navy" : w.pirate > w.navy ? "pirate" : null;
+    const lose = win === "navy" ? "pirate" : "navy";
+    hero = `
+      <div class="g8-hero">
+        <div class="eyebrow">${esc(game.endedEarly ? t.endedEarly : t.roundsDone(rounds.length))} · ${esc(t.modes.team)}</div>
+        ${win ? g8Badge(win, 72) : `<span class="g8-hero-tie">${g8Badge("navy", 48)}${g8Badge("pirate", 48)}</span>`}
+        <h2 class="g8-big">${esc(win ? t.teamWin(t.teams[win]) : t.teamTie)}</h2>
+        <div class="g8-score">${win ? `<span>${esc(t.teams[win])}</span><strong>${w[win]} : ${w[lose]}</strong><span>${esc(t.teams[lose])}</span>` : `<span>${esc(t.teams.navy)}</span><strong>${w.navy} : ${w.pirate}</strong><span>${esc(t.teams.pirate)}</span>`}</div>
+        ${win ? `<div class="g8-crew">${(game.teams?.[win] || []).map((id) => `<span>${esc(g8Nick(id))}</span>`).join("")}</div>` : ""}
+        ${game.myKey ? `<p class="g8-note center">${esc(t.youAre(t.teams[game.myKey]))} · ${esc(win === game.myKey ? t.yourTeamWon : win ? t.revenge : t.teamTie)}</p>` : ""}
+      </div>`;
+  } else {
+    const top = ranking.length ? ranking[0].score : 0;
+    const winners = top > 0 ? ranking.filter((p) => p.score === top) : [];
+    hero = `
+      <div class="g8-hero">
+        <div class="eyebrow">${esc(game.endedEarly ? t.endedEarly : t.roundsDone(rounds.length))} · ${esc(t.modes[game.mode])}</div>
+        <h2 class="g8-big">${esc(winners.length > 1 ? t.tieTitle : winners.length ? t.winTitle : t.noWinner)}</h2>
+        ${winners.length ? `<div class="g8-winners">${winners.map((p) => `<div class="g8-win"><strong>${esc(g8Nick(p.id))}</strong><small>${esc(t.roundsWon(p.score))}</small></div>`).join("")}</div>` : ""}
+      </div>`;
+  }
+  const titleHtml = titles.length ? `<div class="g8-titles">${titles.map((x) => `
+    <div class="g8-stat"><span class="g8-medal">${G8_MEDALS[x.key]}</span><small>${esc(t.titles[x.key])}</small><strong>${esc(g8Nick(x.id))}</strong><span>${esc(t.titleVal[x.key](x.v))}</span></div>`).join("")}</div>` : "";
+  const roundsHtml = rounds.length ? `
+    <div class="g8-section"><div class="eyebrow">${esc(t.perRound)}</div>
+      <div class="g8-rounds">${rounds.map((r) => game.mode === "team"
+        ? `<div class="g8-rd team-${r.keys[0]}">R${r.round} · ${esc(t.teams[r.keys[0]] || "—")}</div>`
+        : `<div class="g8-rd">R${r.round} · ${esc(r.keys.map((k) => g8Nick(k)).join("、") || "—")}</div>`).join("")}</div>
+    </div>` : "";
+  const rankHtml = game.mode === "team" ? "" : `
+    <div class="g8-section"><div class="eyebrow">${esc(t.ranking)}</div>
+      <div class="g8-rank">${ranking.map((p, i) => `<div class="g8-rank-row ${p.score === ranking[0].score && p.score > 0 ? "first" : ""} ${p.id === S.playerId ? "me" : ""}"><span>${rankOf(p.score)}</span><span class="g8-rank-name">${esc(g8Nick(p.id))}</span><b>${p.score}</b></div>`).join("")}</div>
+    </div>`;
+
+  $("#gamePanel").innerHTML = `
+    <div class="g8-root g8-result">
+      ${hero}
+      ${titleHtml}
+      ${roundsHtml}
+      ${rankHtml}
+      <div class="g8-actions">
+        <button type="button" class="btn btn-outline" onclick="leaveRoom()">${esc(t.lobby)}</button>
+        ${isHost ? `<button type="button" class="btn btn-yellow" onclick="g8Restart()">${esc(t.again)}</button>` : `<p class="g8-note center">${esc(t.waitHost)}</p>`}
+      </div>
+    </div>
+  `;
+}
+
+window.g8CellClick = (boardId, r, c) => {
+  const game = S.room?.gameState;
+  if (!game) return;
+  if (game.phase === "placing") {
+    const board = game.boards.find((b) => b.id === boardId);
+    const own = (board?.ships || []).find((s) => s.owner === S.playerId && s.cells?.some(([a, b]) => a === r && b === c));
+    if (own && own.id !== S.g8Sel) {
+      S.g8Sel = own.id;
+      renderGame8(game);
+      return;
+    }
+    if (!S.g8Sel) return;
+    send({ type: "g8:place", shipId: S.g8Sel, r, c, horiz: S.g8Horiz !== false });
+    const mine = (board?.myShips || []).filter((s) => s.owner === S.playerId && !s.placed && s.id !== S.g8Sel);
+    S.g8Sel = mine[0]?.id || S.g8Sel;
+    return;
+  }
+  if (game.phase !== "turn") return;
+  if (game.shooter === S.playerId) {
+    S.g8Aim = { board: boardId, r, c };
+    renderGame8(game);
+    return;
+  }
+  if (game.mode === "team" && game.cur === game.myKey) send({ type: "g8:ping", r, c });
+};
+
+window.g8PickShip = (id) => { S.g8Sel = id; renderGame8(S.room.gameState); };
+window.g8Rotate = () => { S.g8Horiz = !(S.g8Horiz !== false); renderGame8(S.room.gameState); };
+window.g8Random = () => send({ type: "g8:random" });
+window.g8Ready = (ready) => send({ type: "g8:ready", ready });
+window.g8PickTarget = (id) => { S.g8Target = id; S.g8Aim = null; renderGame8(S.room.gameState); };
+window.g8ToggleView = () => { S.g8ShowOwn = !S.g8ShowOwn; renderGame8(S.room.gameState); };
+window.g8UseCard = (card) => { S.g8Card = S.g8Card === card ? null : card; renderGame8(S.room.gameState); };
+window.g8Fire = () => {
+  const game = S.room?.gameState;
+  if (!game || !S.g8Aim) return;
+  send({ type: "g8:fire", target: S.g8Aim.board, r: S.g8Aim.r, c: S.g8Aim.c, card: S.g8Card || null });
+  S.g8Aim = null;
+  S.g8Card = null;
+};
+window.g8SetMode = (mode) => send({ type: "g8:mode", mode });
+window.g8Restart = () => send({ type: "g8:restart" });
+window.g8EndEarly = async () => {
+  const ok = await askConfirm(g8T().confirmEnd);
+  if (!ok) return;
+  send({ type: "g8:end" });
+};
+
+function g8AllowedModes(count) {
+  if (count <= 2) return ["duel"];
+  if (count === 3) return ["brawl"];
+  return ["brawl", "team"];
+}
+
+function g8LobbyHtml(room) {
+  const t = g8T();
+  const count = room.players.filter((p) => p.connected).length;
+  const allowed = g8AllowedModes(count);
+  const chosen = allowed.includes(room.g8Settings?.mode) ? room.g8Settings.mode : allowed[0];
+  const isHost = room.hostId === S.playerId;
+  const teamLabel = count >= 4 ? `${t.modes.team} ${Math.ceil(count / 2)}v${Math.floor(count / 2)} · ${t.teams.navy} ${t.vs} ${t.teams.pirate}` : t.modes.team;
+  const modes = ["duel", "brawl", "team"].map((m) => {
+    const ok = allowed.includes(m);
+    const note = !ok ? (m === "duel" ? t.onlyTwo : m === "team" ? t.needFour : "") : t.modeDesc[m];
+    return `<button type="button" class="g8-mode ${chosen === m ? "on" : ""}" ${ok && isHost ? `onclick="g8SetMode('${m}')"` : "disabled"}>
+      <strong>${esc(m === "team" ? teamLabel : t.modes[m])}</strong><small>${esc(note || t.modeDesc[m])}</small>
+    </button>`;
+  }).join("");
+  return `
+    <div class="g8-lobby">
+      <div class="label-row"><span>${esc(isHost ? t.pickMode : t.hostPicks)}</span><span class="notice" style="margin:0">${esc(t.nowPlayers(count))}</span></div>
+      <div class="g8-modes">${modes}</div>
+    </div>
+  `;
+}

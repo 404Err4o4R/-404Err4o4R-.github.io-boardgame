@@ -69,6 +69,24 @@ const G7_OFFLINE_STRIKES = 2;   // 斷線連續超時兩次就當淘汰
 const G7_CARDS = ["skip", "reverse", "assign"];
 const G7_HISTORY_MAX = 12;
 
+const G8_TURN_MS_OPTIONS = [15000, 20000, 30000];
+const G8_ROUND_MIN = 1;
+const G8_ROUND_MAX = 5;
+const G8_PLACE_MS = 60000;
+const G8_ROUNDOVER_MS = 6000;
+const G8_OFFLINE_TURN_MS = 1500;
+const G8_HOT_BRAWL = 8;   // 大亂鬥第 8 輪開始白熱化
+const G8_HOT_TEAM = 20;   // 分隊第 20 輪開始白熱化
+const G8_TEAM_CARDS = 2;
+const G8_CARDS = ["radar", "cross", "torpedo"];
+const G8_MODES = ["duel", "brawl", "team"];
+const G8_SHIPS_BIG = [
+  { len: 4, name: "戰艦" }, { len: 3, name: "巡洋艦" }, { len: 3, name: "潛艇" }, { len: 2, name: "驅逐艦" }
+];
+const G8_SHIPS_SMALL = [
+  { len: 3, name: "巡洋艦" }, { len: 2, name: "驅逐艦" }, { len: 2, name: "巡邏艇" }
+];
+
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -103,7 +121,7 @@ function shuffle(a) {
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7" || v==="game8"; }
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
@@ -157,6 +175,21 @@ function clampG7Rounds(v) {
   const n = Math.round(Number(v));
   if (!Number.isFinite(n) || n <= 0) return 5;
   return Math.min(G7_ROUND_MAX, Math.max(G7_ROUND_MIN, n));
+}
+function clampG8TurnMs(v) {
+  const n = Number(v);
+  return G8_TURN_MS_OPTIONS.includes(n) ? n : 20000;
+}
+function clampG8Rounds(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n <= 0) return 3;
+  return Math.min(G8_ROUND_MAX, Math.max(G8_ROUND_MIN, n));
+}
+// 人數決定可以揀邊啲模式：2 人淨係 1v1，3 人淨係大亂鬥，4–6 人大亂鬥或分隊。
+function g8AllowedModes(count) {
+  if (count <= 2) return ["duel"];
+  if (count === 3) return ["brawl"];
+  return ["brawl", "team"];
 }
 function g7RandInt(min, max) {
   return min + Math.floor(Math.random() * (max - min + 1));
@@ -330,6 +363,10 @@ export default {
                 body.g7TurnSeconds ? body.g7TurnSeconds*1000 : null,
               g7Rounds:
                 body.g7Rounds || null,
+              g8TurnMs:
+                body.g8TurnSeconds ? body.g8TurnSeconds*1000 : null,
+              g8Rounds:
+                body.g8Rounds || null,
               roomTtl: ROOM_TTL
             })
           }
@@ -439,6 +476,11 @@ function publicRoom(room, viewerId=null) {
       answerMs: room.g6AnswerMs||20000,
       rounds: room.g6Rounds||10,
       voteMs: room.g6VoteMs||G6_VOTE_MS_DEFAULT
+    } : null,
+    g8Settings: room.game==="game8" ? {
+      turnMs: room.g8TurnMs||20000,
+      rounds: room.g8Rounds||3,
+      mode: room.g8Mode||null
     } : null,
     g7Settings: room.game==="game7" ? {
       turnMs: room.g7TurnMs||G7_TURN_MS_OPTIONS[0],
@@ -770,6 +812,69 @@ results:g.results||null
     return base6;
   }
 
+  if(room.game==="game8") {
+    const myKey = viewerId ? (g.mode==="team"
+      ? ((g.teams?.navy||[]).includes(viewerId) ? "navy" : (g.teams?.pirate||[]).includes(viewerId) ? "pirate" : null)
+      : (g.boards?.[viewerId] ? viewerId : null)) : null;
+    const reveal = g.phase==="roundover" || g.phase==="gameover";
+    const iAmOut = g.mode==="brawl" && myKey && g.boards?.[myKey]?.dead;
+    const boards = Object.values(g.boards||{}).map(b=>{
+      const mine = myKey===b.id;
+      const showAll = mine || reveal || iAmOut || !myKey;
+      return {
+        id:b.id,
+        owners:b.owners,
+        dead:!!b.dead,
+        shipsLeft:b.ships.filter(s=>!s.sunk).length,
+        shipsTotal:b.ships.length,
+        shots:Object.entries(b.shots||{}).map(([k,v])=>{ const [r,c]=k.split(",").map(Number); return [r,c,v.res,v.air?1:0]; }),
+        ships:b.ships
+          .filter(s=>s.cells && (showAll || s.sunk))
+          .map(s=>({id:s.id,len:s.len,name:s.name,owner:s.owner,cells:s.cells,sunk:!!s.sunk})),
+        myShips: (g.phase==="placing" && mine) ? b.ships.map(s=>({id:s.id,len:s.len,name:s.name,owner:s.owner,placed:!!s.cells})) : null
+      };
+    });
+    const base8={
+      phase:g.phase,
+      mode:g.mode,
+      round:g.round,
+      totalRounds:g.totalRounds,
+      turnMs:g.turnMs,
+      size:g.size,
+      hotAt:g.hotAt||0,
+      hot:!!(g.hotAt && g.cycle>=g.hotAt),
+      cycle:g.cycle||1,
+      teams:g.teams||null,
+      myKey,
+      boards,
+      order:g.order||[],
+      cur:g.cur||null,
+      shooter:g.shooter||null,
+      turnSeq:g.turnSeq||0,
+      endsAt:g.endsAt||null,
+      readyCount:Object.keys(g.ready||{}).length,
+      readyTotal:room.players.filter(p=>p.connected).length,
+      myReady:!!(viewerId && g.ready?.[viewerId]),
+      cards:myKey ? (g.cards?.[myKey]||[]) : [],
+      pings:myKey && g.pings?.[myKey] ? Object.entries(g.pings[myKey]).map(([id,cell])=>{ const [r,c]=cell.split(",").map(Number); return {id,r,c}; }) : [],
+      radar:(g.radar||[]).filter(x=>x.key===myKey),
+      last:g.last||null,
+      airLog:g.airCycle===g.cycle ? (g.airLog||null) : null,
+      roundWinners:g.roundWinners||[],
+      winners:room.g8Winners||[],
+      teamWins:room.g8TeamWins||null,
+      endedEarly:!!g.endedEarly
+    };
+    if(g.phase==="gameover"){
+      base8.ranking=[...room.players]
+        .filter(p=>(room.g8Roster||[]).includes(p.id))
+        .sort((a,b)=>(b.score||0)-(a.score||0))
+        .map(p=>({id:p.id,nickname:p.nickname,score:p.score||0}));
+      base8.stats=room.g8Stats||{};
+    }
+    return base8;
+  }
+
   if(room.game==="game7") {
     const alive=g.alive||[];
     const viewerAlive=!!(viewerId && alive.includes(viewerId));
@@ -882,6 +987,9 @@ export class GameRoom extends DurableObject {
         g6VoteMs:clampG6VoteMs(body.g6VoteMs),
         g7TurnMs:clampG7TurnMs(body.g7TurnMs),
         g7Rounds:clampG7Rounds(body.g7Rounds),
+        g8TurnMs:clampG8TurnMs(body.g8TurnMs),
+        g8Rounds:clampG8Rounds(body.g8Rounds),
+        g8Mode:null,
         hostId:null,
         players:[],
         gameState:null,
@@ -926,7 +1034,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
-    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7") return [];
+    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7" || game==="game8") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -988,6 +1096,14 @@ export class GameRoom extends DurableObject {
       case "g6:next": return this.onG6Next(session.playerId);
       case "g6:end": return this.onG6End(session.playerId);
       case "g6:restart": return this.onG6Restart(session.playerId);
+      case "g8:mode": return this.onG8Mode(session.playerId,msg.mode);
+      case "g8:place": return this.onG8Place(session.playerId,msg.shipId,msg.r,msg.c,msg.horiz);
+      case "g8:random": return this.onG8Random(session.playerId);
+      case "g8:ready": return this.onG8Ready(session.playerId,msg.ready);
+      case "g8:ping": return this.onG8Ping(session.playerId,msg.r,msg.c);
+      case "g8:fire": return this.onG8Fire(session.playerId,msg.target,msg.r,msg.c,msg.card);
+      case "g8:end": return this.onG8End(session.playerId);
+      case "g8:restart": return this.onG8Restart(session.playerId);
       case "g7:guess": return this.onG7Guess(session.playerId,msg.value);
       case "g7:card": return this.onG7Card(session.playerId,msg.targetId);
       case "g7:end": return this.onG7End(session.playerId);
@@ -1129,6 +1245,7 @@ async onReady(playerId, ready){
       }
       if(await this.g6AfterDisconnect()) return;
       if(await this.g7AfterDisconnect()) return;
+      if(await this.g8AfterDisconnect()) return;
     }
 
     await this.save();
@@ -1174,6 +1291,7 @@ if (notReady.length > 0) {
     else if(this.room.game==="game5") await this.startGame5();
     else if(this.room.game==="game6") await this.startGame6();
     else if(this.room.game==="game7") await this.startGame7();
+    else if(this.room.game==="game8") await this.startGame8();
     else await this.startGame2();
   }
 
@@ -2712,6 +2830,485 @@ async onG1Next(playerId){
   }
 
   /* =========================
+     Game 8 · Battleship 海戰棋
+  ========================= */
+
+  g8Config(mode){
+    if(mode==="brawl") return { size:6, ships:G8_SHIPS_SMALL, hotAt:G8_HOT_BRAWL };
+    return { size:8, ships:G8_SHIPS_BIG, hotAt: mode==="team" ? G8_HOT_TEAM : 0 };
+  }
+
+  // 參加者：1v1／大亂鬥係玩家 id，分隊係 "navy" / "pirate"。
+  g8Members(g,key){
+    if(g.mode==="team") return (g.teams?.[key]||[]);
+    return [key];
+  }
+
+  g8KeyOf(g,playerId){
+    if(g.mode==="team"){
+      if((g.teams?.navy||[]).includes(playerId)) return "navy";
+      if((g.teams?.pirate||[]).includes(playerId)) return "pirate";
+      return null;
+    }
+    return g.boards?.[playerId] ? playerId : null;
+  }
+
+  async onG8Mode(playerId,mode){
+    if(playerId!==this.room.hostId) return;
+    if(this.room.gameState && this.room.gameState.phase!=="waiting") return;
+    if(!G8_MODES.includes(mode)) return;
+    this.room.g8Mode=mode;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async startGame8(){
+    const connected=this.room.players.filter(p=>p.connected);
+    const allowed=g8AllowedModes(connected.length);
+    let mode=this.room.g8Mode;
+    if(!allowed.includes(mode)) mode=allowed[0];
+    this.room.g8Mode=mode;
+    for(const p of this.room.players) p.score=0;
+    this.room.g8Stats={};
+    this.room.g8Winners=[];
+    this.room.g8TeamWins={navy:0,pirate:0};
+    this.room.g8Teams=null;
+    if(mode==="team"){
+      const ids=shuffle(connected.map(p=>p.id));
+      const half=Math.ceil(ids.length/2);
+      this.room.g8Teams={navy:ids.slice(0,half),pirate:ids.slice(half)};
+    }
+    this.room.g8Roster=connected.map(p=>p.id);
+    await this.beginRoundGame8(1);
+  }
+
+  g8Stat(id){
+    this.room.g8Stats=this.room.g8Stats||{};
+    return this.room.g8Stats[id] ||= {cells:0,hits:0,sinks:0,airHit:0};
+  }
+
+  async beginRoundGame8(round){
+    const mode=this.room.g8Mode;
+    const cfg=this.g8Config(mode);
+    const roster=(this.room.g8Roster||[]).filter(id=>this.room.players.some(p=>p.id===id));
+    const participants = mode==="team" ? ["navy","pirate"] : roster;
+    const boards={};
+    for(const key of participants){
+      const members = mode==="team" ? (this.room.g8Teams?.[key]||[]) : [key];
+      const ships=cfg.ships.map((s,i)=>({id:"s"+i,len:s.len,name:s.name,owner:null,cells:null,sunk:false}));
+      if(mode==="team"){
+        const n=members.length||1;
+        const pattern = n===1 ? [0,0,0,0] : n===2 ? [0,1,1,0] : [0,1,2,0];
+        ships.forEach((s,i)=>{ s.owner=members[pattern[i] % n] || members[0] || null; });
+      } else {
+        ships.forEach(s=>{ s.owner=key; });
+      }
+      boards[key]={id:key,owners:members,ships,shots:{},dead:false};
+    }
+    const prev=this.room.gameState;
+    this.room.gameState={
+      game:"game8",
+      mode,
+      phase:"placing",
+      round,
+      totalRounds:this.room.g8Rounds||3,
+      turnMs:this.room.g8TurnMs||20000,
+      size:cfg.size,
+      hotAt:cfg.hotAt,
+      teams:this.room.g8Teams||null,
+      boards,
+      ready:{},
+      order:[],
+      cur:null,
+      shooter:null,
+      shooterIdx:{navy:0,pirate:0},
+      cycle:1,
+      turnSeq:prev?.game==="game8" ? (prev.turnSeq||0) : 0,
+      cards:{},
+      pings:{},
+      radar:[],
+      last:null,
+      airLog:null,
+      airCycle:0,
+      roundWinners:[],
+      endsAt:Date.now()+G8_PLACE_MS
+    };
+    await this.commitGame8();
+  }
+
+  async commitGame8(){
+    const g=this.room.gameState;
+    await this.save();
+    if(g?.endsAt) await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  g8Occupied(board,exceptShipId){
+    const occ=new Set();
+    for(const s of board.ships){
+      if(s.id===exceptShipId || !s.cells) continue;
+      for(const [r,c] of s.cells) occ.add(r+","+c);
+    }
+    return occ;
+  }
+
+  g8Fits(g,board,ship,r,c,horiz){
+    const n=g.size;
+    const cells=[];
+    for(let i=0;i<ship.len;i++){
+      const rr=horiz?r:r+i, cc=horiz?c+i:c;
+      if(rr<0||cc<0||rr>=n||cc>=n) return null;
+      cells.push([rr,cc]);
+    }
+    const occ=this.g8Occupied(board,ship.id);
+    if(cells.some(([rr,cc])=>occ.has(rr+","+cc))) return null;
+    return cells;
+  }
+
+  g8RandomPlace(g,board,ship){
+    for(let t=0;t<400;t++){
+      const horiz=Math.random()<.5;
+      const r=Math.floor(Math.random()*g.size), c=Math.floor(Math.random()*g.size);
+      const cells=this.g8Fits(g,board,ship,r,c,horiz);
+      if(cells){ ship.cells=cells; return true; }
+    }
+    return false;
+  }
+
+  async onG8Place(playerId,shipId,r,c,horiz){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="placing") return;
+    const key=this.g8KeyOf(g,playerId); const board=key && g.boards[key];
+    if(!board) return;
+    const ship=board.ships.find(s=>s.id===shipId);
+    if(!ship || ship.owner!==playerId) return;
+    if(r===null || r===undefined){
+      ship.cells=null;
+      delete g.ready[playerId];
+    } else {
+      const cells=this.g8Fits(g,board,ship,Number(r),Number(c),!!horiz);
+      if(!cells) return this.errorPlayer(playerId,"呢個位置擺唔到，可能出咗界或者撞到其他船。");
+      ship.cells=cells;
+    }
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async onG8Random(playerId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="placing") return;
+    const key=this.g8KeyOf(g,playerId); const board=key && g.boards[key];
+    if(!board) return;
+    const mine=board.ships.filter(s=>s.owner===playerId);
+    for(const s of mine) s.cells=null;
+    for(const s of [...mine].sort((a,b)=>b.len-a.len)) this.g8RandomPlace(g,board,s);
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async onG8Ready(playerId,ready){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="placing") return;
+    const key=this.g8KeyOf(g,playerId); const board=key && g.boards[key];
+    if(!board) return;
+    if(ready){
+      if(board.ships.some(s=>s.owner===playerId && !s.cells)){
+        return this.errorPlayer(playerId,"仲有船未擺好。");
+      }
+      g.ready[playerId]=true;
+    } else delete g.ready[playerId];
+    if(this.g8AllPlaced(g)) return this.finishPlacingGame8();
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  g8AllPlaced(g){
+    const connected=this.room.players.filter(p=>p.connected && this.g8KeyOf(g,p.id));
+    return connected.length>0 && connected.every(p=>g.ready[p.id]);
+  }
+
+  async finishPlacingGame8(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="placing") return;
+    for(const board of Object.values(g.boards)){
+      for(const s of [...board.ships].sort((a,b)=>b.len-a.len)){
+        if(!s.cells && !this.g8RandomPlace(g,board,s)){
+          // 極少數情況擺唔落：全部清咗重新隨機擺。
+          for(const t of board.ships) t.cells=null;
+          for(const t of [...board.ships].sort((a,b)=>b.len-a.len)) this.g8RandomPlace(g,board,t);
+          break;
+        }
+      }
+    }
+    // 派技能卡：1v1／大亂鬥每人一張；分隊每隊兩張。
+    g.cards={};
+    const keys=Object.keys(g.boards);
+    for(const k of keys){
+      const count = g.mode==="team" ? G8_TEAM_CARDS : 1;
+      g.cards[k]=Array.from({length:count},()=>G8_CARDS[Math.floor(Math.random()*G8_CARDS.length)]);
+    }
+    const start=(g.round-1)%keys.length;
+    g.order=[...keys.slice(start),...keys.slice(0,start)];
+    g.cycle=1;
+    this.setTurnGame8(g.order[0]);
+    await this.commitGame8();
+  }
+
+  g8Alive(g){
+    return g.order.filter(k=>!g.boards[k].dead);
+  }
+
+  g8Hot(g){
+    return !!(g.hotAt && g.cycle>=g.hotAt);
+  }
+
+  setTurnGame8(key){
+    const g=this.room.gameState;
+    g.phase="turn";
+    g.cur=key;
+    g.turnSeq=(g.turnSeq||0)+1;
+    let shooter=key;
+    if(g.mode==="team"){
+      const members=g.teams?.[key]||[];
+      const online=members.filter(id=>this.room.players.some(p=>p.id===id && p.connected));
+      const pool=online.length ? online : members;
+      const idx=(g.shooterIdx[key]||0) % Math.max(1,pool.length);
+      shooter=pool[idx]||members[0]||null;
+    }
+    g.shooter=shooter;
+    const p=this.room.players.find(x=>x.id===shooter);
+    const ms=this.g8Hot(g) ? Math.round(g.turnMs/2) : g.turnMs;
+    g.endsAt=Date.now()+(p?.connected ? ms : G8_OFFLINE_TURN_MS);
+  }
+
+  g8ShotsLeft(board,size){
+    const free=[];
+    for(let r=0;r<size;r++) for(let c=0;c<size;c++) if(!board.shots[r+","+c]) free.push([r,c]);
+    return free;
+  }
+
+  // 打一格：返回結果。sunk 係呢一炮打沉嘅船名。
+  g8ShootCell(g,board,r,c,by,air){
+    const k=r+","+c;
+    if(board.shots[k]) return null;
+    const ship=board.ships.find(s=>s.cells && s.cells.some(([rr,cc])=>rr===r&&cc===c));
+    const res=ship ? "hit" : "miss";
+    board.shots[k]={res,air:!!air};
+    if(by){
+      const st=this.g8Stat(by); st.cells++; if(ship) st.hits++;
+    }
+    if(ship && air && ship.owner) this.g8Stat(ship.owner).airHit++;
+    let sunk=null;
+    if(ship && !ship.sunk && ship.cells.every(([rr,cc])=>board.shots[rr+","+cc])){
+      ship.sunk=true; sunk=ship.name;
+      if(by) this.g8Stat(by).sinks++;
+    }
+    if(board.ships.every(s=>s.sunk)) board.dead=true;
+    return {r,c,res,sunk};
+  }
+
+  async onG8Ping(playerId,r,c){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="turn" || g.mode!=="team") return;
+    const key=this.g8KeyOf(g,playerId);
+    if(!key || key!==g.cur) return;
+    g.pings[key]=g.pings[key]||{};
+    const cell=Number(r)+","+Number(c);
+    if(g.pings[key][playerId]===cell) delete g.pings[key][playerId];
+    else g.pings[key][playerId]=cell;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async onG8Fire(playerId,target,r,c,card){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="turn") return;
+    if(g.shooter!==playerId) return this.errorPlayer(playerId,"未輪到你開炮。");
+    r=Number(r); c=Number(c);
+    if(!Number.isInteger(r)||!Number.isInteger(c)||r<0||c<0||r>=g.size||c>=g.size) return this.errorPlayer(playerId,"請揀一格。");
+    const key=g.cur;
+    if(g.mode!=="brawl") target=g.order.find(k=>k!==key);
+    const board=g.boards[target];
+    if(!board || target===key || board.dead) return this.errorPlayer(playerId,"請揀一個仲未出局嘅對手。");
+    if(card && !G8_CARDS.includes(card)) return;
+    if(card){
+      const hand=g.cards[key]||[];
+      const idx=hand.indexOf(card);
+      if(idx<0) return this.errorPlayer(playerId,"冇呢張技能卡。");
+      hand.splice(idx,1);
+    } else if(board.shots[r+","+c]){
+      return this.errorPlayer(playerId,"呢格已經打過。");
+    }
+    await this.fireGame8(playerId,key,target,r,c,card||null,false);
+  }
+
+  async fireGame8(by,key,target,r,c,card,auto){
+    const g=this.room.gameState;
+    const board=g.boards[target];
+    const results=[];
+    if(card==="radar"){
+      let count=0;
+      for(let rr=r-1;rr<=r+1;rr++) for(let cc=c-1;cc<=c+1;cc++){
+        if(rr<0||cc<0||rr>=g.size||cc>=g.size) continue;
+        if(board.shots[rr+","+cc]) continue;
+        if(board.ships.some(s=>s.cells && s.cells.some(([a,b])=>a===rr&&b===cc))) count++;
+      }
+      g.radar.push({key,board:target,r,c,count});
+    } else if(card==="cross"){
+      for(const [rr,cc] of [[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]]){
+        if(rr<0||cc<0||rr>=g.size||cc>=g.size) continue;
+        const x=this.g8ShootCell(g,board,rr,cc,by,false); if(x) results.push(x);
+      }
+    } else if(card==="torpedo"){
+      for(let cc=0;cc<g.size;cc++){
+        const x=this.g8ShootCell(g,board,r,cc,by,false);
+        if(!x) continue;
+        results.push(x);
+        if(x.res==="hit") break;
+      }
+    } else {
+      const x=this.g8ShootCell(g,board,r,c,by,false); if(x) results.push(x);
+    }
+    g.last={by,key,target,card,r,c,auto:!!auto,cells:results,radar:card==="radar" ? g.radar[g.radar.length-1].count : null};
+    if(g.pings[key]) g.pings[key]={};
+    if(g.mode==="team") g.shooterIdx[key]=(g.shooterIdx[key]||0)+1;
+    await this.advanceGame8();
+  }
+
+  // 下一個參加者；行完一圈 cycle+1，白熱化期間每圈完結空襲每塊板一格。
+  async advanceGame8(){
+    const g=this.room.gameState;
+    if(await this.checkRoundOverGame8()) return;
+    const order=g.order;
+    const pos=order.indexOf(g.cur);
+    let next=null, wrapped=false;
+    for(let i=1;i<=order.length;i++){
+      const idx=pos+i;
+      const k=order[idx % order.length];
+      if(idx>=order.length) wrapped=true;
+      if(!g.boards[k].dead && k!==g.cur){ next=k; break; }
+      if(!g.boards[k].dead && k===g.cur && i===order.length){ next=k; break; }
+    }
+    if(wrapped){
+      const ended=g.cycle;
+      g.cycle++;
+      if(g.hotAt && ended>=g.hotAt){
+        const air=[];
+        const aliveBefore=this.g8Alive(g);
+        for(const k of order){
+          const b=g.boards[k];
+          if(b.dead) continue;
+          const free=this.g8ShotsLeft(b,g.size);
+          if(!free.length) continue;
+          const [rr,cc]=free[Math.floor(Math.random()*free.length)];
+          const x=this.g8ShootCell(g,b,rr,cc,null,true);
+          if(x) air.push({board:k,...x});
+        }
+        g.airLog=air;
+        g.airCycle=g.cycle;
+        if(await this.checkRoundOverGame8(aliveBefore)) return;
+        if(g.boards[next]?.dead) next=g.order.find(k=>!g.boards[k].dead);
+      }
+    }
+    this.setTurnGame8(next);
+    await this.commitGame8();
+  }
+
+  async checkRoundOverGame8(aliveBefore){
+    const g=this.room.gameState;
+    const alive=this.g8Alive(g);
+    if(alive.length>1) return false;
+    // 剩返一個就佢贏；如果空襲同時炸沉晒最後幾個，嗰幾個一齊贏。
+    let winKeys=alive;
+    if(!winKeys.length) winKeys=aliveBefore || [];
+    const winners=[...new Set(winKeys.flatMap(k=>this.g8Members(g,k)))];
+    for(const id of winners){
+      const p=this.room.players.find(x=>x.id===id); if(p) p.score=(p.score||0)+1;
+    }
+    if(g.mode==="team" && winKeys[0]) this.room.g8TeamWins[winKeys[0]]=(this.room.g8TeamWins[winKeys[0]]||0)+1;
+    this.room.g8Winners=[...(this.room.g8Winners||[]),{round:g.round,keys:winKeys,ids:winners}];
+    g.roundWinners=winKeys;
+    g.phase="roundover";
+    g.cur=null; g.shooter=null;
+    g.endsAt=Date.now()+G8_ROUNDOVER_MS;
+    await this.commitGame8();
+    return true;
+  }
+
+  async afterRoundGame8(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="roundover") return;
+    if(g.round>=g.totalRounds) return this.finishGame8(false);
+    await this.beginRoundGame8(g.round+1);
+  }
+
+  async timeoutGame8(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8") return;
+    if(g.phase==="placing") return this.finishPlacingGame8();
+    if(g.phase==="roundover") return this.afterRoundGame8();
+    if(g.phase!=="turn") return;
+    const key=g.cur;
+    let target;
+    if(g.mode==="brawl"){
+      const opp=g.order.filter(k=>k!==key && !g.boards[k].dead);
+      target=opp[Math.floor(Math.random()*opp.length)];
+    } else target=g.order.find(k=>k!==key);
+    const free=this.g8ShotsLeft(g.boards[target],g.size);
+    const [r,c]=free[Math.floor(Math.random()*free.length)]||[0,0];
+    await this.fireGame8(g.shooter,key,target,r,c,null,true);
+  }
+
+  async finishGame8(endedEarly){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8") return;
+    g.phase="gameover";
+    g.endsAt=null;
+    g.cur=null; g.shooter=null;
+    g.endedEarly=!!endedEarly;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async g8AfterDisconnect(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8") return false;
+    if(g.phase==="placing" && this.g8AllPlaced(g)){
+      await this.finishPlacingGame8();
+      return true;
+    }
+    if(g.phase==="turn"){
+      const p=this.room.players.find(x=>x.id===g.shooter);
+      if(p && !p.connected){
+        const soon=Date.now()+G8_OFFLINE_TURN_MS;
+        if(!g.endsAt || g.endsAt>soon){
+          g.endsAt=soon;
+          await this.commitGame8();
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  async onG8End(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase==="gameover") return;
+    await this.finishGame8(true);
+  }
+
+  async onG8Restart(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="gameover") return;
+    if(this.room.players.filter(p=>p.connected).length<MIN_PLAYERS){
+      return this.errorPlayer(playerId,"最少要 2 位在線玩家先可以再玩。");
+    }
+    await this.startGame8();
+  }
+
+  /* =========================
      Game 7 · 數字炸彈
   ========================= */
 
@@ -3020,6 +3617,7 @@ async onG1Next(playerId){
 
     if(await this.g6AfterDisconnect()) return;
     if(await this.g7AfterDisconnect()) return;
+    if(await this.g8AfterDisconnect()) return;
 
     await this.save();
     await this.broadcastRoom();
@@ -3113,6 +3711,11 @@ async onG1Next(playerId){
 
     if(g?.game==="game6" && g.phase==="reveal" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.advanceAfterRevealGame6();
+      return;
+    }
+
+    if(g?.game==="game8" && (g.phase==="placing" || g.phase==="turn" || g.phase==="roundover") && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.timeoutGame8();
       return;
     }
 

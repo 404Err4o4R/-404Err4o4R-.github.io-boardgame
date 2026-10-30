@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=21">
+  <link rel="stylesheet" href="./style.css?v=22">
 </head>
 
 <body>
@@ -243,6 +243,10 @@
 
               <option value="game7">
                 Number Bomb 數字炸彈
+              </option>
+
+              <option value="game8">
+                Battleship 海戰棋
               </option>
 
             </select>
@@ -487,6 +491,36 @@
             </div>
             <p class="notice" style="margin:6px 0 0">
               打第一個諗到嘅字，撞啱就得分。2–6 人。
+            </p>
+          </div>
+
+
+          <div
+            id="g8Section"
+            class="hidden"
+          >
+            <div class="label-row">
+              <span>回合數</span>
+            </div>
+            <div id="g8RoundsBox" class="filter-box">
+              <button type="button" class="filter-chip g8-rounds-chip" data-rounds="1">1</button>
+              <button type="button" class="filter-chip g8-rounds-chip" data-rounds="2">2</button>
+              <button type="button" class="filter-chip g8-rounds-chip active" data-rounds="3">3</button>
+              <button type="button" class="filter-chip g8-rounds-chip" data-rounds="4">4</button>
+              <button type="button" class="filter-chip g8-rounds-chip" data-rounds="5">5</button>
+            </div>
+            <p class="notice" style="margin:6px 0 0">每輪大約 5–10 分鐘，人越多越耐。</p>
+
+            <div class="label-row" style="margin-top:14px">
+              <span>每炮思考時間</span>
+            </div>
+            <div id="g8TimeBox" class="filter-box">
+              <button type="button" class="filter-chip g8-time-chip" data-sec="15">15 秒</button>
+              <button type="button" class="filter-chip g8-time-chip active" data-sec="20">20 秒</button>
+              <button type="button" class="filter-chip g8-time-chip" data-sec="30">30 秒</button>
+            </div>
+            <p class="notice" style="margin:6px 0 0">
+              模式（1v1／大亂鬥／分隊）喺大廳等齊人之後先揀。2–6 人。
             </p>
           </div>
 
@@ -940,6 +974,48 @@
 
       </article>
 
+
+      <article class="game-card navy-card">
+
+        <div class="sticker">
+          08
+        </div>
+
+        <div class="game-icon">
+          <svg width="60" height="52" viewBox="0 0 60 52" aria-hidden="true">
+            <path d="M4 34h52l-7 12H11z" fill="#FEFEF2" stroke="#1f2740" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M16 34v-9h22l6 9" fill="#C9D6F2" stroke="#1f2740" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M26 25V8" stroke="#1f2740" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M26 8l11 5-11 4" fill="#F2D965" stroke="#1f2740" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M38 29h12" stroke="#1f2740" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <h3>
+          Battle<br>
+          ship<br>
+          <span class="h3-sub">海戰棋</span>
+        </h3>
+
+        <p>
+          擺好船，輪流開炮，打沉晒對方艦隊就贏。1v1、大亂鬥、分隊三種玩法。
+        </p>
+
+        <div class="tag-row">
+          <span>FLEET</span>
+          <span>TEAMS</span>
+          <span>2–6</span>
+        </div>
+
+        <button
+          class="btn btn-dark"
+          data-start="game8"
+        >
+          PLAY THIS GAME
+        </button>
+
+      </article>
+
     </div>
 
   </section>
@@ -1063,7 +1139,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=40" defer></script>
+<script src="./app.js?v=41" defer></script>
 
 </body>
 </html>
