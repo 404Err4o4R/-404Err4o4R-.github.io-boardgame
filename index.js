@@ -3194,7 +3194,6 @@ async onG1Next(playerId){
       g.cycle++;
       if(g.hotAt && ended>=g.hotAt){
         const air=[];
-        const aliveBefore=this.g8Alive(g);
         for(const k of order){
           const b=g.boards[k];
           if(b.dead) continue;
@@ -3206,7 +3205,7 @@ async onG1Next(playerId){
         }
         g.airLog=air;
         g.airCycle=g.cycle;
-        if(await this.checkRoundOverGame8(aliveBefore)) return;
+        if(await this.checkRoundOverGame8()) return;
         if(g.boards[next]?.dead) next=g.order.find(k=>!g.boards[k].dead);
       }
     }
@@ -3214,13 +3213,12 @@ async onG1Next(playerId){
     await this.commitGame8();
   }
 
-  async checkRoundOverGame8(aliveBefore){
+  async checkRoundOverGame8(){
     const g=this.room.gameState;
     const alive=this.g8Alive(g);
     if(alive.length>1) return false;
-    // 剩返一個就佢贏；如果空襲同時炸沉晒最後幾個，嗰幾個一齊贏。
-    let winKeys=alive;
-    if(!winKeys.length) winKeys=aliveBefore || [];
+    // 剩返一個就佢贏；如果空襲同時炸沉晒最後幾個（同歸於盡），呢輪冇贏家，算平手。
+    const winKeys=alive;
     const winners=[...new Set(winKeys.flatMap(k=>this.g8Members(g,k)))];
     for(const id of winners){
       const p=this.room.players.find(x=>x.id===id); if(p) p.score=(p.score||0)+1;

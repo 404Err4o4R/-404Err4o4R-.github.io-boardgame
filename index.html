@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=22">
+  <link rel="stylesheet" href="./style.css?v=23">
 </head>
 
 <body>
@@ -382,7 +382,7 @@
               <button type="button" class="filter-chip g4-anon-chip" data-anon="0">公開投票</button>
             </div>
 
-            <p class="notice" style="margin:6px 0 0">
+            <p class="notice" style="margin:6px 0 0" data-zh="至少需要 3 人才能開始遊戲">
               最少 3 人先可以開始遊戲
             </p>
 
@@ -410,7 +410,7 @@
               <button type="button" class="filter-chip g1-rounds-chip" data-rounds="30">30輪</button>
               <button type="button" class="filter-chip g1-rounds-chip active" data-rounds="0">無限</button>
             </div>
-            <p class="notice" style="margin:6px 0 0">
+            <p class="notice" style="margin:6px 0 0" data-zh="無限：由房主自行決定何時結算">
               無限：房主自己決定幾時結算
             </p>
           </div>
@@ -454,7 +454,7 @@
             class="hidden"
           >
             <div class="label-row">
-              <span>每 round 時間</span>
+              <span data-zh="每回合時間">每 round 時間</span>
             </div>
             <div id="g6TimeBox" class="filter-box">
               <button type="button" class="filter-chip g6-time-chip" data-sec="10">10 秒</button>
@@ -469,7 +469,7 @@
               <button type="button" class="filter-chip g6-rounds-chip" data-rounds="5">5輪</button>
               <button type="button" class="filter-chip g6-rounds-chip active" data-rounds="10">10輪</button>
               <button type="button" class="filter-chip g6-rounds-chip" data-rounds="20">20輪</button>
-              <button type="button" class="filter-chip g6-rounds-chip" data-rounds="custom">自定義</button>
+              <button type="button" data-zh="自訂" class="filter-chip g6-rounds-chip" data-rounds="custom">自定義</button>
             </div>
             <input
               id="g6RoundsCustom"
@@ -489,7 +489,7 @@
               <strong id="g6VoteLabel">10 秒</strong>
               <button type="button" class="g6-step-btn" data-step="5" aria-label="增加投票時間">+</button>
             </div>
-            <p class="notice" style="margin:6px 0 0">
+            <p class="notice" style="margin:6px 0 0" data-zh="寫下第一個想到的詞，和別人相同就得分。2–6 人。">
               打第一個諗到嘅字，撞啱就得分。2–6 人。
             </p>
           </div>
@@ -509,17 +509,17 @@
               <button type="button" class="filter-chip g8-rounds-chip" data-rounds="4">4</button>
               <button type="button" class="filter-chip g8-rounds-chip" data-rounds="5">5</button>
             </div>
-            <p class="notice" style="margin:6px 0 0">每輪大約 5–10 分鐘，人越多越耐。</p>
+            <p class="notice" style="margin:6px 0 0" data-zh="每輪約 5–10 分鐘，人數越多越久。">每輪大約 5–10 分鐘，人越多越耐。</p>
 
             <div class="label-row" style="margin-top:14px">
-              <span>每炮思考時間</span>
+              <span data-zh="每砲思考時間">每炮思考時間</span>
             </div>
             <div id="g8TimeBox" class="filter-box">
               <button type="button" class="filter-chip g8-time-chip" data-sec="15">15 秒</button>
               <button type="button" class="filter-chip g8-time-chip active" data-sec="20">20 秒</button>
               <button type="button" class="filter-chip g8-time-chip" data-sec="30">30 秒</button>
             </div>
-            <p class="notice" style="margin:6px 0 0">
+            <p class="notice" style="margin:6px 0 0" data-zh="模式（1v1／大亂鬥／分隊）在大廳等人到齊後再選擇。2–6 人。">
               模式（1v1／大亂鬥／分隊）喺大廳等齊人之後先揀。2–6 人。
             </p>
           </div>
@@ -549,13 +549,13 @@
             >
 
             <div class="label-row" style="margin-top:14px">
-              <span>每次估數時間</span>
+              <span data-zh="每次猜數時間">每次估數時間</span>
             </div>
             <div id="g7TimeBox" class="filter-box">
               <button type="button" class="filter-chip g7-time-chip active" data-sec="10">10 秒</button>
               <button type="button" class="filter-chip g7-time-chip" data-sec="15">15 秒</button>
             </div>
-            <p class="notice" style="margin:6px 0 0">
+            <p class="notice" style="margin:6px 0 0" data-zh="炸彈範圍 1–100，每個回合所有人復活，每人隨機獲得一張技能卡。贏得最多回合的人勝出。2–6 人。">
               炸彈範圍 1–100，每個回合人人復活，每人隨機派一張技能卡。贏最多回合嘅人勝出。2–6 人。
             </p>
           </div>
@@ -587,7 +587,7 @@
               class="filter-box"
             ></div>
 
-            <p class="notice" style="margin:6px 0 0">
+            <p class="notice" style="margin:6px 0 0" data-zh="只要有人交出的句子含有句號，故事就會立即結束">
               有人交出嘅句子入面有句號，故事就會即刻完結
             </p>
 
@@ -1139,7 +1139,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=41" defer></script>
+<script src="./app.js?v=42" defer></script>
 
 </body>
 </html>

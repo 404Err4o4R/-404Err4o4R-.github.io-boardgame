@@ -612,7 +612,22 @@ $("#langBox")?.addEventListener("click", (event) => {
   chip.classList.add("active");
 
   S.selectedLanguage = chip.dataset.lang || "yue";
+  applyFormLanguage();
 });
+
+// 開房表格：揀「台灣」時，有 data-zh 嘅說明文字轉做書面語；揀返「香港」就還原。
+function applyFormLanguage() {
+  const zh = S.selectedLanguage === "zh";
+  document.querySelectorAll("#createTab [data-zh]").forEach((el) => {
+    if (el.dataset.yue === undefined) el.dataset.yue = el.textContent.trim();
+    el.textContent = zh ? el.dataset.zh : el.dataset.yue;
+  });
+}
+
+// 房間入面嘅說明文字：台灣版房間用書面語。
+function lz(yue, zh) {
+  return S.room?.language === "zh" ? zh : yue;
+}
 
 $("#writeTimeBox")?.addEventListener("click", (event) => {
   const chip = event.target.closest(".write-chip");
@@ -869,11 +884,11 @@ async function createRoom() {
     }
 
     if (S.selectedGame === "game6" && !S.g6Rounds) {
-      throw new Error("自定義回合數要喺 3 至 30 之間。");
+      throw new Error(S.selectedLanguage === "zh" ? "自訂回合數須介於 3 至 30 之間。" : "自定義回合數要喺 3 至 30 之間。");
     }
 
     if (S.selectedGame === "game7" && !S.g7Rounds) {
-      throw new Error("自定義回合數要喺 1 至 20 之間。");
+      throw new Error(S.selectedLanguage === "zh" ? "自訂回合數須介於 1 至 20 之間。" : "自定義回合數要喺 1 至 20 之間。");
     }
 
     const res = await fetch(`${HTTP_BASE}/api/rooms`, {
@@ -1351,22 +1366,22 @@ function renderRoom() {
     ${
       room.game === "game6" && room.g6Settings
         ? `<p class="notice" style="margin:10px 0 0">
-            每 round ${Math.round(room.g6Settings.answerMs / 1000)} 秒 ·
-            ${room.g6Settings.rounds} round ·
+            ${lz("每 round", "每回合")} ${Math.round(room.g6Settings.answerMs / 1000)} 秒 ·
+            ${room.g6Settings.rounds} ${lz("round", "回合")} ·
             投票合併 ${Math.round(room.g6Settings.voteMs / 1000)} 秒 ·
             ${room.language === "zh" ? "台灣版" : "香港版"}
           </p>`
         : room.game === "game7" && room.g7Settings
         ? `<p class="notice" style="margin:10px 0 0">
             ${room.g7Settings.rounds} 個回合 ·
-            每次估數 ${Math.round(room.g7Settings.turnMs / 1000)} 秒 ·
+            ${lz("每次估數", "每次猜數")} ${Math.round(room.g7Settings.turnMs / 1000)} 秒 ·
             炸彈範圍 1–100 ·
             ${room.language === "zh" ? "台灣版" : "香港版"}
           </p>`
         : room.game === "game8" && room.g8Settings
         ? `<p class="notice" style="margin:10px 0 0">
             ${room.g8Settings.rounds} 輪 ·
-            每炮 ${Math.round(room.g8Settings.turnMs / 1000)} 秒 ·
+            ${lz("每炮", "每砲")} ${Math.round(room.g8Settings.turnMs / 1000)} 秒 ·
             ${room.language === "zh" ? "台灣版" : "香港版"}
           </p>${g8LobbyHtml(room)}`
         : ""
@@ -1526,7 +1541,7 @@ const canStart =
           .filter((p) => p.connected)
           .length
       }/6 人在線。
-      夠人就可以開始。
+      ${lz("夠人就可以開始。", "人數足夠就可以開始。")}
     </p>
   `;
 
@@ -1551,7 +1566,7 @@ startBtn?.addEventListener("click", async () => {
   if (startBtn.disabled) return;
 
   const ok = await askConfirm(
-    "肯定開始遊戲？"
+    lz("肯定開始遊戲？", "確定開始遊戲？")
   );
 
   if (ok) {
@@ -1739,7 +1754,7 @@ function renderGame() {
       </h2>
 
       <p class="notice">
-        夠人數之後，房主就可以開始。
+        ${lz("夠人數之後，房主就可以開始。", "人數足夠後，房主就可以開始。")}
       </p>
     `;
 
@@ -5291,6 +5306,8 @@ const G8_TEXT = {
     air: (n) => `空襲炸中 ${n} 嘅船！`,
     airMiss: "空襲冇炸中任何船",
     roundWin: (n) => `${n} 贏咗呢輪！`,
+    roundDraw: "同歸於盡！呢輪平手",
+    drawChip: "平手",
     roundWinTeam: (t) => `${t} 贏咗呢輪！`,
     nextRound: (r) => `第 ${r} 輪準備開始`,
     lastRound: "最後一輪完結",
@@ -5383,6 +5400,8 @@ const G8_TEXT = {
     air: (n) => `空襲炸中 ${n} 的船！`,
     airMiss: "空襲沒有炸中任何船",
     roundWin: (n) => `${n} 贏得這一輪！`,
+    roundDraw: "同歸於盡！這一輪平手",
+    drawChip: "平手",
     roundWinTeam: (t) => `${t} 贏得這一輪！`,
     nextRound: (r) => `第 ${r} 輪準備開始`,
     lastRound: "最後一輪結束",
@@ -5779,7 +5798,7 @@ function renderGame8Turn(game) {
 function renderGame8RoundOver(game) {
   const t = g8T();
   const w = game.roundWinners || [];
-  const title = !w.length ? t.noWinner
+  const title = !w.length ? t.roundDraw
     : game.mode === "team" ? t.roundWinTeam(t.teams[w[0]])
     : t.roundWin(w.map((k) => g8Nick(k)).join("、"));
   const boards = game.boards.map((b) => `
@@ -5864,9 +5883,11 @@ function renderGame8Gameover(game) {
     <div class="g8-stat"><span class="g8-medal">${G8_MEDALS[x.key]}</span><small>${esc(t.titles[x.key])}</small><strong>${esc(g8Nick(x.id))}</strong><span>${esc(t.titleVal[x.key](x.v))}</span></div>`).join("")}</div>` : "";
   const roundsHtml = rounds.length ? `
     <div class="g8-section"><div class="eyebrow">${esc(t.perRound)}</div>
-      <div class="g8-rounds">${rounds.map((r) => game.mode === "team"
-        ? `<div class="g8-rd team-${r.keys[0]}">R${r.round} · ${esc(t.teams[r.keys[0]] || "—")}</div>`
-        : `<div class="g8-rd">R${r.round} · ${esc(r.keys.map((k) => g8Nick(k)).join("、") || "—")}</div>`).join("")}</div>
+      <div class="g8-rounds">${rounds.map((r) => !r.keys.length
+        ? `<div class="g8-rd">R${r.round} · ${esc(t.drawChip)}</div>`
+        : game.mode === "team"
+        ? `<div class="g8-rd team-${r.keys[0]}">R${r.round} · ${esc(t.teams[r.keys[0]])}</div>`
+        : `<div class="g8-rd">R${r.round} · ${esc(r.keys.map((k) => g8Nick(k)).join("、"))}</div>`).join("")}</div>
     </div>` : "";
   const rankHtml = game.mode === "team" ? "" : `
     <div class="g8-section"><div class="eyebrow">${esc(t.ranking)}</div>

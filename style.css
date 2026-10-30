@@ -548,6 +548,17 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
   --card:#fff;--card-fg:var(--ink);--sel:var(--ink);--sel-fg:#FEFEF2;--deep:var(--blue-dark);
   --strip:var(--yellow);--strip-fg:var(--ink);--ring:#1f2740;--cream:#FEFEF2;
 }
+/* 規則：入房等人時「YOUR FRIENDS.」用該遊戲封面嘅背景色（--cover）。
+   新增遊戲時記得喺下面加返 --cover。淺色加深色描邊，白底都睇得清。 */
+#gameShell[data-game="game1"]{--cover:#F2D965}
+#gameShell[data-game="game2"]{--cover:#3FBFA8}
+#gameShell[data-game="game3"]{--cover:#FF8A6B}
+#gameShell[data-game="game4"]{--cover:#7B57CE}
+#gameShell[data-game="game5"]{--cover:#AFCBE3}
+#gameShell[data-game="game6"]{--cover:#B9DD5B}
+#gameShell[data-game="game7"]{--cover:#F7577A}
+#gameShell[data-game="game8"]{--cover:#22408C}
+#gameShell:not(.is-playing) #gamePanel .title span{color:var(--cover,var(--deep));-webkit-text-stroke:2px #1f2740;paint-order:stroke fill}
 #gameShell[data-game="game1"]{--card:#F2D965;--card-fg:#1f2740;--sel:#7a89ae;--sel-fg:#fff;--deep:#3f4d73;--strip:#7a89ae;--strip-fg:#fff}
 #gameShell[data-game="game2"]{--card:#3FBFA8;--card-fg:#1f2740;--sel:#004643;--sel-fg:#F0EDE5;--deep:#004643;--strip:#3FBFA8;--strip-fg:#1f2740}
 #gameShell[data-game="game3"]{--card:#FF8A6B;--card-fg:#1f2740;--sel:#F2D9C4;--sel-fg:#8a5236;--deep:#5a2e1f;--strip:#F2D9C4;--strip-fg:#8a5236}
