@@ -1372,3 +1372,4 @@ button.g8-c:hover{border-color:#F2D965}
 }
 .g8-cards-row .g8-card.def.on{flex-basis:100%}
 .g8-cards-row.multi .g8-card.def.on .g8-card-text small{display:block}
+.g8-nudge{position:relative;left:.25em}

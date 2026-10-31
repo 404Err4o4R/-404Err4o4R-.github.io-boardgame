@@ -6656,6 +6656,11 @@ function g8Titles(game) {
   ].filter(Boolean);
 }
 
+// 句尾全形「！」右邊有半格空位，置中時會令成句睇落偏左：收返嗰半格。
+function g8Center(text) {
+  return /[！？]$/.test(text) ? `<span class="g8-nudge">${esc(text)}</span>` : esc(text);
+}
+
 function renderGame8Gameover(game) {
   const t = g8T();
   clearInterval(S.timer);
@@ -6673,10 +6678,10 @@ function renderGame8Gameover(game) {
       <div class="g8-hero">
         <div class="eyebrow">${esc(game.endedEarly ? t.endedEarly : t.roundsDone(rounds.length))} · ${esc(t.modes.team)}</div>
         ${win ? g8Badge(win, 72) : `<span class="g8-hero-tie">${g8Badge("navy", 48)}${g8Badge("pirate", 48)}</span>`}
-        <h2 class="g8-big">${esc(win ? t.teamWin(t.teams[win]) : t.teamTie)}</h2>
+        <h2 class="g8-big">${g8Center(win ? t.teamWin(t.teams[win]) : t.teamTie)}</h2>
         <div class="g8-score">${win ? `<span>${esc(t.teams[win])}</span><strong>${sc[win]?.total || 0} : ${sc[lose]?.total || 0}</strong><span>${esc(t.teams[lose])}</span>` : `<span>${esc(t.teams.navy)}</span><strong>${n} : ${p}</strong><span>${esc(t.teams.pirate)}</span>`}</div>
         ${win ? `<div class="g8-crew">${(game.teams?.[win] || []).map((id) => `<span>${esc(g8Nick(id))}</span>`).join("")}</div>` : ""}
-        ${game.myKey ? `<p class="g8-note center">${esc(t.youAre(t.teams[game.myKey]))} · ${esc(win === game.myKey ? t.yourTeamWon : win ? t.revenge : t.teamTie)}</p>` : ""}
+        ${game.myKey ? `<p class="g8-note center">${esc(t.youAre(t.teams[game.myKey]))} · ${g8Center(win === game.myKey ? t.yourTeamWon : win ? t.revenge : t.teamTie)}</p>` : ""}
       </div>`;
   } else {
     const top = ranking.length ? ranking[0].score : 0;
@@ -6684,7 +6689,7 @@ function renderGame8Gameover(game) {
     hero = `
       <div class="g8-hero">
         <div class="eyebrow">${esc(game.endedEarly ? t.endedEarly : t.roundsDone(rounds.length))} · ${esc(t.modes[game.mode])}</div>
-        <h2 class="g8-big">${esc(winners.length > 1 ? t.tieTitle : winners.length ? t.winTitle(g8Nick(winners[0].id)) : t.noWinner)}</h2>
+        <h2 class="g8-big">${g8Center(winners.length > 1 ? t.tieTitle : winners.length ? t.winTitle(g8Nick(winners[0].id)) : t.noWinner)}</h2>
         ${winners.length ? `<div class="g8-winners">${winners.map((p) => `<div class="g8-win">${game.mode === "duel" && g8SideOf(game, p.id) ? g8Badge(g8SideOf(game, p.id), 40) : ""}<strong>${esc(g8Nick(p.id))}</strong><small>${esc(t.totalLbl)} ${p.score}</small></div>`).join("")}</div>` : ""}
       </div>`;
   }
