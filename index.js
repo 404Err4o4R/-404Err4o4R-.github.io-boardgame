@@ -845,6 +845,7 @@ results:g.results||null
       hot:!!(g.hotAt && g.cycle>=g.hotAt),
       cycle:g.cycle||1,
       teams:g.teams||null,
+      sides:g.sides||null,
       myKey,
       boards,
       order:g.order||[],
@@ -2879,6 +2880,12 @@ async onG1Next(playerId){
       this.room.g8Teams={navy:ids.slice(0,half),pirate:ids.slice(half)};
     }
     this.room.g8Roster=connected.map(p=>p.id);
+    // 1v1：兩個人隨機分做海軍同海盜，成場固定。
+    this.room.g8Sides=null;
+    if(mode==="duel"){
+      const ids=shuffle(connected.map(p=>p.id));
+      this.room.g8Sides={[ids[0]]:"navy",[ids[1]]:"pirate"};
+    }
     await this.beginRoundGame8(1);
   }
 
@@ -2916,6 +2923,7 @@ async onG1Next(playerId){
       size:cfg.size,
       hotAt:cfg.hotAt,
       teams:this.room.g8Teams||null,
+      sides:this.room.g8Sides||null,
       boards,
       ready:{},
       order:[],

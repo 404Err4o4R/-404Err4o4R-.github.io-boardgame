@@ -5447,7 +5447,9 @@ const G8_TEXT = {
     hotBanner: "白熱化 · 思考時間減半 · 每輪完結空襲",
     placeTitle: "擺好你嘅船",
     placeTeamTitle: "擺好你負責嘅船",
-    placeHint: "撳船揀選，再撳格仔擺位；撳「旋轉」轉方向",
+    placeHint: "將下面嘅船拖上棋盤；撳一下棋盤上嘅船，船尾會出旋轉掣",
+    dragMe: "拖我",
+    cantPlace: "呢度擺唔到",
     rotate: "旋轉",
     random: "隨機擺",
     ready: "準備好",
@@ -5541,7 +5543,9 @@ const G8_TEXT = {
     hotBanner: "白熱化 · 思考時間減半 · 每輪結束空襲",
     placeTitle: "擺好你的船",
     placeTeamTitle: "擺好你負責的船",
-    placeHint: "點船選取，再點格子放置；按「旋轉」改方向",
+    placeHint: "把下方的船拖到棋盤上；點一下棋盤上的船，船尾會出現旋轉鈕",
+    dragMe: "拖曳",
+    cantPlace: "這裡放不下",
     rotate: "旋轉",
     random: "隨機擺放",
     ready: "準備好了",
@@ -5663,92 +5667,27 @@ function g8Badge(team, size = 30) {
   return `<span class="g8-badge g8-badge-${team}" style="width:${size}px;height:${size}px">${g8Icon(team === "navy" ? "anchor" : "skull", Math.round(size * 0.6))}</span>`;
 }
 
-// 一塊板：shots／船／標記／雷達；clickable 決定撳格會做咩。
-function g8BoardHtml(game, board, opts = {}) {
-  const n = game.size;
-  const state = {};
-  for (const [r, c, res, air] of board.shots || []) state[r + "," + c] = { res, air: !!air };
-  const shipAt = {};
-  for (const s of board.ships || []) for (const [r, c] of s.cells || []) shipAt[r + "," + c] = s;
-  const pingAt = {};
-  for (const p of opts.pings || []) (pingAt[p.r + "," + p.c] ||= []).push(p.id);
-  const radarCenter = {};
-  const radarArea = new Set();
-  for (const x of opts.radar || []) {
-    if (x.board !== board.id) continue;
-    radarCenter[x.r + "," + x.c] = x.count;
-    for (let r = x.r - 1; r <= x.r + 1; r++) for (let c = x.c - 1; c <= x.c + 1; c++) radarArea.add(r + "," + c);
-  }
-  const preview = new Set(opts.preview || []);
-  const cells = [];
-  if (!opts.small) {
-    cells.push('<span class="g8-lab"></span>');
-    for (let c = 0; c < n; c++) cells.push(`<span class="g8-lab">${G8_LETTERS[c]}</span>`);
-  }
-  for (let r = 0; r < n; r++) {
-    if (!opts.small) cells.push(`<span class="g8-lab">${r + 1}</span>`);
-    for (let c = 0; c < n; c++) {
-      const k = r + "," + c;
-      const st = state[k];
-      const ship = shipAt[k];
-      const cls = ["g8-c"];
-      let inner = "";
-      if (st?.res === "hit") {
-        cls.push(ship?.sunk ? "sunk" : "hit");
-        inner = g8Icon("x", opts.small ? 10 : 16, 'stroke-width="4"');
-      } else if (st?.res === "miss") {
-        cls.push("miss");
-        inner = '<i class="g8-dot"></i>';
-      } else if (ship) {
-        cls.push(ship.sunk ? "sunk" : "ship");
-        if (opts.mineOwner && ship.owner && ship.owner !== opts.mineOwner) cls.push("mate");
-        if (opts.selShip && ship.id === opts.selShip) cls.push("sel");
-      }
-      if (st?.air) cls.push("air");
-      if (radarArea.has(k)) cls.push("radar");
-      if (preview.has(k)) cls.push("preview");
-      if (opts.aim && opts.aim.r === r && opts.aim.c === c) {
-        cls.push("aim");
-        inner = g8Icon("aim", opts.small ? 12 : 20);
-      } else if (opts.aimRow !== undefined && opts.aimRow === r && !st) {
-        cls.push("aimrow");
-      }
-      if (pingAt[k] && !st) {
-        cls.push("ping");
-        if (!inner) inner = `<b class="g8-ping-n">${esc([...g8Nick(pingAt[k][0])][0] || "?")}</b>`;
-      }
-      if (radarCenter[k] !== undefined) inner += `<b class="g8-radar-n">${radarCenter[k]}</b>`;
-      const label = `${g8Cell(r, c)}${st ? " " + g8T().res[st.res] : ""}`;
-      if (opts.click) {
-        cells.push(`<button type="button" class="${cls.join(" ")}" aria-label="${esc(label)}" onclick="g8CellClick('${board.id}',${r},${c})">${inner}</button>`);
-      } else {
-        cells.push(`<span class="${cls.join(" ")}">${inner}</span>`);
-      }
-    }
-  }
-  const cols = opts.small ? n : n + 1;
-  return `<div class="g8-board ${opts.small ? "small" : ""} ${opts.dim ? "dim" : ""}" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${cells.join("")}</div>`;
-}
-
 function g8ShipStrip(board, game) {
   const t = g8T();
-  const defs = game.size === 6 ? [3, 2, 2] : [4, 3, 3, 2];
-  const sunk = (board.ships || []).filter((s) => s.sunk);
-  const names = game.size === 6 ? ["巡洋艦", "驅逐艦", "巡邏艇"] : ["戰艦", "巡洋艦", "潛艇", "驅逐艦"];
-  const sunkLeft = [...sunk];
-  return `<div class="g8-fleet">${defs.map((len, i) => {
-    const idx = sunkLeft.findIndex((s) => s.len === len);
+  const defs = game.size === 6 ? [[3, "巡洋艦"], [2, "驅逐艦"], [2, "巡邏艇"]] : [[4, "戰艦"], [3, "巡洋艦"], [3, "潛艇"], [2, "驅逐艦"]];
+  const sunkLeft = (board.ships || []).filter((s) => s.sunk);
+  return `<div class="g8-fleet">${defs.map(([len, name]) => {
+    const idx = sunkLeft.findIndex((s) => s.name === name);
     const dead = idx >= 0;
     if (dead) sunkLeft.splice(idx, 1);
-    return `<span class="g8-fl ${dead ? "dead" : ""}"><span class="g8-seg">${"<i></i>".repeat(len)}</span>${esc(names[i])}${dead ? " · " + esc(t.sunkTag) : ""}</span>`;
+    return `<span class="g8-fl ${dead ? "dead" : ""}"><span class="g8-fl-art" style="--len:${len}">${g8ShipArt(name, len, false)}</span>${esc(name)}${dead ? " · " + esc(t.sunkTag) : ""}</span>`;
   }).join("")}</div>`;
 }
 
 function g8Head(game, eyebrow, title) {
   const t = g8T();
-  const teamLine = game.mode === "team" && game.myKey
-    ? `<div class="g8-vs">${g8Badge(game.myKey)}<span>${esc(t.teams[game.myKey])}</span><span class="g8-vs-x">${esc(t.vs)}</span>${g8Badge(game.myKey === "navy" ? "pirate" : "navy")}<span>${esc(t.teams[game.myKey === "navy" ? "pirate" : "navy"])}</span></div>`
-    : "";
+  let teamLine = "";
+  if (game.mode === "team" && game.myKey) {
+    teamLine = `<div class="g8-vs">${g8Badge(game.myKey)}<span>${esc(t.teams[game.myKey])}</span><span class="g8-vs-x">${esc(t.vs)}</span>${g8Badge(game.myKey === "navy" ? "pirate" : "navy")}<span>${esc(t.teams[game.myKey === "navy" ? "pirate" : "navy"])}</span></div>`;
+  } else if (game.mode === "duel" && game.sides) {
+    const ids = Object.keys(game.sides).sort((a, b) => (a === game.myKey ? -1 : b === game.myKey ? 1 : 0));
+    teamLine = `<div class="g8-vs">${ids.map((id, i) => `${i ? `<span class="g8-vs-x">${esc(t.vs)}</span>` : ""}${g8Badge(game.sides[id])}<span>${esc(t.teams[game.sides[id]])} · ${esc(g8Nick(id))}</span>`).join("")}</div>`;
+  }
   return `
     <div class="g8-head">
       <div>
@@ -5793,12 +5732,18 @@ function renderGame8(game) {
   const shell = $("#gameShell");
   const panel = $("#gamePanel");
   const t = g8T();
+  if (S.g8Dragging) return; // 拖緊船：放手先重畫
   let team = "";
   if (game.mode === "team") {
     if (game.phase === "gameover") {
       const w = game.teamWins || {};
       team = (w.navy || 0) > (w.pirate || 0) ? "navy" : (w.pirate || 0) > (w.navy || 0) ? "pirate" : "tie";
     } else team = game.myKey || "";
+  } else if (game.mode === "duel") {
+    if (game.phase === "gameover") {
+      const rk = game.ranking || [];
+      team = rk.length > 1 && rk[0].score > rk[1].score ? g8SideOf(game, rk[0].id) || "tie" : "tie";
+    } else team = g8SideOf(game, game.myKey) || "";
   }
   if (shell) shell.dataset.g8team = team;
   panel?.classList.toggle("g8-hot", !!game.hot && game.phase === "turn");
@@ -5807,6 +5752,147 @@ function renderGame8(game) {
   if (game.phase === "turn") return renderGame8Turn(game);
   if (game.phase === "roundover") return renderGame8RoundOver(game);
   if (game.phase === "gameover") return renderGame8Gameover(game);
+}
+
+// 每種船嘅俯視圖：橫向畫（船頭向右），直擺時轉 90 度。
+const G8_SHIP_KIND = { "戰艦": "battleship", "巡洋艦": "cruiser", "潛艇": "sub", "驅逐艦": "destroyer", "巡邏艇": "patrol" };
+
+function g8ShipArt(name, len, vertical) {
+  const kind = G8_SHIP_KIND[name] || "cruiser";
+  const W = len * 100;
+  const ink = "#1f2740";
+  const hull = "#EEF2FB";
+  const deck = "#C9D6F2";
+  const turret = (x) => `<g><path d="M${x} 50h34" stroke="${ink}" stroke-width="9" stroke-linecap="round"/><circle cx="${x}" cy="50" r="15" fill="#8EA2CF" stroke="${ink}" stroke-width="5"/></g>`;
+  let body = "";
+  if (kind === "sub") {
+    body = `
+      <rect x="8" y="26" width="${W - 16}" height="48" rx="24" fill="#3A4766" stroke="${ink}" stroke-width="6"/>
+      <rect x="${W * 0.42}" y="34" width="${W * 0.2}" height="32" rx="12" fill="#6B7DA6" stroke="${ink}" stroke-width="5"/>
+      <path d="M${W * 0.52} 50h${W * 0.16}" stroke="#F2D965" stroke-width="6" stroke-linecap="round"/>
+      <path d="M22 50h${W * 0.14}" stroke="#6B7DA6" stroke-width="6" stroke-linecap="round"/>`;
+  } else {
+    const top = kind === "destroyer" || kind === "patrol" ? 28 : 20;
+    const bot = 100 - top;
+    body = `<path d="M14 ${top + 8}Q14 ${top} 26 ${top}H${W - 44}Q${W - 6} 50 ${W - 44} ${bot}H26Q14 ${bot} 14 ${bot - 8}Z" fill="${hull}" stroke="${ink}" stroke-width="6" stroke-linejoin="round"/>`;
+    if (kind === "battleship") {
+      body += turret(W * 0.16) + turret(W * 0.66) +
+        `<rect x="${W * 0.3}" y="32" width="${W * 0.2}" height="36" rx="6" fill="${deck}" stroke="${ink}" stroke-width="5"/>
+         <circle cx="${W * 0.4}" cy="50" r="7" fill="#F2D965" stroke="${ink}" stroke-width="3"/>` + turret(W * 0.82);
+    } else if (kind === "cruiser") {
+      body += turret(W * 0.2) + turret(W * 0.72) +
+        `<rect x="${W * 0.38}" y="34" width="${W * 0.18}" height="32" rx="6" fill="${deck}" stroke="${ink}" stroke-width="5"/>
+         <path d="M${W * 0.47} 50l18-8v16z" fill="#F2D965" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>`;
+    } else if (kind === "destroyer") {
+      body += `<rect x="${W * 0.18}" y="38" width="${W * 0.26}" height="24" rx="5" fill="${deck}" stroke="${ink}" stroke-width="5"/>` + turret(W * 0.66);
+    } else {
+      body += `<rect x="${W * 0.2}" y="36" width="${W * 0.34}" height="28" rx="8" fill="${deck}" stroke="${ink}" stroke-width="5"/>
+        <path d="M${W * 0.2} 50h${W * 0.34}" stroke="#F2D965" stroke-width="5"/>
+        <circle cx="${W * 0.74}" cy="50" r="7" fill="${ink}"/>`;
+    }
+  }
+  if (!vertical) return `<svg viewBox="0 0 ${W} 100" preserveAspectRatio="none" aria-hidden="true">${body}</svg>`;
+  return `<svg viewBox="0 0 100 ${W}" preserveAspectRatio="none" aria-hidden="true"><g transform="translate(100 0) rotate(90)">${body}</g></svg>`;
+}
+
+function g8ShipVertical(ship) {
+  return !!(ship.cells && ship.cells.length > 1 && ship.cells[0][1] === ship.cells[1][1]);
+}
+
+// 一塊板：每格都有明確位置，船畫喺格仔下面一層，打中／射空標記喺上面。
+function g8BoardHtml(game, board, opts = {}) {
+  const n = game.size;
+  const off = opts.small ? 0 : 1;
+  const state = {};
+  for (const [r, c, res, air] of board.shots || []) state[r + "," + c] = { res, air: !!air };
+  const shipAt = {};
+  for (const s of board.ships || []) for (const [r, c] of s.cells || []) shipAt[r + "," + c] = s;
+  const pingAt = {};
+  for (const p of opts.pings || []) (pingAt[p.r + "," + p.c] ||= []).push(p.id);
+  const radarCenter = {};
+  const radarArea = new Set();
+  for (const x of opts.radar || []) {
+    if (x.board !== board.id) continue;
+    radarCenter[x.r + "," + x.c] = x.count;
+    for (let r = x.r - 1; r <= x.r + 1; r++) for (let c = x.c - 1; c <= x.c + 1; c++) radarArea.add(r + "," + c);
+  }
+  const preview = new Set(opts.preview || []);
+  const items = [];
+  const at = (r, c, rs = 1, cs = 1) => `grid-row:${r + 1 + off}/span ${rs};grid-column:${c + 1 + off}/span ${cs}`;
+  if (!opts.small) {
+    items.push(`<span class="g8-lab" style="grid-row:1;grid-column:1"></span>`);
+    for (let c = 0; c < n; c++) items.push(`<span class="g8-lab" style="grid-row:1;grid-column:${c + 2}">${G8_LETTERS[c]}</span>`);
+    for (let r = 0; r < n; r++) items.push(`<span class="g8-lab" style="grid-row:${r + 2};grid-column:1">${r + 1}</span>`);
+  }
+  // 海面底層
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) items.push(`<span class="g8-sea" style="${at(r, c)}"></span>`);
+  // 船
+  for (const s of board.ships || []) {
+    if (!s.cells?.length) continue;
+    const v = g8ShipVertical(s);
+    const [r0, c0] = s.cells[0];
+    const cls = ["g8-shipart"];
+    if (s.sunk) cls.push("sunk");
+    if (opts.mineOwner && s.owner && s.owner !== opts.mineOwner) cls.push("mate");
+    if (opts.selShip && s.id === opts.selShip) cls.push("sel");
+    const drag = opts.drag && s.owner === S.playerId;
+    items.push(`<span class="${cls.join(" ")} ${drag ? "drag" : ""}" style="${at(r0, c0, v ? s.len : 1, v ? 1 : s.len)}" ${drag ? `data-ship="${s.id}" data-len="${s.len}" data-name="${esc(s.name)}" data-v="${v ? 1 : 0}"` : ""}>${g8ShipArt(s.name, s.len, v)}</span>`);
+  }
+  // 格仔（標記層）
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const k = r + "," + c;
+      const st = state[k];
+      const ship = shipAt[k];
+      const cls = ["g8-c"];
+      let inner = "";
+      if (st?.res === "hit") {
+        cls.push(ship?.sunk ? "sunk" : "hit");
+        inner = g8Icon("x", opts.small ? 10 : 16, 'stroke-width="4"');
+      } else if (st?.res === "miss") {
+        cls.push("miss");
+        inner = '<i class="g8-dot"></i>';
+      }
+      if (ship) cls.push("onship");
+      if (st?.air) cls.push("air");
+      if (radarArea.has(k)) cls.push("radar");
+      if (preview.has(k)) cls.push("preview");
+      if (opts.aim && opts.aim.r === r && opts.aim.c === c) {
+        cls.push("aim");
+        inner = g8Icon("aim", opts.small ? 12 : 20);
+      } else if (opts.aimRow !== undefined && opts.aimRow === r && !st) {
+        cls.push("aimrow");
+      }
+      if (pingAt[k] && !st) {
+        cls.push("ping");
+        if (!inner) inner = `<b class="g8-ping-n">${esc([...g8Nick(pingAt[k][0])][0] || "?")}</b>`;
+      }
+      if (radarCenter[k] !== undefined) inner += `<b class="g8-radar-n">${radarCenter[k]}</b>`;
+      const label = `${g8Cell(r, c)}${st ? " " + g8T().res[st.res] : ""}`;
+      const pos = `style="${at(r, c)}" data-r="${r}" data-c="${c}"`;
+      if (opts.click) {
+        items.push(`<button type="button" class="${cls.join(" ")}" ${pos} aria-label="${esc(label)}" onclick="g8CellClick('${board.id}',${r},${c})">${inner}</button>`);
+      } else {
+        items.push(`<span class="${cls.join(" ")}" ${pos}>${inner}</span>`);
+      }
+    }
+  }
+  // 揀咗嘅船：旋轉掣跟住船尾
+  if (opts.rotateShip) {
+    const s = (board.ships || []).find((x) => x.id === opts.rotateShip && x.cells?.length);
+    if (s) {
+      const [r1, c1] = s.cells[s.cells.length - 1];
+      items.push(`<span class="g8-rot-slot" style="${at(r1, c1)}"><button type="button" class="g8-rot" aria-label="${esc(g8T().rotate)}" onclick="g8RotateShip('${s.id}')">${g8Icon("rotate", 16)}</button></span>`);
+    }
+  }
+  const cols = opts.small ? n : n + 1;
+  return `<div class="g8-board ${opts.small ? "small" : ""} ${opts.drag ? "dragboard" : ""}" data-board="${board.id}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${cols},auto)">${items.join("")}</div>`;
+}
+
+function g8SideOf(game, id) {
+  if (game.mode === "team") return game.teams?.navy?.includes(id) ? "navy" : game.teams?.pirate?.includes(id) ? "pirate" : null;
+  if (game.mode === "duel") return game.sides?.[id] || null;
+  return null;
 }
 
 function renderGame8Placing(game) {
@@ -5818,26 +5904,31 @@ function renderGame8Placing(game) {
     return;
   }
   const mine = (myBoard.myShips || []).filter((s) => s.owner === S.playerId);
-  if (!mine.some((s) => s.id === S.g8Sel)) S.g8Sel = (mine.find((s) => !s.placed) || mine[0])?.id || null;
-  if (S.g8Horiz === undefined) S.g8Horiz = true;
+  if (S.g8Sel && !mine.some((s) => s.id === S.g8Sel)) S.g8Sel = null;
+  const placedSel = S.g8Sel && myBoard.ships.some((s) => s.id === S.g8Sel && s.cells?.length);
   const eyebrow = `${t.roundLabel(game.round, game.totalRounds)} · ${t.modes[game.mode]}`;
   const tray = (myBoard.myShips || []).map((s) => {
     const isMine = s.owner === S.playerId;
-    const sel = isMine && s.id === S.g8Sel;
-    const status = !isMine ? t.teammateShip(g8Nick(s.owner)) : sel ? t.picked : s.placed ? "✓" : "";
-    return `<button type="button" class="g8-ship ${sel ? "sel" : ""} ${isMine ? "" : "mate"}" ${isMine ? `onclick="g8PickShip('${s.id}')"` : "disabled"}>
-      <span class="g8-seg">${"<i></i>".repeat(s.len)}</span><span class="g8-ship-name">${esc(s.name)}</span><span>${esc(status)}</span>
-    </button>`;
+    const status = !isMine ? t.teammateShip(g8Nick(s.owner)) : s.placed ? "✓" : t.dragMe;
+    return `<div class="g8-tship ${s.placed ? "placed" : ""} ${isMine ? "" : "mate"} ${isMine && !game.myReady ? "drag" : ""}"
+      ${isMine && !game.myReady ? `data-ship="${s.id}" data-len="${s.len}" data-name="${esc(s.name)}" data-v="0"` : ""}>
+      <span class="g8-tship-art" style="--len:${s.len}">${g8ShipArt(s.name, s.len, false)}</span>
+      <span class="g8-tship-meta"><b>${esc(s.name)}</b><small>${esc(status)}</small></span>
+    </div>`;
   }).join("");
 
   $("#gamePanel").innerHTML = `
-    <div class="g8-root">
+    <div class="g8-root g8-placing">
       ${g8Head(game, eyebrow, game.mode === "team" ? t.placeTeamTitle : t.placeTitle)}
       <p class="g8-note">${esc(t.placeHint)}</p>
-      ${g8BoardHtml(game, myBoard, { click: !game.myReady, selShip: S.g8Sel, mineOwner: game.mode === "team" ? S.playerId : null })}
-      <div class="g8-tray ${game.mode === "team" ? "team" : ""}">${tray}</div>
+      ${g8BoardHtml(game, myBoard, {
+        drag: !game.myReady,
+        selShip: S.g8Sel,
+        rotateShip: !game.myReady && placedSel ? S.g8Sel : null,
+        mineOwner: game.mode === "team" ? S.playerId : null
+      })}
+      <div class="g8-tray2">${tray}</div>
       <div class="g8-tools">
-        <button type="button" class="g8-tool" onclick="g8Rotate()" ${game.myReady ? "disabled" : ""}>${g8Icon("rotate", 18)}${esc(t.rotate)} · ${S.g8Horiz ? "↔" : "↕"}</button>
         <button type="button" class="g8-tool" onclick="g8Random()" ${game.myReady ? "disabled" : ""}>${g8Icon("shuffle", 18)}${esc(t.random)}</button>
       </div>
       <div class="g8-bottom">
@@ -5848,6 +5939,127 @@ function renderGame8Placing(game) {
   `;
   startTimer($("#time"), game.endsAt);
 }
+
+window.g8RotateShip = (id) => {
+  const game = S.room?.gameState;
+  const board = game?.boards.find((b) => b.id === game.myKey);
+  const ship = board?.ships.find((s) => s.id === id && s.cells?.length);
+  if (!ship) return;
+  const [r, c] = ship.cells[0];
+  send({ type: "g8:place", shipId: id, r, c, horiz: g8ShipVertical(ship) });
+};
+
+/* 拖船：滑鼠同手指都用 pointer events；拖緊嘅時候唔重畫，放手先重畫。 */
+(() => {
+  let drag = null;
+
+  // 用格仔位置計返手指喺邊一格（格仔本身唔接收 pointer，等底下嘅船拖得郁）。
+  function cellAt(x, y) {
+    const board = document.querySelector(".g8-board.dragboard");
+    const q = (r, c) => board?.querySelector(`.g8-c[data-r="${r}"][data-c="${c}"]`)?.getBoundingClientRect();
+    const a = q(0, 0), b = q(0, 1), d = q(1, 0);
+    if (!a || !b || !d) return null;
+    const n = S.room?.gameState?.size || 8;
+    const c = Math.floor((x - a.left) / (b.left - a.left));
+    const r = Math.floor((y - a.top) / (d.top - a.top));
+    if (r < 0 || c < 0 || r >= n || c >= n) return null;
+    return { r, c };
+  }
+
+  function clearPreview() {
+    document.querySelectorAll(".g8-board.dragboard .g8-c.drop-ok, .g8-board.dragboard .g8-c.drop-bad")
+      .forEach((el) => el.classList.remove("drop-ok", "drop-bad"));
+  }
+
+  function previewAt(anchor) {
+    clearPreview();
+    if (!anchor) return null;
+    const game = S.room?.gameState;
+    const n = game?.size || 8;
+    const board = game?.boards.find((b) => b.id === game.myKey);
+    const occ = new Set();
+    for (const s of board?.ships || []) {
+      if (s.id === drag.id || !s.cells) continue;
+      for (const [r, c] of s.cells) occ.add(r + "," + c);
+    }
+    const cells = [];
+    let ok = true;
+    for (let i = 0; i < drag.len; i++) {
+      const r = drag.v ? anchor.r + i : anchor.r;
+      const c = drag.v ? anchor.c : anchor.c + i;
+      if (r >= n || c >= n || occ.has(r + "," + c)) ok = false;
+      cells.push([r, c]);
+    }
+    for (const [r, c] of cells) {
+      const el = document.querySelector(`.g8-board.dragboard .g8-c[data-r="${r}"][data-c="${c}"]`);
+      el?.classList.add(ok ? "drop-ok" : "drop-bad");
+    }
+    return ok ? anchor : null;
+  }
+
+  document.addEventListener("pointerdown", (event) => {
+    const src = event.target.closest?.("#gamePanel [data-ship].drag");
+    if (!src || event.button > 0) return;
+    const boardCell = document.querySelector(".g8-board.dragboard .g8-c");
+    if (!boardCell) return;
+    event.preventDefault();
+    const cellSize = boardCell.getBoundingClientRect().width;
+    const len = Number(src.dataset.len);
+    const v = src.dataset.v === "1";
+    const rect = src.getBoundingClientRect();
+    const onBoard = src.classList.contains("g8-shipart");
+    // 由托盤拖出嚟：船頭跟住手指；由棋盤拖：保持撳落去嗰格位置。
+    let grab = Math.floor(onBoard ? (v ? (event.clientY - rect.top) : (event.clientX - rect.left)) / cellSize : 0);
+    grab = Math.max(0, Math.min(len - 1, grab));
+    const ghost = document.createElement("div");
+    ghost.className = "g8-ghost";
+    ghost.style.width = `${(v ? 1 : len) * cellSize}px`;
+    ghost.style.height = `${(v ? len : 1) * cellSize}px`;
+    ghost.innerHTML = g8ShipArt(src.dataset.name, len, v);
+    document.body.appendChild(ghost);
+    drag = { id: src.dataset.ship, len, v, grab, cellSize, ghost, onBoard, startX: event.clientX, startY: event.clientY, moved: false, anchor: null };
+    S.g8Dragging = true;
+    S.g8Sel = drag.id;
+    move(event);
+  });
+
+  function move(event) {
+    if (!drag) return;
+    if (Math.abs(event.clientX - drag.startX) + Math.abs(event.clientY - drag.startY) > 6) drag.moved = true;
+    const half = drag.cellSize / 2;
+    const left = event.clientX - (drag.v ? half : drag.grab * drag.cellSize + half);
+    const top = event.clientY - (drag.v ? drag.grab * drag.cellSize + half : half);
+    drag.ghost.style.transform = `translate(${left}px, ${top}px)`;
+    drag.ghost.style.visibility = drag.moved ? "visible" : "hidden";
+    drag.anchor = drag.moved ? previewAt(cellAt(left + half, top + half)) : null;
+    drag.overBoard = !!cellAt(event.clientX, event.clientY);
+  }
+
+  document.addEventListener("pointermove", (event) => { if (drag) { event.preventDefault(); move(event); } }, { passive: false });
+
+  function end() {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    d.ghost.remove();
+    clearPreview();
+    S.g8Dragging = false;
+    if (!d.moved) {
+      // 只係撳一下：揀呢隻船（棋盤上會出旋轉掣）
+      S.g8Sel = d.id;
+    } else if (d.anchor) {
+      send({ type: "g8:place", shipId: d.id, r: d.anchor.r, c: d.anchor.c, horiz: !d.v });
+    } else if (d.onBoard && !d.overBoard) {
+      send({ type: "g8:place", shipId: d.id, r: null });
+    } else if (d.moved) {
+      flash(g8T().cantPlace);
+    }
+    if (S.room?.gameState) renderGame8(S.room.gameState);
+  }
+
+  document.addEventListener("pointerup", end);
+  document.addEventListener("pointercancel", end);
+})();
 
 function g8DefaultView(game) {
   const me = game.myKey;
@@ -5918,9 +6130,10 @@ function renderGame8Turn(game) {
   if (aim && S.g8Card === "radar") for (let r = aim.r - 1; r <= aim.r + 1; r++) for (let c = aim.c - 1; c <= aim.c + 1; c++) preview.push(r + "," + c);
   if (aim && S.g8Card === "torpedo") aimRow = aim.r;
 
+  const sideBadge = (id) => (game.mode === "duel" && g8SideOf(game, id) ? g8Badge(g8SideOf(game, id), 24) : "");
   const boardTitle = viewingEnemy
-    ? (game.mode === "team" ? `${g8Badge(viewId, 24)}<span>${esc(t.waters(t.teams[viewId]))}</span>` : `<span>${esc(t.waters(g8Nick(viewId)))}</span>`)
-    : (game.mode === "team" ? `${g8Badge(me, 24)}<span>${esc(t.teamWaters(t.teams[me]))}</span>` : `<span>${esc(t.yourWaters)}</span>`);
+    ? (game.mode === "team" ? `${g8Badge(viewId, 24)}<span>${esc(t.waters(t.teams[viewId]))}</span>` : `${sideBadge(viewId)}<span>${esc(t.waters(g8Nick(viewId)))}</span>`)
+    : (game.mode === "team" ? `${g8Badge(me, 24)}<span>${esc(t.teamWaters(t.teams[me]))}</span>` : `${sideBadge(me)}<span>${esc(t.yourWaters)}</span>`);
 
   const toggle = game.mode !== "brawl" && me
     ? `<button type="button" class="g8-link" onclick="g8ToggleView()">${esc(viewingEnemy ? t.viewOwn : t.viewEnemy)}</button>`
@@ -5991,7 +6204,7 @@ function renderGame8RoundOver(game) {
     : t.roundWin(w.map((k) => g8Nick(k)).join("、"));
   const boards = game.boards.map((b) => `
     <div class="g8-reveal">
-      <div class="g8-board-head">${game.mode === "team" ? g8Badge(b.id, 22) : ""}<span>${esc(g8KeyName(game, b.id))}${b.dead ? " · " + esc(t.out) : ""}</span></div>
+      <div class="g8-board-head">${game.mode === "team" ? g8Badge(b.id, 22) : game.mode === "duel" && g8SideOf(game, b.id) ? g8Badge(g8SideOf(game, b.id), 22) : ""}<span>${esc(g8KeyName(game, b.id))}${b.dead ? " · " + esc(t.out) : ""}</span></div>
       ${g8BoardHtml(game, b, { small: true })}
     </div>`).join("");
   $("#gamePanel").innerHTML = `
@@ -6064,7 +6277,7 @@ function renderGame8Gameover(game) {
       <div class="g8-hero">
         <div class="eyebrow">${esc(game.endedEarly ? t.endedEarly : t.roundsDone(rounds.length))} · ${esc(t.modes[game.mode])}</div>
         <h2 class="g8-big">${esc(winners.length > 1 ? t.tieTitle : winners.length ? t.winTitle : t.noWinner)}</h2>
-        ${winners.length ? `<div class="g8-winners">${winners.map((p) => `<div class="g8-win"><strong>${esc(g8Nick(p.id))}</strong><small>${esc(t.roundsWon(p.score))}</small></div>`).join("")}</div>` : ""}
+        ${winners.length ? `<div class="g8-winners">${winners.map((p) => `<div class="g8-win">${game.mode === "duel" && g8SideOf(game, p.id) ? g8Badge(g8SideOf(game, p.id), 40) : ""}<strong>${esc(g8Nick(p.id))}</strong><small>${esc(t.roundsWon(p.score))}</small></div>`).join("")}</div>` : ""}
       </div>`;
   }
   const titleHtml = titles.length ? `<div class="g8-titles">${titles.map((x) => `

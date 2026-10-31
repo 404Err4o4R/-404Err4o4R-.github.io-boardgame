@@ -1248,3 +1248,42 @@ button.g8-c:hover{border-color:#F2D965}
   .hh-en{font-size:34px;line-height:1}
   .hh-zh{font-size:17px;line-height:1.4}
 }
+
+/* 海戰棋 v2：船圖、拖放擺船 */
+.g8-board{position:relative}
+.g8-board > *{min-width:0}
+.g8-sea{aspect-ratio:1;border-radius:6px;background:var(--g8-sea);border:2px solid var(--g8-sea);box-sizing:border-box}
+.g8-board.small .g8-sea{border-radius:3px;border-width:1px}
+.g8-board .g8-c{background:transparent;border-color:transparent;z-index:2}
+.g8-board .g8-c.hit{background:#FF7A59;border-color:#1f2740}
+.g8-board .g8-c.hit.onship{background:rgba(255,122,89,.72)}
+.g8-board .g8-c.sunk{background:rgba(180,56,31,.82);border-color:#1f2740}
+.g8-board .g8-c.miss{background:transparent}
+.g8-board .g8-c.ping{background:rgba(242,217,101,.22)}
+.g8-board .g8-c.drop-ok{background:rgba(185,221,91,.55);border-color:#B9DD5B;border-style:solid}
+.g8-board .g8-c.drop-bad{background:rgba(255,122,89,.55);border-color:#FF7A59;border-style:solid}
+.g8-board.dragboard .g8-c{pointer-events:none}
+.g8-shipart{display:block;z-index:1;padding:2px;box-sizing:border-box;border-radius:10px;min-height:0}
+.g8-board.small .g8-shipart{padding:1px;border-radius:4px}
+.g8-shipart svg{display:block;width:100%;height:100%}
+.g8-shipart.mate{opacity:.65}
+.g8-shipart.sunk{filter:saturate(.4) brightness(.8)}
+.g8-shipart.sel{outline:3px solid #F2D965;outline-offset:-1px}
+.g8-shipart.drag,.g8-tship.drag{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.g8-rot-slot{position:relative;z-index:3;pointer-events:none}
+.g8-rot{pointer-events:auto;position:absolute;top:-12px;right:-12px;width:34px;height:34px;border-radius:50%;border:2px solid #1f2740;background:#F2D965;color:#1f2740;display:grid;place-items:center;box-shadow:0 3px 0 #1f2740;cursor:pointer}
+.g8-tray2{display:flex;flex-wrap:wrap;gap:8px}
+.g8-tship{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(254,254,242,.14);min-height:44px}
+.g8-tship-art{display:block;height:30px;width:calc(var(--len) * 30px)}
+.g8-tship-art svg{display:block;width:100%;height:100%}
+.g8-tship-meta{display:flex;flex-direction:column;line-height:1.15}
+.g8-tship-meta b{font-size:13px}
+.g8-tship-meta small{font-size:11px;font-weight:800;opacity:.8}
+.g8-tship.placed{opacity:.5}
+.g8-tship.mate{opacity:.55}
+.g8-ghost{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;opacity:.92;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+.g8-ghost svg{display:block;width:100%;height:100%}
+.g8-placing{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.g8-fl-art{display:block;height:16px;width:calc(var(--len) * 16px);flex-shrink:0}
+.g8-fl-art svg{display:block;width:100%;height:100%}
+.g8-fl.dead .g8-fl-art{filter:saturate(.3) brightness(.75)}
