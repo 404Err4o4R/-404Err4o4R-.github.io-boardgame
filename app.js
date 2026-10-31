@@ -5524,9 +5524,22 @@ const G8_TEXT = {
     },
     drawTitle: "抽道具！",
     drawHint: (n) => `拉一下老虎機，抽 ${n} 件道具帶落場`,
-    drawTeamHint: (n) => `隊入面任何一個人拉都得，全隊共用 ${n} 件道具`,
+    drawTeamHint: (n, k) => `每人拉一次抽 ${n} 件，抽完全隊投票揀 ${k} 件帶落場`,
     drawGot: "抽到呢啲道具，擺船時諗下點用",
-    drawBy: (n) => `${n} 幫你哋隊拉咗`,
+    drawTeamGot: "抽到喇！等隊友抽完就投票",
+    teamDrawn: "你哋隊抽到嘅道具",
+    notYet: "未抽",
+    voteTitle: "投票揀道具",
+    voteHint: "每人揀 3 件，最多票嘅 3 件全隊帶落場（同票隨機）",
+    voteResult: "入選道具",
+    voteResultHint: "就係呢 3 件，跟住去擺船",
+    voteIn: "入選",
+    votesUnit: "票",
+    drawnBy: (n) => `${n} 抽到`,
+    voteConfirm: (k) => `確定（${k} / 3）`,
+    voteWait: "已確定，等隊友…",
+    voteWho: "隊友投票",
+    voteMax: "最多揀 3 件，撳返已揀嘅可以取消",
     pull: "拉！",
     drawSpinning: "轉緊…",
     drawAuto: "時間到會自動幫你拉",
@@ -5678,9 +5691,22 @@ const G8_TEXT = {
     },
     drawTitle: "抽道具！",
     drawHint: (n) => `拉一下拉霸，抽 ${n} 件道具帶上場`,
-    drawTeamHint: (n) => `隊上任何一人拉都可以，全隊共用 ${n} 件道具`,
+    drawTeamHint: (n, k) => `每人拉一次抽 ${n} 件，抽完全隊投票選 ${k} 件帶上場`,
     drawGot: "抽到這些道具，擺船時想想怎麼用",
-    drawBy: (n) => `${n} 幫你們隊拉了`,
+    drawTeamGot: "抽到了！等隊友抽完就投票",
+    teamDrawn: "你們隊抽到的道具",
+    notYet: "未抽",
+    voteTitle: "投票選道具",
+    voteHint: "每人選 3 件，票數最多的 3 件全隊帶上場（同票隨機）",
+    voteResult: "入選道具",
+    voteResultHint: "就是這 3 件，接著去擺船",
+    voteIn: "入選",
+    votesUnit: "票",
+    drawnBy: (n) => `${n} 抽到`,
+    voteConfirm: (k) => `確定（${k} / 3）`,
+    voteWait: "已確定，等待隊友…",
+    voteWho: "隊友投票",
+    voteMax: "最多選 3 件，再點一次已選的可以取消",
     pull: "拉！",
     drawSpinning: "轉動中…",
     drawAuto: "時間到會自動幫你拉",
@@ -5987,9 +6013,10 @@ function renderGame8(game) {
   }
   if (shell) shell.dataset.g8team = team;
   panel?.classList.toggle("g8-hot", !!game.hot && (game.phase === "turn" || game.phase === "pick"));
-  if (game.phase !== "gameover" && game.phase !== "placing" && game.phase !== "draw") g8TrackEvents(game);
+  if (game.phase !== "gameover" && game.phase !== "placing" && game.phase !== "draw" && game.phase !== "ballot") g8TrackEvents(game);
 
   if (game.phase === "draw") return renderGame8Draw(game);
+  if (game.phase === "ballot") return renderGame8Ballot(game);
   if (game.phase === "placing") return renderGame8Placing(game);
   if (game.phase === "turn") return renderGame8Turn(game);
   if (game.phase === "pick") return renderGame8Pick(game);
@@ -6163,12 +6190,15 @@ function g8SideOf(game, id) {
   return null;
 }
 
-// 抽道具：老虎機，每件道具一格，撳「拉！」之後逐格停低。
+// 抽道具：老虎機，每件道具一格，撳「拉！」之後逐格停低；每格獨立隨機，可以抽到重複。
 function g8DrawStatus(game) {
   const t = g8T();
   const spun = new Set(game.spun || []);
-  const keys = game.mode === "team" ? ["navy", "pirate"] : game.order.length ? game.order : game.boards.map((b) => b.id);
-  return keys.map((k) => `<span class="g8-mem ${spun.has(k) ? "shoot" : ""}">${game.mode === "team" ? g8Badge(k, 18) + " " : ""}${esc(g8KeyName(game, k))}${spun.has(k) ? " · " + esc(t.drawDone) : ""}</span>`).join("");
+  const ids = game.mode === "team" ? [...(game.teams?.navy || []), ...(game.teams?.pirate || [])] : game.boards.map((b) => b.id);
+  return ids.map((id) => {
+    const team = game.mode === "team" ? (game.teams.navy.includes(id) ? "navy" : "pirate") : null;
+    return `<span class="g8-mem ${spun.has(id) ? "shoot" : ""}">${team ? g8Badge(team, 18) + " " : ""}${esc(g8Nick(id))}${spun.has(id) ? " · " + esc(t.drawDone) : ""}</span>`;
+  }).join("");
 }
 
 function g8ReelFace(card) {
@@ -6177,43 +6207,56 @@ function g8ReelFace(card) {
   return `<span class="g8-reel-item ${card === "shield" ? "def" : ""}">${g8CardIcon(card, 30)}<small>${esc(t.cards[card])}</small></span>`;
 }
 
+function g8ItemCard(c, extra = "") {
+  const t = g8T();
+  return `<div class="g8-card ${c === "shield" ? "def" : ""}"><span class="g8-card-face ${c === "shield" ? "def" : ""}">${g8CardIcon(c, 22)}</span><span class="g8-card-text"><strong>${esc(t.cards[c])}</strong><small>${esc(t.cardDesc[c])}</small></span>${extra}</div>`;
+}
+
+function g8TeamPoolHtml(game) {
+  const t = g8T();
+  const pool = game.teamPool || [];
+  if (!pool.length) return "";
+  return `<div class="g8-section"><div class="eyebrow">${esc(t.teamDrawn)}</div><div class="g8-pool">${pool.map((x) => `
+    <span class="g8-poolitem ${x.card ? (x.card === "shield" ? "def" : "") : "q"}">${x.card ? g8CardIcon(x.card, 18) : "<b>?</b>"}<span>${esc(x.card ? t.cards[x.card] : t.notYet)}<small>${esc(g8Nick(x.by))}</small></span></span>`).join("")}</div></div>`;
+}
+
 function renderGame8Draw(game) {
   const t = g8T();
   const me = game.myKey;
-  const n = game.handSize || 2;
-  const cards = game.cards || [];
-  const spun = !!(me && game.spunBy && cards.length);
+  const n = game.drawEach || 2;
+  const team = game.mode === "team";
+  const mine = team ? (game.teamPool || []).filter((x) => x.by === S.playerId).map((x) => x.card) : game.cards || [];
+  const spun = !!(game.iSpun && mine.length && mine.every(Boolean));
   const animKey = `${S.room?.code}:${game.round}`;
   const animate = spun && S.g8SpinAnim !== animKey;
   // 轉緊：只更新其他人狀態，唔好打斷動畫
   if (!animate && Date.now() < (S.g8SpinUntil || 0) && $("#gamePanel .g8-slot")) {
     const st = $("#g8DrawStatus");
     if (st) st.innerHTML = g8DrawStatus(game);
+    const pl = $("#g8PoolBox");
+    if (pl) pl.innerHTML = g8TeamPoolHtml(game);
     return;
   }
   const pool = ["radar", "cross", "torpedo", "shield"];
   const reels = Array.from({ length: n }, (_, i) => {
     let strip;
-    if (animate) strip = [...Array.from({ length: 14 + i * 4 }, (_, j) => pool[(j + i * 2) % 4]), cards[i]];
-    else strip = [spun ? cards[i] : null];
+    if (animate) strip = [...Array.from({ length: 14 + i * 4 }, () => pool[Math.floor(Math.random() * 4)]), mine[i]];
+    else strip = [spun ? mine[i] : null];
     return `<div class="g8-reel ${spun ? "done" : ""}"><div class="g8-reel-strip" data-steps="${strip.length - 1}" style="--i:${i}">${strip.map(g8ReelFace).join("")}</div></div>`;
   }).join("");
-  const by = game.spunBy && game.spunBy !== S.playerId && game.spunBy !== "auto" ? g8Nick(game.spunBy) : null;
-  const result = spun ? `
-    <div class="g8-drawn ${animate ? "wait" : ""}">
-      ${cards.map((c) => `<div class="g8-card ${c === "shield" ? "def" : ""}"><span class="g8-card-face ${c === "shield" ? "def" : ""}">${g8CardIcon(c, 22)}</span><span class="g8-card-text"><strong>${esc(t.cards[c])}</strong><small>${esc(t.cardDesc[c])}</small></span></div>`).join("")}
-    </div>` : "";
-  const hint = game.mode === "team" ? t.drawTeamHint(n) : t.drawHint(n);
+  const doneNote = team ? t.drawTeamGot : t.drawGot;
+  const result = spun && !team ? `<div class="g8-drawn ${animate ? "wait" : ""}">${mine.map((c) => g8ItemCard(c)).join("")}</div>` : "";
   $("#gamePanel").innerHTML = `
     <div class="g8-root g8-drawroot">
       ${g8Head(game, `${t.roundLabel(game.round, game.totalRounds)} · ${t.modes[game.mode]}`, t.drawTitle)}
-      <p class="g8-note" id="g8DrawNote">${esc(animate ? t.drawSpinning : spun ? (by ? t.drawBy(by) : t.drawGot) : hint)}</p>
+      <p class="g8-note" id="g8DrawNote">${esc(animate ? t.drawSpinning : spun ? doneNote : team ? t.drawTeamHint(n, game.handSize || 3) : t.drawHint(n))}</p>
       <div class="g8-slot ${spun ? "" : "idle"}">
         <div class="g8-slot-top"><span></span><span></span><span></span></div>
         <div class="g8-reels" style="--n:${n}">${reels}</div>
       </div>
-      ${me && !spun ? `<button type="button" class="btn btn-yellow g8-main-btn g8-pull" onclick="g8Spin()">${esc(t.pull)}</button><p class="g8-note center">${esc(t.drawAuto)}</p>` : ""}
+      ${me && !game.iSpun ? `<button type="button" class="btn btn-yellow g8-main-btn g8-pull" onclick="g8Spin()">${esc(t.pull)}</button><p class="g8-note center">${esc(t.drawAuto)}</p>` : ""}
       ${result}
+      ${team ? `<div id="g8PoolBox">${g8TeamPoolHtml(game)}</div>` : ""}
       <div class="g8-section"><div class="eyebrow">${esc(t.drawWho)}</div><div id="g8DrawStatus" class="g8-mems">${g8DrawStatus(game)}</div></div>
     </div>
   `;
@@ -6224,19 +6267,72 @@ function renderGame8Draw(game) {
     S.g8SpinUntil = Date.now() + longest * 1000 + 250;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       document.querySelectorAll("#gamePanel .g8-reel-strip").forEach((el) => {
-        const steps = Number(el.dataset.steps);
         el.classList.add("go");
-        el.style.transform = `translateY(calc(-${steps} * var(--reel-h)))`;
+        el.style.transform = `translateY(calc(-${Number(el.dataset.steps)} * var(--reel-h)))`;
       });
     }));
     setTimeout(() => {
       $("#gamePanel .g8-drawn")?.classList.remove("wait");
       $("#gamePanel .g8-slot")?.classList.add("win");
       const note = $("#g8DrawNote");
-      if (note) note.textContent = by ? t.drawBy(by) : t.drawGot;
+      if (note) note.textContent = doneNote;
     }, longest * 1000);
   }
 }
+
+// 分隊投票：每人揀 3 件，最多票嘅 3 件帶落場
+function renderGame8Ballot(game) {
+  const t = g8T();
+  const me = game.myKey;
+  const pool = game.teamPool || [];
+  const votes = game.teamVotes || {};
+  const mine = votes[S.playerId] || [];
+  const done = (game.voteDone || []).includes(S.playerId);
+  const chosen = game.chosen;
+  const count = pool.map((x) => Object.values(votes).filter((v) => v.includes(x.i)).length);
+  const mates = game.teams?.[me] || [];
+  const items = pool.map((x) => {
+    const on = mine.includes(x.i);
+    const win = chosen && chosen.includes(x.i);
+    const cls = chosen ? (win ? "win" : "lose") : on ? "on" : "";
+    const dots = mates.map((id) => `<i class="${(votes[id] || []).includes(x.i) ? "on" : ""}"></i>`).join("");
+    const clickable = me && !done && !chosen;
+    return `<button type="button" class="g8-vote ${cls} ${x.card === "shield" ? "def" : ""}" ${clickable ? `onclick="g8VoteToggle(${x.i})"` : "disabled"}>
+      <span class="g8-card-face ${x.card === "shield" ? "def" : ""}">${g8CardIcon(x.card, 22)}</span>
+      <span class="g8-card-text"><strong>${esc(t.cards[x.card])}</strong><small>${esc(t.drawnBy(g8Nick(x.by)))}</small></span>
+      <span class="g8-vote-side">${win ? `<b class="g8-win-tag">${esc(t.voteIn)}</b>` : ""}<span class="g8-dots">${dots}</span><small>${count[x.i]} ${esc(t.votesUnit)}</small></span>
+    </button>`;
+  }).join("");
+  const status = mates.map((id) => `<span class="g8-mem ${(game.voteDone || []).includes(id) ? "shoot" : ""}">${esc(g8Nick(id))}${(game.voteDone || []).includes(id) ? " · ✓" : ""}</span>`).join("");
+  const action = chosen ? `<div class="g8-items"><span class="eyebrow">${esc(t.teamItems)}</span><div>${(game.cards || []).map((c) => `<span class="g8-item ${c === "shield" ? "def" : ""}">${g8CardIcon(c, 16)}${esc(t.cards[c])}</span>`).join("")}</div></div>`
+    : done ? `<p class="g8-note center g8-done">${esc(t.voteWait)}</p>`
+    : me ? `<button type="button" class="btn btn-yellow g8-main-btn" ${mine.length === 3 ? "" : "disabled"} onclick="g8VoteDone()">${esc(t.voteConfirm(mine.length))}</button>` : "";
+  $("#gamePanel").innerHTML = `
+    <div class="g8-root">
+      ${g8Head(game, `${t.roundLabel(game.round, game.totalRounds)} · ${t.modes.team}`, chosen ? t.voteResult : t.voteTitle)}
+      <p class="g8-note">${esc(chosen ? t.voteResultHint : t.voteHint)}</p>
+      <div class="g8-votes">${items}</div>
+      ${action}
+      <div class="g8-section"><div class="eyebrow">${esc(t.voteWho)}</div><div class="g8-mems">${status}</div></div>
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+}
+
+window.g8VoteToggle = (i) => {
+  const game = S.room?.gameState;
+  if (!game) return;
+  const mine = [...(game.teamVotes?.[S.playerId] || [])];
+  const at = mine.indexOf(i);
+  if (at >= 0) mine.splice(at, 1);
+  else if (mine.length < 3) mine.push(i);
+  else return flash(g8T().voteMax);
+  send({ type: "g8:vote", picks: mine });
+};
+window.g8VoteDone = () => {
+  const game = S.room?.gameState;
+  send({ type: "g8:vote", picks: game?.teamVotes?.[S.playerId] || [], done: true });
+};
 
 window.g8Spin = () => send({ type: "g8:spin" });
 
