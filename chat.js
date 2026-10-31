@@ -24,6 +24,7 @@
       hideChat: "收埋聊天室",
       you: "你",
       locked: "作答中，暫停聊天",
+      lockedSelf: "你係出題人，揭曉之前唔可以講嘢",
       muted: "你已被房主禁言",
       deadLocked: "你已出局，回合完之前只可以喺淘汰區講嘢",
       guest: "加入房間先可以講嘢",
@@ -57,6 +58,7 @@
       hideChat: "收起聊天室",
       you: "你",
       locked: "作答中，暫停聊天",
+      lockedSelf: "你是出題人，揭曉前不能發言",
       muted: "你已被房主禁言",
       deadLocked: "你已出局，回合結束前只能在淘汰區發言",
       guest: "加入房間後才能發言",
@@ -403,6 +405,7 @@
       reason === "muted" ? T.muted :
       reason === "dead" ? T.deadLocked :
       reason === "guest" ? T.guest :
+      reason === "lockedSelf" ? T.lockedSelf :
       reason ? T.locked : "";
 
     const form = el.querySelector(".rc-form");

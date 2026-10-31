@@ -1081,8 +1081,16 @@ const CHAT_RULES = {
   game3: { lockPhases:["writing","rating"] },
   game5: { announceRounds:false },
   game6: { lockPhases:["answering"] },
-  game7: { deadIds: g7DeadIds }
+  game7: { deadIds: g7DeadIds },
+  // 心中有數：出題人知道目標位置，出提示同估嘅時候佢唔可以講嘢；其他人照傾
+  game9: { lockPlayers: g9LockedIds }
 };
+
+function g9LockedIds(room){
+  const g=room.gameState;
+  if(!g || g.game!=="game9" || !g.psychicId) return [];
+  return (g.phase==="hint" || g.phase==="guess") ? [g.psychicId] : [];
+}
 
 // 數字炸彈：回合進行中已經出局（唔喺 alive）嘅玩家。回合完咗（有贏家）就唔再算。
 function g7DeadIds(room){
@@ -1114,7 +1122,8 @@ function chatPolicy(room, viewerId=null){
   if(!enabled) reason="disabled";
   else if(!viewerId) reason="guest";
   else if(isMuted) reason="muted";
-  else if(phaseLocked || lockedIds.includes(viewerId)) reason="locked";
+  else if(phaseLocked) reason="locked";
+  else if(lockedIds.includes(viewerId)) reason="lockedSelf";
   else if(dead) reason="dead";
   return {
     enabled,

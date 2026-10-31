@@ -1165,7 +1165,7 @@ button.g8-c:hover{border-color:#F2D965}
   .g8-titles{gap:6px}
 }
 
-/* ==================================================
+/* =========================================================
    首頁 hero（v25）：左邊遊戲封面格＋右邊開房／入房
    桌面：封面 3 欄格仔；≤900px：封面變一行橫向滑動，放喺標題同表格中間
 ========================================================= */
@@ -1497,7 +1497,8 @@ button.g8-c:hover{border-color:#F2D965}
   .g9-end{font-size:13px;padding:5px 9px}
   .g9-reveal-top{flex-direction:column}
   .g9-target{flex-direction:row;gap:10px;justify-content:space-between;padding:8px 16px}
-=======
+}
+
 /* =========================================================
    全房聊天室（chat.js）— 所有 game 共用
    手機／細螢幕：底部聊天欄，展開後半透明蓋住遊戲
