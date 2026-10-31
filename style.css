@@ -1610,3 +1610,49 @@ button.g8-c:hover{border-color:#F2D965}
   #gameShell.has-chat.chat-collapsed .rc{display:none}
   #gameShell.has-chat .game-content{padding-bottom:24px}
 }
+/* ===== Battleship：抽道具老虎機、拖船鎖畫面 ===== */
+html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;touch-action:none}
+.g8-placing .g8-board.dragboard{touch-action:none}
+.g8-items{display:flex;flex-direction:column;gap:6px}
+.g8-items div{display:flex;gap:6px;flex-wrap:wrap}
+.g8-item{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#F2D965;color:#1f2740;font-weight:900;font-size:12px}
+.g8-item.def{background:#8FE3D0}
+.g8-slot{--reel-h:92px;background:#1f2740;border:3px solid #F2D965;border-radius:24px;padding:12px;box-shadow:0 6px 0 rgba(0,0,0,.25);display:flex;flex-direction:column;gap:10px}
+.g8-slot-top{display:flex;justify-content:center;gap:10px}
+.g8-slot-top span{width:12px;height:12px;border-radius:50%;background:#F2D965;opacity:.35}
+.g8-slot.idle .g8-slot-top span{animation:g8bulb 1.2s ease-in-out infinite}
+.g8-slot.idle .g8-slot-top span:nth-child(2){animation-delay:.2s}
+.g8-slot.idle .g8-slot-top span:nth-child(3){animation-delay:.4s}
+.g8-slot.win .g8-slot-top span{opacity:1;background:#B9DD5B}
+@keyframes g8bulb{0%,100%{opacity:.3}50%{opacity:1}}
+.g8-reels{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
+.g8-reel{height:var(--reel-h);overflow:hidden;border-radius:14px;background:#FEFEF2;box-shadow:inset 0 8px 10px -6px rgba(0,0,0,.35),inset 0 -8px 10px -6px rgba(0,0,0,.35)}
+.g8-reel-strip{display:flex;flex-direction:column}
+.g8-reel-strip.go{transition:transform calc(1.5s + var(--i) * .55s) cubic-bezier(.12,.75,.22,1)}
+.g8-reel-item{height:var(--reel-h);flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#1f2740}
+.g8-reel-item small{font-weight:900;font-size:13px}
+.g8-reel-item.q b{font-family:"Fredoka",sans-serif;font-size:40px;opacity:.35}
+.g8-slot.idle .g8-reel-item.q b{animation:g8bulb 1.2s ease-in-out infinite}
+.g8-slot.win .g8-reel{animation:g8winpop .45s ease-out}
+@keyframes g8winpop{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+.g8-pull{font-size:20px}
+.g8-drawn{display:flex;flex-direction:column;gap:8px;transition:opacity .3s}
+.g8-drawn.wait{opacity:0}
+.g8-pool{display:flex;flex-wrap:wrap;gap:6px}
+.g8-poolitem{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:12px;background:#1f2740;color:#FEFEF2;font-weight:900;font-size:13px}
+.g8-poolitem > svg{color:#F2D965}
+.g8-poolitem.def > svg{color:#8FE3D0}
+.g8-poolitem small{display:block;font-size:10px;font-weight:800;opacity:.7}
+.g8-poolitem.q{opacity:.55}
+.g8-poolitem.q b{font-family:"Fredoka",sans-serif;width:18px;text-align:center}
+.g8-votes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.g8-vote{display:flex;align-items:center;gap:8px;background:#1f2740;color:#FEFEF2;border:3px solid transparent;border-radius:16px;padding:8px 10px;text-align:left;font:inherit;cursor:pointer;min-width:0}
+.g8-vote:disabled{cursor:default}
+.g8-vote.on{border-color:#F2D965;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.g8-vote.def.on{border-color:#8FE3D0}
+.g8-vote.win{border-color:#B9DD5B}
+.g8-vote.lose{opacity:.4}
+.g8-vote-side{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.g8-vote-side small{font-size:10px;font-weight:900;opacity:.8}
+.g8-win-tag{font-size:10px;font-weight:900;padding:1px 7px;border-radius:999px;background:#B9DD5B;color:#1f2740}
+.g8-vote .g8-dots i{width:8px;height:8px}
