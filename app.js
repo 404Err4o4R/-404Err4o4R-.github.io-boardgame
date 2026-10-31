@@ -847,6 +847,11 @@ function lz(yue, zh) {
   return S.room?.language === "zh" ? zh : yue;
 }
 
+// 房間入面顯示題庫分類名：跟房間語言（開房表格用 categoryLabel）。
+function roomCategoryLabel(category) {
+  return S.room?.language === "zh" ? (CATEGORY_LABEL_ZH[category] || category) : category;
+}
+
 $("#writeTimeBox")?.addEventListener("click", (event) => {
   const chip = event.target.closest(".write-chip");
   if (!chip) return;
@@ -2079,7 +2084,7 @@ function startTimer(element, endsAt) {
 
     num.textContent = String(Math.ceil(remaining / 1000));
     bar.setAttribute("stroke-dashoffset", String(C * (1 - Math.min(1, remaining / total))));
-    element.setAttribute("aria-label", `剩低 ${Math.ceil(remaining / 1000)} 秒`);
+    element.setAttribute("aria-label", lz(`剩低 ${Math.ceil(remaining / 1000)} 秒`, `剩餘 ${Math.ceil(remaining / 1000)} 秒`));
   };
 
   update();
@@ -2096,7 +2101,7 @@ function startTimer(element, endsAt) {
 
 function categoryTagHtml(category) {
   if (!category) return "";
-  return `<div class="q-tag" style="color:${categoryColor(category)}">#${esc(category)}</div>`;
+  return `<div class="q-tag" style="color:${categoryColor(category)}">#${esc(roomCategoryLabel(category))}</div>`;
 }
 
 function renderGame1(game) {
@@ -2118,7 +2123,7 @@ if (game.phase === "intro") {
       </h2>
 
       <p>
-        準備揀你嘅答案
+        ${lz("準備揀你嘅答案", "準備選擇你的答案")}
       </p>
     </div>
   `;
@@ -2209,7 +2214,7 @@ if (game.phase === "intro") {
         ${Math.round((game.voteMs || 10000) / 1000)} 秒投票。
         ${
           myVote !== undefined
-            ? "你已經投咗。"
+            ? lz("你已經投咗。", "你已經投票了。")
             : "每人一票。"
         }
       </p>
@@ -2227,15 +2232,25 @@ if (game.phase === "intro") {
     game.votes || [0, 0];
 
   $("#gamePanel").innerHTML = `
-    <div>
-      <div class="eyebrow">
-        RESULT · ROUND ${game.round}
+    <div
+      class="row"
+      style="justify-content:space-between;align-items:end"
+    >
+      <div>
+        <div class="eyebrow">
+          RESULT · ROUND ${game.round}${game.totalRounds ? ` / ${game.totalRounds}` : ""}
+        </div>
+
+        <h2 class="title">
+          WHAT DID<br>
+          <span>EVERYONE CHOOSE?</span>
+        </h2>
       </div>
 
-      <h2 class="title">
-        WHAT DID<br>
-        <span>EVERYONE CHOOSE?</span>
-      </h2>
+      <div
+        id="time"
+        class="timer ${game.paused ? "hidden" : ""}"
+      ></div>
     </div>
 
     <div class="question">
@@ -2300,7 +2315,7 @@ if (game.phase === "intro") {
                         `<span>${esc(name)}</span>`
                     )
                     .join("、")
-                : "冇人揀呢個"
+                : lz("冇人揀呢個", "沒有人選這個")
             }
           </div>
         </div>
@@ -2309,79 +2324,78 @@ if (game.phase === "intro") {
     .join("")}
 </div>
 
-    <div
-      class="${
-        game.winner === null
-          ? "status"
-          : "result"
-      }"
-    >
-      ${
-        game.winner === null
-          ? "今題打和。"
-          : "多數揀咗：" +
-            String.fromCharCode(
-              65 + game.winner
-            ) +
-            " · " +
-            esc(
-              game.question.options[
-                game.winner
-              ]
-            )
-      }
-    </div>
+    ${g1ResultBoxHtml(game, counts)}
 
     <div style="height:16px"></div>
 
-    <div
-      class="row"
-      style="margin-top:10px"
-    >
- ${
-  S.room.hostId === S.playerId
-    ? `
-      <button
-        class="btn btn-yellow"
-        onclick="next1()"
-      >
-        NEXT QUESTION
-      </button>
+    ${g1NextControlsHtml(game)}
+  `;
 
-      <button
-        class="btn btn-outline"
-        onclick="finish1()"
-      >
-        結束並睇結算
-      </button>
-    `
-    : `
-      <button
-        class="btn btn-outline"
-        onclick="next1()"
-      >
-        準備好
-      </button>
-    `
+  if (!game.paused && game.endsAt) {
+    startTimer($("#time"), game.endsAt);
+  } else {
+    clearInterval(S.timer);
+  }
 }
-    </div>
 
-    <p class="notice">
-      準備好下一題：
-      ${game.nextReadyCount || 0}/
-      ${
-        S.room.players
-          .filter((p) => p.connected)
-          .length
-      }
-    </p>
+// 結果框：全部人揀同一個（至少兩票）就出「全員心有靈犀！」。
+function g1ResultBoxHtml(game, counts) {
+  const a = counts[0] || 0;
+  const b = counts[1] || 0;
+  const optionText = (i) => `${String.fromCharCode(65 + i)} · ${esc(game.question.options[i])}`;
 
+  if (game.winner === null) {
+    return `<div class="status">${lz("今題打和。", "這題平手。")}</div>`;
+  }
+
+  if (a + b >= 2 && (a === 0 || b === 0)) {
+    return `
+      <div class="result g1-unanimous">
+        <div class="g1-unanimous-title">全員心有靈犀！</div>
+        ${lz("全部人都揀咗：", "所有人都選了：")}${optionText(game.winner)}
+      </div>
+    `;
+  }
+
+  return `<div class="result">${lz("多數揀咗：", "多數人選了：")}${optionText(game.winner)}</div>`;
+}
+
+// 結果頁：5 秒自動入下一題；房主可以暫停（冇時限），撳「繼續」即刻入下一題。
+function g1NextControlsHtml(game) {
+  const isHost = S.room.hostId === S.playerId;
+  const isLast = !!game.totalRounds && game.round >= game.totalRounds;
+  const seconds = Math.max(0, Math.ceil(((game.endsAt || 0) - Date.now()) / 1000));
+
+  const notice = game.paused
+    ? lz("房主暫停咗，傾吓先。", "房主暫停了，大家先聊一下。")
+    : isLast
+    ? lz("最後一題完咗，倒數完就睇結算。", "最後一題結束，倒數完畢後查看結算。")
+    : lz("倒數完自動入下一題。", "倒數完畢後自動進入下一題。");
+
+  const hostButtons = isHost
+    ? `
+      <div class="row" style="margin-top:10px">
+        ${
+          game.paused
+            ? `<button class="btn btn-yellow" onclick="next1()">${lz("繼續", "繼續")}</button>`
+            : `<button class="btn btn-yellow" onclick="pause1()">${lz("暫停", "暫停")}</button>`
+        }
+        <button class="btn btn-outline" onclick="finish1()">
+          ${lz("結束並睇結算", "結束並查看結算")}
+        </button>
+      </div>
+    `
+    : "";
+
+  return `
+    ${hostButtons}
+    <p class="notice ${game.paused ? "g1-paused-note" : ""}">${notice}</p>
   `;
 }
 
 window.vote1 = async (index) => {
   const ok = await askConfirm(
-    "肯定投呢個？"
+    lz("肯定投呢個？", "確定投這個？")
   );
 
   if (!ok) return;
@@ -2401,9 +2415,19 @@ window.next1 = () => {
   });
 };
 
+window.pause1 = () => {
+  send({
+    type: "g1:pause"
+  });
+};
+
 window.finish1 = async () => {
+  // 結果頁倒數緊嘅話先暫停，唔係確認框未撳完就已經入咗下一題。
+  const g = S.room?.gameState;
+  if (g?.phase === "chat" && !g.paused) send({ type: "g1:pause" });
+
   const ok = await askConfirm(
-    "結束呢輪，同大家睇結算？"
+    lz("結束呢輪，同大家睇結算？", "結束這一輪，和大家查看結算？")
   );
 
   if (!ok) return;
@@ -2433,17 +2457,17 @@ function renderGame1Final(game) {
       </div>
 
       <h2 class="title">
-        仲未夠數據<br>
-        <span>計唔到默契指數</span>
+        ${lz("仲未夠數據", "數據還不夠")}<br>
+        <span>${lz("計唔到默契指數", "無法計算默契指數")}</span>
       </h2>
 
       <p class="notice">
-        要至少一條題目入面有兩位玩家都投咗票，先可以計算。
+        ${lz("要至少一條題目入面有兩位玩家都投咗票，先可以計算。", "至少要有一題有兩位玩家都投了票，才可以計算。")}
       </p>
 
       ${
         S.room.hostId === S.playerId
-          ? `<button class="btn btn-yellow" onclick="next1()">再嚟一題</button>`
+          ? `<button class="btn btn-yellow" onclick="next1()">${lz("再嚟一題", "再來一題")}</button>`
           : ""
       }
     `;
@@ -2460,7 +2484,7 @@ function renderGame1Final(game) {
   const catRows = Object.entries(selectedPair.byCategory)
     .sort((a, b) => b[1].rate - a[1].rate)
     .map(([cat, stat]) =>
-      barRowHtml(cat, stat.rate, `${stat.match}/${stat.shared}`, false, categoryColor(cat))
+      barRowHtml(roomCategoryLabel(cat), stat.rate, `${stat.match}/${stat.shared}`, false, categoryColor(cat))
     )
     .join("");
 
@@ -2495,23 +2519,27 @@ function renderGame1Final(game) {
     </div>
 
     <h2 class="title">
-      全場最有默契：<br>
+      ${lz("全場最有默契：", "全場最有默契：")}<br>
       <span>${esc(pairs[0].aName)} × ${esc(pairs[0].bName)}</span>
     </h2>
 
     <div class="result">
-      ${pairs[0].rate}% 一致（${pairs[0].match}/${pairs[0].shared} 題）
+      ${pairs[0].rate}% ${lz("一致", "一致")}（${pairs[0].match}/${pairs[0].shared} ${lz("題", "題")}）
     </div>
 
     <p class="notice">
-      得兩個選項嘅題目，亂咁揀都有 5 成機會啱，所以 5 成以上先算真係夾。
-      一齊玩過嘅題越多，個數字就越準。（呢局一共問咗 ${results.totalRounds} 題）
+      ${lz(
+        `得兩個選項嘅題目，亂咁揀都有 5 成機會啱，所以 5 成以上先算真係夾。
+      一齊玩過嘅題越多，個數字就越準。（呢局一共問咗 ${results.totalRounds} 題）`,
+        `只有兩個選項的題目，隨便選也有五成機會相同，所以五成以上才算真的有默契。
+      一起玩過的題目越多，這個數字就越準確。（這局一共問了 ${results.totalRounds} 題）`
+      )}
     </p>
 
     <div style="height:18px"></div>
 
     <div class="eyebrow">
-      揀一對玩家睇佢哋嘅分類細節
+      ${lz("揀一對玩家睇佢哋嘅分類細節", "選擇一對玩家查看他們的分類細節")}
     </div>
 
     <div class="filter-box" style="margin-top:8px">
@@ -2529,7 +2557,7 @@ function renderGame1Final(game) {
     <div style="height:24px"></div>
 
     <div class="eyebrow">
-      全部組合排名
+      ${lz("全部組合排名", "全部組合排名")}
     </div>
 
     <div class="bars" style="margin-top:8px">
@@ -2542,7 +2570,7 @@ function renderGame1Final(game) {
       S.room.hostId === S.playerId
         ? `
           <div style="height:16px"></div>
-          <button class="btn btn-yellow" onclick="next1()">再嚟一題</button>
+          <button class="btn btn-yellow" onclick="next1()">${lz("再嚟一題", "再來一題")}</button>
         `
         : ""
     }
@@ -2561,9 +2589,9 @@ function flourishHtml(results) {
       maverick
         ? `
           <div class="role-card">
-            🎭 特立獨行獎
+            🎭 ${lz("特立獨行獎", "特立獨行獎")}
             <div class="title" style="font-size:22px;margin:6px 0 4px">${esc(maverick.name)}</div>
-            ${maverick.count} / ${maverick.totalRounds} 題同全場多數意見唔同（${maverick.rate}%）
+            ${maverick.count} / ${maverick.totalRounds} ${lz("題同全場多數意見唔同", "題與全場多數意見不同")}（${maverick.rate}%）
           </div>
         `
         : ""
@@ -2572,7 +2600,7 @@ function flourishHtml(results) {
       divisive
         ? `
           <div class="role-card bluffer">
-            💥 全場最撕裂一題
+            💥 ${lz("全場最撕裂一題", "全場最分歧的一題")}
             <div class="title" style="font-size:20px;margin:6px 0 4px">${esc(divisive.question)}</div>
             ${esc(divisive.options?.[0] || "選項A")} ${divisive.countA} 票　vs　${esc(divisive.options?.[1] || "選項B")} ${divisive.countB} 票
           </div>
@@ -2582,7 +2610,7 @@ function flourishHtml(results) {
   `;
 
   const soulmateRows = (soulmates || [])
-    .map((s) => barRowHtml(`${s.name} 嘅拍檔`, s.rate, s.partnerName, false))
+    .map((s) => barRowHtml(lz(`${s.name} 嘅拍檔`, `${s.name} 的搭檔`), s.rate, s.partnerName, false))
     .join("");
 
   return `
@@ -2599,7 +2627,7 @@ function flourishHtml(results) {
       soulmateRows
         ? `
           <div style="height:16px"></div>
-          <div class="eyebrow">你嘅心有靈犀拍檔</div>
+          <div class="eyebrow">${lz("你嘅心有靈犀拍檔", "你的心有靈犀搭檔")}</div>
           <div class="bars" style="margin-top:8px">${soulmateRows}</div>
         `
         : ""
@@ -2689,7 +2717,7 @@ function radarChartHtml(byCategory) {
     const rate = byCategory[c].rate;
 
     svg += `
-      <text x="${lx}" y="${ly - 4}" text-anchor="${anchor}" font-size="11" font-weight="900" fill="${color}">${esc(c)}</text>
+      <text x="${lx}" y="${ly - 4}" text-anchor="${anchor}" font-size="11" font-weight="900" fill="${color}">${esc(roomCategoryLabel(c))}</text>
       <text x="${lx}" y="${ly + 10}" text-anchor="${anchor}" font-size="10" font-weight="700" fill="${color}" opacity="0.75">${rate}%</text>
     `;
   });

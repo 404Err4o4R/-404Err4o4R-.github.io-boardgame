@@ -24,6 +24,7 @@ const ROOM_CHAT_WINDOW_MAX = 5;
 const MAX_CHAT_ARCHIVE = 1000; // 房主專用嘅全場聊天記錄上限（唔會跟住每題重置）
 
 const G1_VOTE_MS = 10000;
+const G1_RESULT_MS = 5000; // 心有靈犀：結果頁停 5 秒就自動入下一題（房主可以暫停）
 const G2_PREP_MS = 30000;
 const G2_PICK_MS = 10000;
 const G2_SPEAK_MS = 30000;
@@ -616,7 +617,7 @@ voters:g.phase!=="vote" ? {
 },
 
 submittedCount:Object.keys(g.votes||{}).length,
-nextReadyCount:Object.keys(g.nextReady||{}).length,
+paused:!!g.paused,
 winner:g.winner ?? null,
 results:g.results||null
     };
@@ -1093,15 +1094,15 @@ results:g.results||null
                           每隊自動有「隊伍頻道」，只有同隊隊友睇到同講到
 ========================= */
 const CHAT_RULES = {
-  game1: { lockPhases:["vote"], roundWord:"question" },
+  game1: { lockPhases:["vote"], announceRounds:false },
   game2: { enabled: room => room.g2Mode!=="offline" },
   game3: { lockPhases:["writing","rating"] },
   game5: { announceRounds:false },
-  game6: { lockPhases:["answering"] },
+  game6: { lockPhases:["answering"], announceRounds:false },
   game7: { deadIds: g7DeadIds },
   game8: { teams: g8Teams },
   // 心中有數：出題人知道目標位置，出提示同估嘅時候佢唔可以講嘢；其他人照傾
-  game9: { lockPlayers: g9LockedIds }
+  game9: { lockPlayers: g9LockedIds, announceRounds:false }
 };
 
 // Battleship 隊伍模式：海軍／海盜
@@ -1322,6 +1323,7 @@ export class GameRoom extends DurableObject {
       case "g1:vote": return this.onG1Vote(session.playerId,msg.option);
       case "g1:next": return this.onG1Next(session.playerId);
       case "g1:finish": return this.onG1Finish(session.playerId);
+      case "g1:pause": return this.onG1Pause(session.playerId);
       case "g2:ready": return this.onG2PrepReady(session.playerId);
       case "g2:pick": return this.onG2Pick(session.playerId,msg.targetId);
       case "g2:chat": return this.room.g2Mode==="offline" ? undefined : this.onChat(session.playerId,msg.text,"speaking");
@@ -1505,9 +1507,6 @@ async onReady(playerId, ready){
         const next=this.room.players.find(x=>x.connected && x.id!==p.id);
         if(next)this.room.hostId=next.id;
       }
-      if(this.room.game==="game1" && this.room.gameState?.phase==="chat"){
-        this.room.gameState.nextReady[p.id]=true;
-      }
       if(await this.g6AfterDisconnect()) return;
       if(await this.g7AfterDisconnect()) return;
       if(await this.g8AfterDisconnect()) return;
@@ -1575,7 +1574,7 @@ if (notReady.length > 0) {
     const q=this.pickGame1Question();
     this.room.gameState={
       game:"game1",phase:"vote",round:(this.room.gameState?.round||0)+1,
-      question:q,usedIds:[...new Set([...prevUsed,q.id])],votes:{},nextReady:{},winner:null,totalRounds:this.room.g1Rounds||0,voteMs:this.room.g1VoteMs||G1_VOTE_MS,endsAt:Date.now()+(this.room.g1VoteMs||G1_VOTE_MS)
+      question:q,usedIds:[...new Set([...prevUsed,q.id])],votes:{},paused:false,winner:null,totalRounds:this.room.g1Rounds||0,voteMs:this.room.g1VoteMs||G1_VOTE_MS,endsAt:Date.now()+(this.room.g1VoteMs||G1_VOTE_MS)
     };
     this.room.chat=[]; // 新一題開始，舊嘅傾偈記錄唔再顯示，個聊天框先唔會越玩越長
     await this.save();
@@ -1645,54 +1644,34 @@ if (notReady.length > 0) {
 
 async onG1Next(playerId){
   const g = this.room.gameState;
-
-  // 睇完結算之後，房主都可以撳呢個掣繼續玩落去（歷史記錄唔會清）。
-  if (!g || (g.phase !== "chat" && g.phase !== "final")) {
-    return;
-  }
-
-  // 房主隨時可以強制入下一題（包括結算完之後想繼續玩）。
-  if (playerId === this.room.hostId) {
-    if (await this.g1FinishIfLastRound()) return;
-    await this.startGame1();
-    return;
-  }
-
-  // 結算畫面淨係房主先可以繼續玩落去，其他人喺呢個 phase 冇「準備好」可以按。
-  if (g.phase !== "chat") return;
-
-  // 其他人按「準備好」只會標記自己已就緒；
-  // 全部在線嘅非房主玩家都準備好之後先會自動入下一題。
-  const player = this.room.players.find(p => p.id === playerId);
-  if (!player) return;
-
-  g.nextReady = g.nextReady || {};
-  g.nextReady[playerId] = true;
-
-  const connected = this.room.players.filter(
-    p => p.connected && p.id !== this.room.hostId
-  );
-
-  const allReady =
-    connected.length > 0 &&
-    connected.every(p => g.nextReady[p.id]);
-
-  if (allReady) {
-    if (await this.g1FinishIfLastRound()) return;
-    await this.startGame1();
-    return;
-  }
-
-  await this.save();
-  await this.broadcastRoom();
+  // 結果頁會自己倒數 5 秒入下一題；呢個掣淨係房主用：暫停之後「繼續」、或者結算畫面「再嚟一題」。
+  if (!g || (g.phase !== "chat" && g.phase !== "final")) return;
+  if (playerId !== this.room.hostId) return;
+  await this.advanceGame1();
 }
+
+  // 結果頁之後入下一題：打完最後一題就去結算，唔係就出新題。
+  async advanceGame1(){
+    if (await this.g1FinishIfLastRound()) return;
+    await this.startGame1();
+  }
+
+  // 房主喺結果頁暫停自動倒數，等大家停低傾偈；暫停冇時限，房主撳「繼續」先會即刻入下一題。
+  async onG1Pause(playerId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game1" || g.phase!=="chat" || g.paused || playerId!==this.room.hostId) return;
+    g.paused=true;
+    g.endsAt=null;
+    await this.save();
+    await this.broadcastRoom();
+  }
 
   async lockGame1(){
     const g=this.room.gameState;if(!g||g.phase!=="vote")return;
     const counts=[0,0];
     Object.values(g.votes||{}).forEach(v=>{if(v===0||v===1)counts[v]++});
     const winner=counts[0]===counts[1]?null:(counts[0]>counts[1]?0:1);
-    g.phase="chat";g.endsAt=null;g.voteCounts=counts;g.winner=winner;
+    g.phase="chat";g.paused=false;g.endsAt=Date.now()+G1_RESULT_MS;g.voteCounts=counts;g.winner=winner;
 
     const lang=this.room.language==="zh"?"zh":"yue";
     this.room.g1History=this.room.g1History||[];
@@ -1706,6 +1685,7 @@ async onG1Next(playerId){
     if(this.room.g1History.length>500) this.room.g1History.shift();
 
     await this.save();
+    await this.ctx.storage.setAlarm(g.endsAt);
     await this.broadcastRoom();
   }
 
@@ -4615,10 +4595,6 @@ async onG1Next(playerId){
       if(next)this.room.hostId=next.id;
     }
 
-    // Don't let a disconnected player block Game 1's "everyone ready" transition.
-    if(this.room.game==="game1" && this.room.gameState?.phase==="chat"){
-      this.room.gameState.nextReady[p.id]=true;
-    }
 
     if(await this.g6AfterDisconnect()) return;
     if(await this.g7AfterDisconnect()) return;
@@ -4641,6 +4617,11 @@ async onG1Next(playerId){
 
     if(g?.phase==="vote" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.lockGame1();
+      return;
+    }
+
+    if(g?.game==="game1" && g.phase==="chat" && !g.paused && g.endsAt && Date.now()+50>=g.endsAt){
+      await this.advanceGame1();
       return;
     }
 
