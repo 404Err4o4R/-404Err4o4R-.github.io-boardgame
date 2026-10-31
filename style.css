@@ -558,6 +558,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 #gameShell[data-game="game6"]{--cover:#B9DD5B}
 #gameShell[data-game="game7"]{--cover:#F7577A}
 #gameShell[data-game="game8"]{--cover:#22408C}
+#gameShell[data-game="game9"]{--cover:#5FA8C6}
 #gameShell:not(.is-playing) #gamePanel .title span{color:var(--cover,var(--deep));-webkit-text-stroke:2px #1f2740;paint-order:stroke fill}
 #gameShell[data-game="game1"]{--card:#F2D965;--card-fg:#1f2740;--sel:#7a89ae;--sel-fg:#fff;--deep:#3f4d73;--strip:#7a89ae;--strip-fg:#fff}
 #gameShell[data-game="game2"]{--card:#3FBFA8;--card-fg:#1f2740;--sel:#004643;--sel-fg:#F0EDE5;--deep:#004643;--strip:#3FBFA8;--strip-fg:#1f2740}
@@ -777,7 +778,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 /* 封面統一尺寸：開房卡固定最少 920px 高（夠放最長嗰隻 game 嘅設定），
    六隻 game 嘅封面同插圖大小一樣；手機版封面固定 340px 高。 */
 .room-panel{min-height:970px}
-.room-visual .cover2 .gc-icon,.room-visual .cover-g6 .gc-icon,.room-visual .cover-g7 .gc-icon,.room-visual .cover-g8 .gc-icon{width:min(72%,340px)}
+.room-visual .cover2 .gc-icon,.room-visual .cover-g6 .gc-icon,.room-visual .cover-g7 .gc-icon,.room-visual .cover-g8 .gc-icon,.room-visual .cover-g9 .gc-icon{width:min(72%,340px)}
 .room-visual:has(.cover-g1){background:var(--g1-a)}
 .room-visual:has(.cover-g2){background:var(--g2-a)}
 .room-visual:has(.cover-g3){background:var(--g3-a)}
@@ -789,6 +790,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .room-visual:has(.cover-g6){background:#B9DD5B}
 .room-visual:has(.cover-g7){background:#F7577A}
 .room-visual:has(.cover-g8){background:#22408C}
+.room-visual:has(.cover-g9){background:#5FA8C6}
 @media (max-width:900px){
   .room-panel{min-height:0}
   .room-visual{min-height:0;height:340px}
@@ -1373,3 +1375,126 @@ button.g8-c:hover{border-color:#F2D965}
 .g8-cards-row .g8-card.def.on{flex-basis:100%}
 .g8-cards-row.multi .g8-card.def.on .g8-card-text small{display:block}
 .g8-nudge{position:relative;left:.25em}
+
+/* ===== Game 9 · 心中有數 ===== */
+#gameShell[data-game="game9"]{--card:#5FA8C6;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#1F6F94;--strip:#F5B82E;--strip-fg:#1f2740}
+
+.dial-card{background:#5FA8C6;color:#1f2740}.dial-card .tag-row span{background:rgba(31,39,64,.12)}
+.dial-card .game-icon svg{display:block}
+.dial-card h3 .h3-sub{display:inline-block;margin-top:4px;font-size:.62em}
+
+.cover-g9{background:#5FA8C6}
+.cover-g9 .gc-icon{top:54%;width:72%}
+.cover-g9 .gc-icon svg{width:100%;height:auto;display:block;overflow:visible}
+.cover-g9 .gc-label{opacity:1}
+.cover-g9 .gc-label.eyebrow{top:6%;background:#1f2740;color:#F5B82E}
+.cover-g9 .gc-label.bottom{bottom:6%;background:#FEFEF2;color:#1f2740}
+
+.g9-preview{margin-top:8px;background:#fff;border:2px solid #e4e8f2;border-radius:16px;padding:10px 14px;font-family:"Fredoka",sans-serif;font-weight:700;font-size:17px;color:#1f2740}
+.g9-sub{font-size:12px;font-weight:800;color:#4b5470}
+.g9-lobby{margin-top:10px;background:#F6F7FA;border-radius:16px;padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.g9-lobby strong{font-family:"Fredoka",sans-serif;font-size:18px}
+.g9-lobby small{font-size:12px;font-weight:800;color:#4b5470}
+
+.g9-root{display:flex;flex-direction:column;gap:14px;min-height:476px}
+.g9-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.g9-head .eyebrow{margin-bottom:6px}
+.g9-pill{display:inline-block;font-size:12px;font-weight:900;background:#1f2740;color:#FEFEF2;padding:5px 11px;border-radius:999px}
+.g9-big{font-family:"Fredoka",sans-serif;font-weight:700;font-size:clamp(28px,4.2vw,42px);line-height:1.05;letter-spacing:-.02em;margin:0}
+.g9-note{margin:0;font-size:13px;font-weight:800;text-align:center}
+.g9-push{margin-top:auto}
+
+.g9-secret{display:flex;align-items:center;gap:12px;background:#1f2740;color:#FEFEF2;border-radius:20px;padding:12px 16px;font-size:13px;font-weight:800}
+.g9-secret svg{flex-shrink:0}
+
+.g9-board{background:var(--cream);color:#1f2740;border-radius:28px;padding:18px 16px 14px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.g9-dial{width:100%;max-width:440px;height:auto;display:block;overflow:visible}
+.g9-dial.live{cursor:grab;touch-action:none;border-radius:12px}
+.g9-dial.live:active{cursor:grabbing}
+.g9-dial.live:focus-visible{outline:3px solid #1F6F94;outline-offset:6px}
+.g9-face{fill:#fff;stroke:#1f2740;stroke-width:3;stroke-linejoin:round}
+.g9-ticks{stroke:#929fc1;stroke-width:2;stroke-linecap:round;fill:none}
+.g9-zone-n{font-family:"Fredoka",sans-serif;font-weight:700;font-size:13px;fill:#1f2740;text-anchor:middle;dominant-baseline:central}
+.g9-needle{stroke:#E0284A;stroke-width:7;stroke-linecap:round}
+.g9-knob{fill:#E0284A;stroke:#1f2740;stroke-width:3}
+.g9-hub{fill:#E0284A;stroke:#1f2740;stroke-width:3}
+.g9-hub-dot{fill:#FEFEF2;opacity:.55}
+.g9-mark-line{stroke:#4b5470;stroke-width:3;stroke-linecap:round}
+.g9-mark-line.me{stroke:#E0284A;stroke-width:6}
+.g9-mark circle{fill:#fff;stroke:#1f2740;stroke-width:2.5}
+.g9-mark.me circle{fill:#E0284A;stroke-width:3}
+.g9-mark text{font-family:"Nunito",sans-serif;font-weight:900;font-size:11px;fill:#1f2740;text-anchor:middle;dominant-baseline:central}
+.g9-mark.me text{fill:#fff}
+
+.g9-spec,.g9-spec-row{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.g9-end{border:2px solid #1f2740;border-radius:14px;padding:6px 12px;font-weight:900;font-size:15px;color:#1f2740;min-width:0;overflow-wrap:anywhere}
+.g9-end.left{background:#F5B82E}
+.g9-end.right{background:#5FA8C6;text-align:right}
+.g9-val{font-family:"Fredoka",sans-serif;font-size:24px;min-width:44px;text-align:center}
+.g9-swap{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:2px solid #e4e8f2;background:#fff;border-radius:14px;font-weight:900;font-size:12px;color:#1f2740;cursor:pointer;flex-shrink:0}
+.g9-swap:hover:not(:disabled){border-color:#1f2740}
+.g9-swap:disabled{opacity:.45;cursor:not-allowed}
+.g9-blank-banner{background:#F5B82E;color:#1f2740;border:2px solid #1f2740;border-radius:18px;padding:10px 14px;font-weight:900;font-size:14px;box-shadow:0 4px 0 #1f2740}
+.g9-custom-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.g9-custom-fields label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:900}
+#gameShell.is-playing #gamePanel .g9-custom-fields input{height:48px;box-sizing:border-box;margin:0;padding:0 12px;font-weight:900;font-size:16px;border:2px solid #1f2740;border-radius:14px;background:#fff;color:#1f2740}
+#gameShell.is-playing #gamePanel .g9-custom-fields input.over{border-color:#C0392B;background:#FFF1EE}
+.g9-custom-tag{font-size:11px;font-weight:900;background:#1f2740;color:#FEFEF2;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.g9-fine{width:100%;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:900;color:#4b5470}
+.g9-fine input{flex:1;height:44px;accent-color:#E0284A}
+
+.g9-hint-form{display:flex;flex-direction:column;gap:8px}
+.g9-hint-field{display:flex;flex-direction:column;gap:8px}
+.g9-label{display:flex;justify-content:space-between;font-size:13px;font-weight:900}
+.g9-label .over{color:#7A1030}
+#gameShell.is-playing #gamePanel .g9-hint-field input{height:56px;box-sizing:border-box;margin:0;padding:0 16px;font-weight:900;font-size:18px;border:2px solid #1f2740;border-radius:16px;background:#fff;color:#1f2740}
+.g9-help{margin:0;font-size:12px;font-weight:800;opacity:.85}
+.g9-cta{min-height:56px;font-size:16px;width:100%}
+
+.g9-hint-card{background:var(--cream);color:#1f2740;border-radius:24px;padding:14px 18px;display:flex;flex-direction:column;gap:4px;flex:1}
+.g9-hint-eyebrow{font-size:11px;letter-spacing:.12em;font-weight:900;opacity:.75}
+.g9-hint-text{font-family:"Fredoka",sans-serif;font-weight:700;font-size:clamp(26px,3.6vw,34px);line-height:1.1;overflow-wrap:anywhere}
+
+.g9-reveal-top{display:flex;gap:10px;align-items:stretch}
+.g9-target{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1f2740;color:#FEFEF2;border-radius:22px;padding:8px 16px;min-width:76px}
+.g9-target span{font-size:11px;font-weight:900;letter-spacing:.1em}
+.g9-target strong{font-family:"Fredoka",sans-serif;font-size:32px;line-height:1}
+
+.g9-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.g9-row{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--cream);color:#1f2740;border-radius:16px;padding:8px 12px;border:2px solid transparent}
+.g9-row.me{border-color:#1f2740;box-shadow:0 3px 0 #1f2740}
+.g9-row.bull{background:#fff}
+.g9-row.miss{opacity:.7}
+.g9-row-main{display:flex;flex-direction:column;min-width:0}
+.g9-row-main strong{font-size:14px}
+.g9-row-main small{font-size:11px;font-weight:800;color:#4b5470}
+.g9-row b{font-family:"Fredoka",sans-serif;font-size:22px;color:#1F6F94}
+.g9-row b.zero{color:#4b5470}
+.g9-psy-row{display:flex;justify-content:space-between;align-items:center;background:rgba(31,39,64,.12);border-radius:14px;padding:8px 12px;font-size:13px;font-weight:900}
+.g9-psy-row b{font-family:"Fredoka",sans-serif;font-size:18px}
+
+.g9-winners{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.g9-win{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--cream);color:#1f2740;border-radius:24px;padding:14px}
+.g9-win-icon{display:block}
+.g9-win strong{font-family:"Fredoka",sans-serif;font-size:24px}
+.g9-win small{font-size:12px;font-weight:800;color:#4b5470}
+.g9-rank{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.g9-rank-row{display:flex;align-items:center;gap:12px;background:rgba(254,254,242,.6);color:#1f2740;border-radius:14px;padding:8px 14px;font-weight:800}
+.g9-rank-row.first{background:#F5B82E}
+.g9-rank-row.me{outline:2px solid #1f2740}
+.g9-rank-name{flex:1;display:flex;flex-direction:column}
+.g9-rank-name small{font-size:11px;font-weight:800;opacity:.75}
+.g9-rank-row b{font-family:"Fredoka",sans-serif;font-size:20px}
+.g9-actions{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center}
+.g9-actions .btn{min-height:56px}
+
+@media (max-width:900px){
+  .g9-root{min-height:0}
+}
+@media (max-width:520px){
+  .g9-custom-fields{grid-template-columns:1fr}
+  .g9-board{padding:14px 10px 10px}
+  .g9-end{font-size:13px;padding:5px 9px}
+  .g9-reveal-top{flex-direction:column}
+  .g9-target{flex-direction:row;gap:10px;justify-content:space-between;padding:8px 16px}
+}

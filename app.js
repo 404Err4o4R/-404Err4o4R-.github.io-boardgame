@@ -153,10 +153,12 @@ function renderCategories() {
   if (g6Section) g6Section.classList.toggle("hidden", S.selectedGame !== "game6");
   $("#g7Section")?.classList.toggle("hidden", S.selectedGame !== "game7");
   $("#g8Section")?.classList.toggle("hidden", S.selectedGame !== "game8");
+  $("#g9Section")?.classList.toggle("hidden", S.selectedGame !== "game9");
   $("#g1Section")?.classList.toggle("hidden", S.selectedGame !== "game1");
   $("#g2Section")?.classList.toggle("hidden", S.selectedGame !== "game2");
 
-  if (S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8") {
+  if (S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9") {
+    if (S.selectedGame === "game9") renderG9Preview();
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.add("hidden");
     if (langSection) langSection.classList.remove("hidden");
@@ -473,6 +475,26 @@ const ROOM_COVERS = {
       <div class="gc-label eyebrow">AIM · FIRE · SINK</div>
       <div class="gc-label bottom">Battleship 海戰棋</div>
     </div>
+  `,
+  game9: `
+    <div class="game-cover cover-g9">
+      <div class="gc-icon">
+        <svg viewBox="0 0 260 170" aria-hidden="true">
+          <path d="M14 150 A116 116 0 0 1 246 150 Z" fill="#FEFEF2" stroke="#1f2740" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M130 150 L178.4 44.6 A116 116 0 0 1 192.7 52.4 Z" fill="#F5B82E"/>
+          <path d="M130 150 L192.7 52.4 A116 116 0 0 1 205.8 62.3 Z" fill="#F26A3D"/>
+          <path d="M130 150 L205.8 62.3 A116 116 0 0 1 217.7 73.5 Z" fill="#5FA8C6"/>
+          <path d="M130 150 L217.7 73.5 A116 116 0 0 1 228.1 86.2 Z" fill="#F26A3D"/>
+          <path d="M130 150 L228.1 86.2 A116 116 0 0 1 236.8 100.1 Z" fill="#F5B82E"/>
+          <path d="M28 150 A102 102 0 0 1 232 150" fill="none" stroke="#929fc1" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round"/>
+          <path d="M130 150 L64 68" stroke="#E0284A" stroke-width="10" stroke-linecap="round"/>
+          <circle cx="130" cy="150" r="20" fill="#E0284A" stroke="#1f2740" stroke-width="5"/>
+          <circle cx="130" cy="150" r="7" fill="#FEFEF2" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="gc-label eyebrow">HINT · DIAL · GUESS</div>
+      <div class="gc-label bottom">Mind Dial 心中有數</div>
+    </div>
   `
 };
 
@@ -484,7 +506,8 @@ const GAME_ACCENTS = {
   game5: "#5c8fb0",
   game6: "#3C5A1E",
   game7: "#7A1030",
-  game8: "#22408C"
+  game8: "#22408C",
+  game9: "#1F6F94"
 };
 
 const GAME_NAMES = {
@@ -495,7 +518,8 @@ const GAME_NAMES = {
   game5: "故事接龍",
   game6: "Sync 唔 Sync",
   game7: "Number Bomb 數字炸彈",
-  game8: "Battleship 海戰棋"
+  game8: "Battleship 海戰棋",
+  game9: "Mind Dial 心中有數"
 };
 
 function renderRoomVisual() {
@@ -530,7 +554,8 @@ const COVER_TILE_LABELS = {
   game5: { full: "故事接龍", short: "故事接龍", bg: "#1f2740", fg: "#AFCBE3" },
   game6: { full: "Sync 唔 Sync", short: "Sync 唔 Sync", bg: "#1f2740", fg: "#B9DD5B" },
   game7: { full: "Number Bomb 數字炸彈", short: "數字炸彈", bg: "#1f2740", fg: "#FFD3DD" },
-  game8: { full: "Battleship 海戰棋", short: "海戰棋", bg: "#F2D965", fg: "#1f2740" }
+  game8: { full: "Battleship 海戰棋", short: "海戰棋", bg: "#F2D965", fg: "#1f2740" },
+  game9: { full: "Mind Dial 心中有數", short: "心中有數", bg: "#1f2740", fg: "#F5B82E" }
 };
 const COVER_GRID_COLUMNS = 3;
 
@@ -814,6 +839,7 @@ function applyFormLanguage() {
     if (el.dataset.yue === undefined) el.dataset.yue = el.textContent.trim();
     el.textContent = zh ? el.dataset.zh : el.dataset.yue;
   });
+  renderG9Preview();
 }
 
 // 房間入面嘅說明文字：台灣版房間用書面語。
@@ -1035,6 +1061,12 @@ S.g8TurnSeconds = 20;
 bindChips("#g8RoundsBox", ".g8-rounds-chip", (chip) => { S.g8Rounds = Number(chip.dataset.rounds) || 3; });
 bindChips("#g8TimeBox", ".g8-time-chip", (chip) => { S.g8TurnSeconds = Number(chip.dataset.sec) || 20; });
 
+/* Game 9 · 心中有數 開房設定 */
+S.g9Rounds = 2;
+S.g9GuessSeconds = 30;
+bindChips("#g9RoundsBox", ".g9-rounds-chip", (chip) => { S.g9Rounds = Number(chip.dataset.rounds) || 2; renderG9Preview(); });
+bindChips("#g9TimeBox", ".g9-time-chip", (chip) => { S.g9GuessSeconds = Number(chip.dataset.sec) || 30; });
+
 /* =========================
    房間
 ========================= */
@@ -1091,7 +1123,7 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: (S.selectedGame === "game1" || S.selectedGame === "game2" || S.selectedGame === "game3" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8") ? (S.selectedLanguage || "yue") : null,
+        language: (S.selectedGame === "game1" || S.selectedGame === "game2" || S.selectedGame === "game3" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9") ? (S.selectedLanguage || "yue") : null,
         g1VoteSeconds: S.selectedGame === "game1" ? S.g1VoteSeconds : null,
         g1Rounds: S.selectedGame === "game1" ? S.g1Rounds : null,
         g2SpeakSeconds: S.selectedGame === "game2" ? S.g2SpeakSeconds : null,
@@ -1103,6 +1135,8 @@ async function createRoom() {
         g7Rounds: S.selectedGame === "game7" ? S.g7Rounds : null,
         g8TurnSeconds: S.selectedGame === "game8" ? S.g8TurnSeconds : null,
         g8Rounds: S.selectedGame === "game8" ? S.g8Rounds : null,
+        g9GuessSeconds: S.selectedGame === "game9" ? S.g9GuessSeconds : null,
+        g9Rounds: S.selectedGame === "game9" ? S.g9Rounds : null,
         g4Rounds: S.selectedGame === "game4" ? (S.selectedG4Rounds || 20) : null,
         g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null,
         g5Mode: S.selectedGame === "game5" ? (S.selectedG5Mode || "sentence") : null,
@@ -1576,6 +1610,8 @@ function renderRoom() {
             ${lz("每炮", "每砲")} ${Math.round(room.g8Settings.turnMs / 1000)} 秒 ·
             ${room.language === "zh" ? "台灣版" : "香港版"}
           </p>${g8LobbyHtml(room)}`
+        : room.game === "game9" && room.g9Settings
+        ? g9LobbyHtml(room)
         : ""
     }
 
@@ -1803,9 +1839,12 @@ function renderScoreboard(room) {
           const g8Team = g8 && g8.mode === "team" ? (g8.teams?.navy || []).includes(p.id) ? "navy" : (g8.teams?.pirate || []).includes(p.id) ? "pirate" : "" : "";
           const g8Out = !!(g8 && g8.mode === "brawl" && g8.boards?.find((b) => b.id === p.id)?.dead);
           const g8Turn = !!(g8 && g8.phase === "turn" && g8.shooter === p.id);
+          const g9 = room.game === "game9" && room.gameState && room.gameState.phase !== "gameover" ? room.gameState : null;
+          const g9Psy = !!(g9 && g9.psychicId === p.id);
+          const g9Locked = !!(g9 && g9.phase === "guess" && (g9.lockedIds || []).includes(p.id));
 
           return `
-            <div class="sb-row ${isMe ? "me" : ""} ${g7Out || g8Out ? "g7-out" : ""} ${g7Turn || g8Turn ? "g7-turn" : ""}" style="opacity:${p.connected ? (g7Out || g8Out ? ".55" : "1") : ".5"}">
+            <div class="sb-row ${isMe ? "me" : ""} ${g7Out || g8Out ? "g7-out" : ""} ${g7Turn || g8Turn || g9Psy ? "g7-turn" : ""}" style="opacity:${p.connected ? (g7Out || g8Out ? ".55" : "1") : ".5"}">
               <span class="sb-rank">${index + 1}</span>
               <span class="sb-name">
                 ${
@@ -1820,6 +1859,8 @@ function renderScoreboard(room) {
                 ${g8Team ? `<span class="sb-tag g8-sb-${g8Team}">${esc(g8T().teams[g8Team])}</span>` : ""}
                 ${g8Out ? `<span class="sb-tag">${esc(g8T().out)}</span>` : ""}
                 ${g8Turn ? `<span class="sb-tag">${esc(g8T().shooterTag)}</span>` : ""}
+                ${g9Psy ? `<span class="sb-tag">${esc(g9T().tagPsy)}</span>` : ""}
+                ${g9Locked ? `<span class="sb-tag">${esc(g9T().tagLocked)}</span>` : ""}
               </span>
               <b class="sb-score">${p.score || 0}</b>
             </div>
@@ -1852,6 +1893,20 @@ function renderScoreboard(room) {
             onclick="g8EndEarly()"
           >
             提前結算
+          </button>`
+        : ""
+    }
+
+    ${
+      S.room?.game === "game9" &&
+      room.hostId === S.playerId &&
+      room.gameState?.phase !== "gameover"
+        ? `<button
+            class="btn btn-outline"
+            style="margin-top:8px;font-size:13px;padding:10px"
+            onclick="g9EndEarly()"
+          >
+            ${esc(g9T().endEarly)}
           </button>`
         : ""
     }
@@ -1967,6 +2022,8 @@ function renderGame() {
     renderGame7(game);
   } else if (S.room.game === "game8") {
     renderGame8(game);
+  } else if (S.room.game === "game9") {
+    renderGame9(game);
   } else {
     renderGame2(game);
   }
@@ -6820,6 +6877,721 @@ function g8LobbyHtml(room) {
     </div>
   `;
 }
+
+/* =========================
+   Game 9 · 心中有數
+========================= */
+
+const G9_TEXT = {
+  yue: {
+    roundLabel: (r, t) => `ROUND ${r} / ${t}`,
+    turnLabel: (i, n) => `第 ${i} / ${n} 位出題`,
+    tagPsy: "出題人",
+    tagLocked: "已鎖定",
+    youPsy: "你係出題人",
+    secret: "只有你見到目標位置，唔好俾人偷睇",
+    hintLabel: "你嘅提示",
+    hintSub: "一個字詞或者一句",
+    hintPh: "例如：沙律加芝士醬",
+    hintHelp: (l, r) => `諗一樣嘢，喺「${l} ↔ ${r}」之間啱啱好落喺藍色 4 分位`,
+    send: "送出提示",
+    swap: "換題",
+    blankBanner: "空白題！自己出一條光譜再俾提示，有 60 秒",
+    blankLeft: "左邊（黃色）",
+    blankRight: "右邊（藍色）",
+    blankLeftPh: "例如：唔使諗",
+    blankRightPh: "例如：諗到頭痕",
+    blankRule: "每邊最多 8 個中文字或者 16 個英文字母",
+    blankPill: "？",
+    blankThinking: (n) => `空白題！${n} 自己出緊光譜…`,
+    blankWait: "出題人會自己寫埋光譜兩邊，等陣先知",
+    customTag: "出題人自訂光譜",
+    errCustomEmpty: "光譜兩邊都要打字。",
+    errCustomLong: "每邊最多 8 個中文字或者 16 個英文字母。",
+    errCustomSame: "兩邊唔可以一樣。",
+    thinking: (n) => `${n} 諗緊提示…`,
+    waitHint: "等出題人出提示，可以先諗吓呢條光譜",
+    hintOf: (n) => `${n} 嘅提示`,
+    dragHelp: "拖個指針去你覺得啱嘅位置",
+    fine: "微調",
+    lock: "鎖定答案",
+    lockedTitle: "已鎖定",
+    lockCount: (a, b) => `已鎖定 ${a} / ${b}`,
+    psyWatch: "大家估緊，睇吓佢哋有幾明你",
+    sliderLabel: (l, r) => `指針位置，0 係「${l}」，100 係「${r}」`,
+    target: "目標",
+    reveal: "揭曉",
+    diffLine: (v, d) => `${v} · 差 ${d}`,
+    verdict: { 4: "正中紅心", 3: "好近", 2: "擦邊", 0: "差太遠" },
+    noGuess: "冇估到",
+    psyGets: (n) => `出題人 ${n} · 攞全隊平均`,
+    skipped: "出題人夠鐘都未出提示，呢題跳過",
+    nextPsy: (n, i, t) => `下個出題人：${n}（第 ${i} / ${t} 位）`,
+    nextRound: (r, n) => `入 Round ${r} · 下個出題人：${n}`,
+    last: "最後一題，準備結算",
+    you: "你",
+    endedEarly: "提前結算",
+    done: (n) => `一共玩咗 ${n} 題`,
+    winTitle: "心中最有數！",
+    tieTitle: "心中一樣咁有數！",
+    noWinner: "今局冇人得分",
+    ranking: "排名",
+    bulls: (n) => `正中紅心 ${n} 次`,
+    lobby: "返大堂",
+    again: "再玩一局",
+    waitHost: "等房主決定再玩定散",
+    endEarly: "提前結算",
+    confirmEnd: "肯定提前結算？之後就唔可以再繼續呢局。",
+    errEmpty: "打咗提示先。",
+    errLong: "提示最多 20 個字。",
+    lobbyLine: (r, s) => `${r} round · 估 ${s} 秒 · 出提示 45 秒（空白題 60 秒）· 香港版`,
+    lobbyCount: (n, q, a, b) => `而家 ${n} 人：共 ${q} 題 · 約 ${a}–${b} 分鐘`,
+    lobbyNote: "每個 round 入面，每人輪流做一次出題人",
+    preview: (q, a, b) => `例如 4 個人玩：共 ${q} 題 · 約 ${a}–${b} 分鐘`
+  },
+  zh: {
+    roundLabel: (r, t) => `ROUND ${r} / ${t}`,
+    turnLabel: (i, n) => `第 ${i} / ${n} 位出題`,
+    tagPsy: "出題人",
+    tagLocked: "已鎖定",
+    youPsy: "你是出題人",
+    secret: "只有你看得到目標位置，別讓其他人偷看",
+    hintLabel: "你的提示",
+    hintSub: "一個詞語或一句話",
+    hintPh: "例如：沙拉加起司醬",
+    hintHelp: (l, r) => `想一樣事物，在「${l} ↔ ${r}」之間剛好落在藍色 4 分區`,
+    send: "送出提示",
+    swap: "換題",
+    blankBanner: "空白題！請自行設定光譜再給提示，限時 60 秒",
+    blankLeft: "左邊（黃色）",
+    blankRight: "右邊（藍色）",
+    blankLeftPh: "例如：不用思考",
+    blankRightPh: "例如：想破頭",
+    blankRule: "每邊最多 8 個中文字或 16 個英文字母",
+    blankPill: "？",
+    blankThinking: (n) => `空白題！${n} 正在自訂光譜…`,
+    blankWait: "出題人會自行寫下光譜兩端，稍後揭曉",
+    customTag: "出題人自訂光譜",
+    errCustomEmpty: "光譜兩邊都要填寫。",
+    errCustomLong: "每邊最多 8 個中文字或 16 個英文字母。",
+    errCustomSame: "兩邊不能一樣。",
+    thinking: (n) => `${n} 正在想提示…`,
+    waitHint: "等待出題人給提示，可以先想想這條光譜",
+    hintOf: (n) => `${n} 的提示`,
+    dragHelp: "把指針拖到你認為正確的位置",
+    fine: "微調",
+    lock: "鎖定答案",
+    lockedTitle: "已鎖定",
+    lockCount: (a, b) => `已鎖定 ${a} / ${b}`,
+    psyWatch: "大家正在猜，看看他們有多懂你",
+    sliderLabel: (l, r) => `指針位置，0 是「${l}」，100 是「${r}」`,
+    target: "目標",
+    reveal: "揭曉",
+    diffLine: (v, d) => `${v} · 相差 ${d}`,
+    verdict: { 4: "正中紅心", 3: "非常接近", 2: "擦邊", 0: "相差太遠" },
+    noGuess: "沒有作答",
+    psyGets: (n) => `出題人 ${n} · 獲得全隊平均分`,
+    skipped: "出題人超時未給提示，本題跳過",
+    nextPsy: (n, i, t) => `下一位出題人：${n}（第 ${i} / ${t} 位）`,
+    nextRound: (r, n) => `進入 Round ${r} · 下一位出題人：${n}`,
+    last: "最後一題，準備結算",
+    you: "你",
+    endedEarly: "提前結算",
+    done: (n) => `共進行了 ${n} 題`,
+    winTitle: "心中最有數！",
+    tieTitle: "心中同樣有數！",
+    noWinner: "本局沒有人得分",
+    ranking: "排名",
+    bulls: (n) => `正中紅心 ${n} 次`,
+    lobby: "返回大廳",
+    again: "再玩一局",
+    waitHost: "等待房主決定是否再玩",
+    endEarly: "提前結算",
+    confirmEnd: "確定要提前結算嗎？結算後無法繼續本局。",
+    errEmpty: "請先輸入提示。",
+    errLong: "提示最多 20 個字。",
+    lobbyLine: (r, s) => `${r} 回合 · 猜測 ${s} 秒 · 出提示 45 秒（空白題 60 秒）· 台灣版`,
+    lobbyCount: (n, q, a, b) => `目前 ${n} 人：共 ${q} 題 · 約 ${a}–${b} 分鐘`,
+    lobbyNote: "每一回合中，每人輪流擔任一次出題人",
+    preview: (q, a, b) => `以 4 人為例：共 ${q} 題 · 約 ${a}–${b} 分鐘`
+  }
+};
+
+const G9_HINT_MAX = 20;
+const G9_SPEC_MAX_UNITS = 16;
+
+// 中文字（同全形符號）算 2，英文字母算 1；每邊上限 16，即係中文 8 字或者英文 16 個字母。
+function g9Units(str) {
+  let n = 0;
+  for (const ch of String(str || "")) n += ch.codePointAt(0) >= 0x2E80 ? 2 : 1;
+  return n;
+}
+const G9_ZONES = [
+  { from: -10, to: -6, pts: 2, fill: "#F5B82E" },
+  { from: -6, to: -2, pts: 3, fill: "#F26A3D" },
+  { from: -2, to: 2, pts: 4, fill: "#5FA8C6" },
+  { from: 2, to: 6, pts: 3, fill: "#F26A3D" },
+  { from: 6, to: 10, pts: 2, fill: "#F5B82E" }
+];
+
+function g9T(lang) {
+  const key = lang || (S.room?.language === "zh" ? "zh" : "yue");
+  return G9_TEXT[key === "zh" ? "zh" : "yue"];
+}
+
+// 揭曉轉盤上面嘅名牌：用名嘅第一個字；同其他人撞（例如「阿明」「阿詩」）就用最後一個字，再撞就用頭兩個字。
+function g9Initial(id) {
+  const chars = (n) => [...(n || "?")];
+  const players = S.room?.players || [];
+  const mine = chars(players.find((p) => p.id === id)?.nickname);
+  const others = players.filter((p) => p.id !== id).map((p) => chars(p.nickname));
+  const first = mine[0];
+  if (!others.some((o) => o[0] === first)) return first;
+  const last = mine[mine.length - 1];
+  if (mine.length > 1 && !others.some((o) => o[0] === last || o[o.length - 1] === last)) return last;
+  return mine.slice(0, 2).join("");
+}
+
+function g9Nick(id) {
+  if (id && id === S.playerId) return g9T().you;
+  return S.room?.players?.find((p) => p.id === id)?.nickname || "玩家";
+}
+
+// 每題大約 1–1.5 分鐘（出提示 ≤45 秒 + 估 + 揭曉）。
+function g9Estimate(questions) {
+  return [questions, Math.ceil(questions * 1.5)];
+}
+
+function renderG9Preview() {
+  const box = $("#g9Preview");
+  if (!box) return;
+  const t = g9T(S.selectedLanguage === "zh" ? "zh" : "yue");
+  const q = 4 * (S.g9Rounds || 2);
+  const [a, b] = g9Estimate(q);
+  box.textContent = t.preview(q, a, b);
+}
+
+function g9LobbyHtml(room) {
+  const t = g9T();
+  const st = room.g9Settings;
+  const n = room.players.filter((p) => p.connected).length;
+  const q = n * st.rounds;
+  const [a, b] = g9Estimate(q);
+  return `
+    <p class="notice" style="margin:10px 0 0">${esc(t.lobbyLine(st.rounds, Math.round(st.guessMs / 1000)))}</p>
+    <div class="g9-lobby">
+      <strong>${esc(t.lobbyCount(n, q, a, b))}</strong>
+      <small>${esc(t.lobbyNote)}</small>
+    </div>
+  `;
+}
+
+/* ---- 轉盤 ---- */
+
+function g9Pt(v, r) {
+  const a = Math.PI * (1 - v / 100);
+  return [+(170 + r * Math.cos(a)).toFixed(2), +(170 - r * Math.sin(a)).toFixed(2)];
+}
+
+function g9Sector(v1, v2) {
+  const a = Math.max(0, Math.min(100, v1));
+  const b = Math.max(0, Math.min(100, v2));
+  if (b - a <= 0) return "";
+  const [x1, y1] = g9Pt(a, 156);
+  const [x2, y2] = g9Pt(b, 156);
+  return `M170 170 L${x1} ${y1} A156 156 0 0 1 ${x2} ${y2} Z`;
+}
+
+function g9Ticks() {
+  let d = "";
+  for (let v = 0; v <= 100; v += 5) {
+    const [x1, y1] = g9Pt(v, v % 25 === 0 ? 138 : 146);
+    const [x2, y2] = g9Pt(v, 156);
+    d += `M${x1} ${y1}L${x2} ${y2}`;
+  }
+  return d;
+}
+
+// opts: target（null 就唔顯示分區）、value（自己支指針）、marks（揭曉時各人指針）、interactive、label
+function g9DialSvg(opts = {}) {
+  const T = opts.target;
+  let zones = "";
+  if (T !== null && T !== undefined) {
+    zones = G9_ZONES.map((z) => {
+      const d = g9Sector(T + z.from, T + z.to);
+      if (!d) return "";
+      const lo = Math.max(0, T + z.from);
+      const hi = Math.min(100, T + z.to);
+      const label = hi - lo >= 2.5
+        ? (() => { const [x, y] = g9Pt((lo + hi) / 2, 128); return `<text x="${x}" y="${y}" class="g9-zone-n">${z.pts}</text>`; })()
+        : "";
+      return `<path d="${d}" fill="${z.fill}"></path>${label}`;
+    }).join("");
+  }
+
+  const marks = (opts.marks || []).map((m) => {
+    const [x, y] = g9Pt(m.value, 130);
+    return `
+      <line x1="170" y1="170" x2="${x}" y2="${y}" class="g9-mark-line ${m.me ? "me" : ""}"></line>
+      <g class="g9-mark ${m.me ? "me" : ""}">
+        <circle cx="${x}" cy="${y}" r="14"></circle>
+        <text x="${x}" y="${y}">${esc(m.label)}</text>
+      </g>`;
+  }).join("");
+
+  let needle = "";
+  if (opts.value !== null && opts.value !== undefined) {
+    const [x, y] = g9Pt(opts.value, 132);
+    const live = !!opts.interactive;
+    needle = `
+      <line ${live ? 'id="g9Needle"' : ""} x1="170" y1="170" x2="${x}" y2="${y}" class="g9-needle"></line>
+      <circle ${live ? 'id="g9Knob"' : ""} cx="${x}" cy="${y}" r="11" class="g9-knob"></circle>`;
+  }
+
+  const a11y = opts.interactive
+    ? `id="g9Dial" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${opts.value}" aria-label="${esc(opts.label || "")}"`
+    : `role="img" aria-label="${esc(opts.label || "")}"`;
+
+  return `
+    <svg class="g9-dial ${opts.interactive ? "live" : ""}" viewBox="0 0 340 180" ${a11y}>
+      <path d="M10 170 A160 160 0 0 1 330 170 Z" class="g9-face"></path>
+      ${zones}
+      <path d="${g9Ticks()}" class="g9-ticks"></path>
+      ${marks}
+      ${needle}
+      <circle cx="170" cy="170" r="20" class="g9-hub"></circle>
+      <circle cx="170" cy="170" r="7" class="g9-hub-dot"></circle>
+    </svg>
+  `;
+}
+
+function g9SpectrumRow(sp) {
+  if (!sp) return "";
+  return `
+    <div class="g9-spec">
+      <span class="g9-end left">← ${esc(sp.left)}</span>
+      ${sp.custom ? `<span class="g9-custom-tag">${esc(g9T().customTag)}</span>` : ""}
+      <span class="g9-end right">${esc(sp.right)} →</span>
+    </div>
+  `;
+}
+
+function g9Head(game, pill) {
+  const t = g9T();
+  return `
+    <div class="g9-head">
+      <div>
+        <div class="eyebrow">${esc(t.roundLabel(game.round, game.totalRounds))} · ${esc(t.turnLabel(game.turnIndex + 1, game.turnCount))}</div>
+        ${pill ? `<span class="g9-pill">${esc(pill)}</span>` : ""}
+      </div>
+      ${game.endsAt && game.phase !== "gameover" ? `<div id="time" class="timer"></div>` : ""}
+    </div>
+  `;
+}
+
+/* ---- 主畫面 ---- */
+
+function renderGame9(game) {
+  const me = S.playerId;
+  const isPsy = game.psychicId === me;
+  const isGuesser = (game.guesserIds || []).includes(me);
+  const locked = game.myGuess !== null && game.myGuess !== undefined;
+
+  // 估緊嘅時候，其他人鎖定唔使成個畫面重畫（費事打斷拖緊嘅指針），淨係更新數字。
+  const key = JSON.stringify([
+    game.phase, game.turnNo, game.spectrum?.id, game.spectrum?.left, game.spectrum?.right, game.swapsLeft, game.hint, locked,
+    game.target, S.room?.language, game.skipped,
+    game.phase === "gameover" ? (game.ranking || []).map((p) => p.id + p.score).join() : ""
+  ]);
+  if (S.g9Key === key && $("#gamePanel .g9-root")) {
+    g9UpdateLockCount(game);
+    return;
+  }
+  S.g9Key = key;
+
+  if (game.phase === "gameover") return renderGame9Gameover(game);
+  if (game.phase === "reveal") return renderGame9Reveal(game);
+  if (game.phase === "hint") return isPsy ? renderGame9Psychic(game) : renderGame9WaitHint(game);
+  if (game.phase === "guess") {
+    if (isGuesser && !locked) return renderGame9Guess(game);
+    return renderGame9Watch(game, isPsy);
+  }
+}
+
+function g9UpdateLockCount(game) {
+  const el = $("#g9LockCount");
+  if (el) el.textContent = g9T().lockCount((game.lockedIds || []).length, (game.guesserIds || []).length);
+}
+
+function renderGame9Psychic(game) {
+  const t = g9T();
+  const sp = game.spectrum || { left: "", right: "" };
+  const blank = !!game.blank;
+  if (S.g9DraftTurn !== game.turnNo) {
+    S.g9Draft = "";
+    S.g9CustomL = "";
+    S.g9CustomR = "";
+  }
+  S.g9DraftTurn = game.turnNo;
+  const left = blank ? (S.g9CustomL.trim() || t.blankPill) : sp.left;
+  const right = blank ? (S.g9CustomR.trim() || t.blankPill) : sp.right;
+
+  $("#gamePanel").innerHTML = `
+    <div class="g9-root">
+      ${g9Head(game, t.youPsy)}
+      ${blank ? `<div class="g9-blank-banner">${esc(t.blankBanner)}</div>` : ""}
+      <div class="g9-secret">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <span>${esc(t.secret)}</span>
+      </div>
+      <div class="g9-board">
+        ${g9DialSvg({ target: game.target, label: `${t.target} ${game.target}` })}
+        <div class="g9-spec-row">
+          <span class="g9-end left" id="g9PillL">← ${esc(left)}</span>
+          ${blank ? "" : `
+            <button type="button" class="g9-swap" onclick="g9Swap()" ${game.swapsLeft > 0 ? "" : "disabled"}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"></path><path d="M3 21v-5h5"></path></svg>
+              ${esc(t.swap)} (${game.swapsLeft || 0})
+            </button>`}
+          <span class="g9-end right" id="g9PillR">${esc(right)} →</span>
+        </div>
+      </div>
+      <form class="g9-hint-form" onsubmit="event.preventDefault();g9SendHint()">
+        ${blank ? `
+          <div class="g9-custom-fields">
+            <label><span>${esc(t.blankLeft)}</span><input id="g9CustomL" type="text" maxlength="40" autocomplete="off" placeholder="${esc(t.blankLeftPh)}" value="${esc(S.g9CustomL)}"></label>
+            <label><span>${esc(t.blankRight)}</span><input id="g9CustomR" type="text" maxlength="40" autocomplete="off" placeholder="${esc(t.blankRightPh)}" value="${esc(S.g9CustomR)}"></label>
+          </div>
+          <p class="g9-help">${esc(t.blankRule)}</p>
+        ` : ""}
+        <label class="g9-hint-field">
+          <span class="g9-label"><span>${esc(t.hintLabel)}</span><span id="g9HintLen">${[...S.g9Draft].length} / ${G9_HINT_MAX}</span></span>
+          <input id="g9Hint" type="text" maxlength="${G9_HINT_MAX * 2}" autocomplete="off" placeholder="${esc(t.hintPh)}" value="${esc(S.g9Draft)}">
+        </label>
+        <p class="g9-help" id="g9HintHelp">${esc(t.hintHelp(left, right))}</p>
+        <button type="submit" class="btn btn-yellow g9-cta">${esc(t.send)}</button>
+      </form>
+    </div>
+  `;
+
+  const input = $("#g9Hint");
+  input?.addEventListener("input", () => {
+    S.g9Draft = input.value;
+    const n = [...input.value.trim()].length;
+    const len = $("#g9HintLen");
+    if (len) {
+      len.textContent = `${n} / ${G9_HINT_MAX}`;
+      len.classList.toggle("over", n > G9_HINT_MAX);
+    }
+  });
+  // 空白題：一路打字，上面兩粒光譜掣同提示說明即時跟住變。
+  const sync = () => {
+    const l = S.g9CustomL.trim() || t.blankPill;
+    const r = S.g9CustomR.trim() || t.blankPill;
+    const pl = $("#g9PillL"), pr = $("#g9PillR"), help = $("#g9HintHelp");
+    if (pl) pl.textContent = `← ${l}`;
+    if (pr) pr.textContent = `${r} →`;
+    if (help) help.textContent = t.hintHelp(l, r);
+  };
+  for (const [id, key] of [["g9CustomL", "g9CustomL"], ["g9CustomR", "g9CustomR"]]) {
+    const el = $("#" + id);
+    el?.addEventListener("input", () => {
+      S[key] = el.value;
+      el.classList.toggle("over", g9Units(el.value.trim()) > G9_SPEC_MAX_UNITS);
+      sync();
+    });
+    el?.classList.toggle("over", g9Units((el?.value || "").trim()) > G9_SPEC_MAX_UNITS);
+  }
+  if (window.matchMedia("(pointer:fine)").matches) (blank ? $("#g9CustomL") : input)?.focus();
+  startTimer($("#time"), game.endsAt);
+}
+
+function renderGame9WaitHint(game) {
+  const t = g9T();
+  $("#gamePanel").innerHTML = `
+    <div class="g9-root">
+      ${g9Head(game, t.tagPsy + "：" + g9Nick(game.psychicId))}
+      <h2 class="g9-big">${esc(game.blank ? t.blankThinking(g9Nick(game.psychicId)) : t.thinking(g9Nick(game.psychicId)))}</h2>
+      <div class="g9-board">
+        ${g9DialSvg({ label: game.blank ? t.blankWait : t.waitHint })}
+        ${game.blank
+          ? `<div class="g9-spec"><span class="g9-end left">← ${esc(t.blankPill)}</span><span class="g9-end right">${esc(t.blankPill)} →</span></div>`
+          : g9SpectrumRow(game.spectrum)}
+      </div>
+      <p class="g9-note">${esc(game.blank ? t.blankWait : t.waitHint)}</p>
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+}
+
+function g9HintCard(game) {
+  const t = g9T();
+  return `
+    <div class="g9-hint-card">
+      <div class="g9-hint-eyebrow">${esc(t.hintOf(g9Nick(game.psychicId)))}${game.spectrum?.custom ? ` · ${esc(t.customTag)}` : ""}</div>
+      <div class="g9-hint-text">${esc(game.hint)}</div>
+    </div>
+  `;
+}
+
+function renderGame9Guess(game) {
+  const t = g9T();
+  S.g9Vals = S.g9Vals || {};
+  if (S.g9Vals[game.turnNo] === undefined) S.g9Vals[game.turnNo] = 50;
+  const v = S.g9Vals[game.turnNo];
+  const sp = game.spectrum || { left: "", right: "" };
+
+  $("#gamePanel").innerHTML = `
+    <div class="g9-root">
+      ${g9Head(game, t.tagPsy + "：" + g9Nick(game.psychicId))}
+      ${g9HintCard(game)}
+      <div class="g9-board">
+        ${g9DialSvg({ value: v, interactive: true, label: t.sliderLabel(sp.left, sp.right) })}
+        <div class="g9-spec-row">
+          <span class="g9-end left">← ${esc(sp.left)}</span>
+          <strong id="g9Val" class="g9-val">${v}</strong>
+          <span class="g9-end right">${esc(sp.right)} →</span>
+        </div>
+        <label class="g9-fine">
+          <span>${esc(t.fine)}</span>
+          <input id="g9Range" type="range" min="0" max="100" step="1" value="${v}" aria-label="${esc(t.sliderLabel(sp.left, sp.right))}">
+        </label>
+      </div>
+      <p class="g9-note"><span>${esc(t.dragHelp)}</span> · <span id="g9LockCount">${esc(t.lockCount((game.lockedIds || []).length, (game.guesserIds || []).length))}</span></p>
+      <button type="button" class="btn btn-dark g9-cta" onclick="g9Lock()">${esc(t.lock)}</button>
+    </div>
+  `;
+
+  g9BindDial(game.turnNo);
+  startTimer($("#time"), game.endsAt);
+}
+
+function g9SetVal(turnNo, v) {
+  v = Math.max(0, Math.min(100, Math.round(v)));
+  S.g9Vals[turnNo] = v;
+  const [x, y] = g9Pt(v, 132);
+  $("#g9Needle")?.setAttribute("x2", x);
+  $("#g9Needle")?.setAttribute("y2", y);
+  $("#g9Knob")?.setAttribute("cx", x);
+  $("#g9Knob")?.setAttribute("cy", y);
+  $("#g9Dial")?.setAttribute("aria-valuenow", v);
+  const out = $("#g9Val");
+  if (out) out.textContent = String(v);
+  const range = $("#g9Range");
+  if (range && Number(range.value) !== v) range.value = String(v);
+}
+
+function g9BindDial(turnNo) {
+  const svg = $("#g9Dial");
+  if (!svg) return;
+  let dragging = false;
+  const valueAt = (e) => {
+    const r = svg.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (340 / r.width);
+    const y = (e.clientY - r.top) * (180 / r.height);
+    const a = Math.atan2(Math.max(170 - y, 0.0001), x - 170);
+    return (1 - a / Math.PI) * 100;
+  };
+  svg.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    try { svg.setPointerCapture(e.pointerId); } catch {}
+    g9SetVal(turnNo, valueAt(e));
+    e.preventDefault();
+  });
+  svg.addEventListener("pointermove", (e) => { if (dragging) g9SetVal(turnNo, valueAt(e)); });
+  const stop = () => { dragging = false; };
+  svg.addEventListener("pointerup", stop);
+  svg.addEventListener("pointercancel", stop);
+  svg.addEventListener("keydown", (e) => {
+    const cur = S.g9Vals[turnNo];
+    const step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -10, PageUp: 10 }[e.key];
+    if (step !== undefined) { g9SetVal(turnNo, cur + step); e.preventDefault(); }
+    else if (e.key === "Home") { g9SetVal(turnNo, 0); e.preventDefault(); }
+    else if (e.key === "End") { g9SetVal(turnNo, 100); e.preventDefault(); }
+  });
+  $("#g9Range")?.addEventListener("input", (e) => g9SetVal(turnNo, Number(e.target.value)));
+}
+
+function renderGame9Watch(game, isPsy) {
+  const t = g9T();
+  const mine = game.myGuess;
+  const sp = game.spectrum || { left: "", right: "" };
+  $("#gamePanel").innerHTML = `
+    <div class="g9-root">
+      ${g9Head(game, isPsy ? t.youPsy : t.lockedTitle)}
+      ${g9HintCard(game)}
+      <div class="g9-board">
+        ${isPsy
+          ? g9DialSvg({ target: game.target, label: `${t.target} ${game.target}` })
+          : g9DialSvg({ value: mine, label: `${mine}` })}
+        <div class="g9-spec-row">
+          <span class="g9-end left">← ${esc(sp.left)}</span>
+          ${isPsy ? "" : `<strong class="g9-val">${mine ?? ""}</strong>`}
+          <span class="g9-end right">${esc(sp.right)} →</span>
+        </div>
+      </div>
+      <p class="g9-note">${isPsy ? `${esc(t.psyWatch)} · ` : ""}<span id="g9LockCount">${esc(t.lockCount((game.lockedIds || []).length, (game.guesserIds || []).length))}</span></p>
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+}
+
+function renderGame9Reveal(game) {
+  const t = g9T();
+  const sp = game.spectrum || { left: "", right: "" };
+  const next = game.next || {};
+  let nextLine = "";
+  if (next.last) nextLine = t.last;
+  else if (next.psychicId) {
+    nextLine = next.round !== game.round
+      ? t.nextRound(next.round, g9Nick(next.psychicId))
+      : t.nextPsy(g9Nick(next.psychicId), (next.turnIndex ?? 0) + 1, game.turnCount);
+  }
+
+  if (game.skipped || !game.result) {
+    $("#gamePanel").innerHTML = `
+      <div class="g9-root">
+        ${g9Head(game, t.reveal)}
+        <h2 class="g9-big">${esc(t.skipped)}</h2>
+        <div class="g9-board">
+          ${g9DialSvg({ target: game.target, label: `${t.target} ${game.target ?? ""}` })}
+          ${game.blank && !sp.left
+            ? `<div class="g9-spec"><span class="g9-end left">← ${esc(t.blankPill)}</span><span class="g9-end right">${esc(t.blankPill)} →</span></div>`
+            : g9SpectrumRow(sp)}
+        </div>
+        <p class="g9-note g9-push">${esc(nextLine)}</p>
+      </div>
+    `;
+    startTimer($("#time"), game.endsAt);
+    return;
+  }
+
+  const r = game.result;
+  const marks = r.guesses.map((g) => ({ value: g.value, label: g9Initial(g.id), me: g.id === S.playerId }));
+  // 自己支指針畫最後，唔會俾人遮住。
+  marks.sort((a, b) => Number(a.me) - Number(b.me));
+
+  const rows = r.guesses.map((g) => `
+    <div class="g9-row ${g.id === S.playerId ? "me" : ""} ${g.points === 4 ? "bull" : ""}">
+      <div class="g9-row-main">
+        <strong>${esc(g9Nick(g.id))}</strong>
+        <small>${esc(t.diffLine(g.value, g.diff))} · ${esc(t.verdict[g.points])}</small>
+      </div>
+      <b class="${g.points ? "" : "zero"}">+${g.points}</b>
+    </div>
+  `).join("");
+  const missing = (r.missing || []).map((id) => `
+    <div class="g9-row miss"><div class="g9-row-main"><strong>${esc(g9Nick(id))}</strong><small>${esc(t.noGuess)}</small></div><b class="zero">+0</b></div>
+  `).join("");
+
+  $("#gamePanel").innerHTML = `
+    <div class="g9-root">
+      ${g9Head(game, t.reveal)}
+      <div class="g9-reveal-top">
+        ${g9HintCard(game)}
+        <div class="g9-target"><span>${esc(t.target)}</span><strong>${r.target}</strong></div>
+      </div>
+      <div class="g9-board">
+        ${g9DialSvg({ target: r.target, marks, label: `${t.target} ${r.target}` })}
+        ${g9SpectrumRow(sp)}
+      </div>
+      <div class="g9-rows">${rows}${missing}</div>
+      <div class="g9-psy-row"><span>${esc(t.psyGets(g9Nick(game.psychicId)))}</span><b>+${r.psychicPoints}</b></div>
+      <p class="g9-note g9-push">${esc(nextLine)}</p>
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+}
+
+function renderGame9Gameover(game) {
+  const t = g9T();
+  clearInterval(S.timer);
+  const ranking = game.ranking || [];
+  const top = ranking.length ? ranking[0].score : 0;
+  const winners = top > 0 ? ranking.filter((p) => p.score === top) : [];
+  const isHost = S.room.hostId === S.playerId;
+  const rankOf = (score) => 1 + ranking.filter((p) => p.score > score).length;
+
+  $("#gamePanel").innerHTML = `
+    <div class="g9-root g9-result">
+      <div>
+        <div class="eyebrow">${esc(game.endedEarly ? t.endedEarly : t.done(game.turnNo || 0))}</div>
+        <h2 class="g9-big">${esc(winners.length > 1 ? t.tieTitle : winners.length ? t.winTitle : t.noWinner)}</h2>
+      </div>
+      ${winners.length ? `
+        <div class="g9-winners">
+          ${winners.map((p) => `
+            <div class="g9-win">
+              <svg class="g9-win-icon" width="64" height="40" viewBox="0 0 64 40" aria-hidden="true">
+                <path d="M4 36 A28 28 0 0 1 60 36 Z" fill="#fff" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M32 36 L26.2 10.6 A26 26 0 0 1 37.8 10.6 Z" fill="#5FA8C6"/>
+                <path d="M32 36 L32 12" stroke="#E0284A" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="32" cy="36" r="5.5" fill="#E0284A" stroke="#1f2740" stroke-width="2.5"/>
+              </svg>
+              <strong>${esc(g9Nick(p.id))}</strong>
+              <small>${p.score} 分 · ${esc(t.bulls(p.bulls || 0))}</small>
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
+      <div>
+        <div class="eyebrow">${esc(t.ranking)}</div>
+        <div class="g9-rank">
+          ${ranking.map((p) => `
+            <div class="g9-rank-row ${winners.some((w) => w.id === p.id) ? "first" : ""} ${p.id === S.playerId ? "me" : ""}">
+              <span>${rankOf(p.score)}</span>
+              <span class="g9-rank-name">${esc(p.nickname)}${p.id === S.playerId ? `（${esc(t.you)}）` : ""}<small>${esc(t.bulls(p.bulls || 0))}</small></span>
+              <b>${p.score}</b>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+      <div class="g9-actions">
+        <button type="button" class="btn btn-outline" onclick="leaveRoom()">${esc(t.lobby)}</button>
+        ${isHost ? `<button type="button" class="btn btn-dark" onclick="g9Restart()">${esc(t.again)}</button>` : `<p class="g9-note">${esc(t.waitHost)}</p>`}
+      </div>
+    </div>
+  `;
+}
+
+window.g9Swap = () => {
+  send({ type: "g9:swap" });
+};
+
+window.g9SendHint = () => {
+  const t = g9T();
+  const game = S.room?.gameState;
+  const input = $("#g9Hint");
+  const text = (input?.value || "").replace(/\s+/g, " ").trim();
+  let left, right;
+  if (game?.blank) {
+    left = ($("#g9CustomL")?.value || "").replace(/\s+/g, " ").trim();
+    right = ($("#g9CustomR")?.value || "").replace(/\s+/g, " ").trim();
+    if (!left || !right) { flash(t.errCustomEmpty); (left ? $("#g9CustomR") : $("#g9CustomL"))?.focus(); return; }
+    if (g9Units(left) > G9_SPEC_MAX_UNITS || g9Units(right) > G9_SPEC_MAX_UNITS) { flash(t.errCustomLong); return; }
+    if (left.toLowerCase() === right.toLowerCase()) { flash(t.errCustomSame); return; }
+  }
+  if (!text) { flash(t.errEmpty); input?.focus(); return; }
+  if ([...text].length > G9_HINT_MAX) { flash(t.errLong); input?.focus(); return; }
+  send({ type: "g9:hint", text, left, right });
+};
+
+window.g9Lock = () => {
+  const game = S.room?.gameState;
+  if (!game || game.phase !== "guess") return;
+  const v = S.g9Vals?.[game.turnNo];
+  send({ type: "g9:guess", value: Number.isInteger(v) ? v : 50 });
+};
+
+window.g9Restart = () => {
+  send({ type: "g9:restart" });
+};
+
+window.g9EndEarly = async () => {
+  const ok = await askConfirm(g9T().confirmEnd);
+  if (!ok) return;
+  send({ type: "g9:end" });
+};
 
 // 首頁地區：要等全部函數同常數準備好先套用
 applyRegion(S.region);
