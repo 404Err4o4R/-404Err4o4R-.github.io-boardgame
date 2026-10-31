@@ -18,8 +18,8 @@ export const GAME9_SPECTRA = [
     "id": 2,
     "text": {
       "yue": {
-        "left": "underrated",
-        "right": "overrated"
+        "left": "Underrated",
+        "right": "Overrated"
       },
       "zh": {
         "left": "被低估",
@@ -148,7 +148,7 @@ export const GAME9_SPECTRA = [
     "id": 12,
     "text": {
       "yue": {
-        "left": "piece of cake",
+        "left": "Firm",
         "right": "搞唔掂"
       },
       "zh": {
@@ -161,12 +161,12 @@ export const GAME9_SPECTRA = [
     "id": 13,
     "text": {
       "yue": {
-        "left": "安全",
-        "right": "危險"
+        "left": "Red Flag",
+        "right": "Green Flag"
       },
       "zh": {
-        "left": "安全",
-        "right": "危險"
+        "left": "雷",
+        "right": "安全"
       }
     }
   },
@@ -227,7 +227,7 @@ export const GAME9_SPECTRA = [
     "text": {
       "yue": {
         "left": "冇人 like",
-        "right": "爆 like"
+        "right": "like 爆"
       },
       "zh": {
         "left": "無人按讚",
@@ -256,7 +256,7 @@ export const GAME9_SPECTRA = [
         "right": "冇 feel"
       },
       "zh": {
-        "left": "丟臉至極",
+        "left": "社死",
         "right": "毫無感覺"
       }
     }
