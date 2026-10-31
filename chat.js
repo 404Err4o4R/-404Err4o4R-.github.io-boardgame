@@ -368,6 +368,8 @@
       C.messages = C.messages.filter((m) => m.channel !== "team" || m.team === teamKey);
       C.unread.team = 0;
       if (!teamKey && C.tab === "team") C.tab = "all";
+      // 遊戲開始分好隊就自動切去隊伍頻道（淘汰區優先）；想去全房要自己撳
+      if (teamKey && C.tab !== "dead") C.tab = "team";
       C.teamKey = teamKey;
       renderLog();
     }
