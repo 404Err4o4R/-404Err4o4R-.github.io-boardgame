@@ -940,6 +940,7 @@ S.g1VoteSeconds = 10;
 S.g1Rounds = 0; // 0 = 無限
 S.g2SpeakSeconds = 30;
 S.g2Rounds = 5;
+S.g2Mode = "online";
 
 function bindChips(boxSel, chipSel, onPick) {
   $(boxSel)?.addEventListener("click", (event) => {
@@ -953,6 +954,7 @@ function bindChips(boxSel, chipSel, onPick) {
 
 bindChips("#g1TimeBox", ".g1-time-chip", (chip) => { S.g1VoteSeconds = Number(chip.dataset.sec) || 10; });
 bindChips("#g1RoundsBox", ".g1-rounds-chip", (chip) => { S.g1Rounds = Number(chip.dataset.rounds) || 0; });
+bindChips("#g2ModeBox", ".g2-mode-chip", (chip) => { S.g2Mode = chip.dataset.mode === "offline" ? "offline" : "online"; });
 bindChips("#g2TimeBox", ".g2-time-chip", (chip) => { S.g2SpeakSeconds = Number(chip.dataset.sec) || 30; });
 bindChips("#g2RoundsBox", ".g2-rounds-chip", (chip) => {
   const custom = $("#g2RoundsCustom");
@@ -1128,6 +1130,7 @@ async function createRoom() {
         g1Rounds: S.selectedGame === "game1" ? S.g1Rounds : null,
         g2SpeakSeconds: S.selectedGame === "game2" ? S.g2SpeakSeconds : null,
         g2Rounds: S.selectedGame === "game2" ? S.g2Rounds : null,
+        g2Mode: S.selectedGame === "game2" ? (S.g2Mode || "online") : null,
         g6AnswerSeconds: S.selectedGame === "game6" ? S.g6AnswerSeconds : null,
         g6Rounds: S.selectedGame === "game6" ? S.g6Rounds : null,
         g6VoteSeconds: S.selectedGame === "game6" ? S.g6VoteSeconds : null,
@@ -1337,6 +1340,7 @@ function handleServerMessage(message) {
     S.chat = message.room?.chat || [];
 
     saveSession();
+    window.RoomChat?.onWelcome(message.room, message.chatHistory, message.playerId);
 
     document.documentElement.style.setProperty(
       "--game-accent",
@@ -1366,6 +1370,8 @@ function handleServerMessage(message) {
   }
 
   S.room = message.room;
+  window.RoomChat?.onState(message.room);
+  (message.room.roomChatDead || []).forEach((m) => window.RoomChat?.onMessage(m));
 
   // 房間狀態入面嘅 chat 先係準嘅（例如新一題開始時伺服器會清空），
   // 每次 state 都由呢度重新同步，唔靠逐條 chat 訊息儲埋落嚟。
@@ -1397,6 +1403,17 @@ function handleServerMessage(message) {
     renderRoom();
     renderGame();
 
+    return;
+  }
+
+  // 全房聊天室（chat.js）
+  if (message.type === "chat:msg") {
+    window.RoomChat?.onMessage(message.msg);
+    return;
+  }
+
+  if (message.type === "chat:denied") {
+    window.RoomChat?.onDenied(message.reason);
     return;
   }
 
@@ -1477,6 +1494,7 @@ function leaveRoom() {
   S.role = null;
   S.explanation = null;
   S.chat = [];
+  window.RoomChat?.reset();
 
   showError("");
 
@@ -1510,6 +1528,8 @@ function flash(text) {
     setTimeout(() => el.remove(), 2000);
   }
 }
+
+window.RoomChat?.init((message) => send(message));
 
 function send(message) {
   if (!S.socket || S.socket.readyState !== WebSocket.OPEN || !S.token) {
@@ -1584,7 +1604,7 @@ function renderRoom() {
           </p>`
         : room.game === "game2" && room.g2Settings
         ? `<p class="notice" style="margin:10px 0 0">
-            每人發言 ${Math.round(room.g2Settings.speakMs / 1000)} 秒 · ${room.g2Settings.rounds} 輪
+            每人發言 ${Math.round(room.g2Settings.speakMs / 1000)} 秒 · ${room.g2Settings.rounds} 輪 · ${room.g2Settings.mode === "offline" ? "線下版" : "線上版"}
           </p>`
         : ""
     }
@@ -2356,63 +2376,7 @@ if (game.phase === "intro") {
       }
     </p>
 
-    <div class="chat-panel">
-      <div class="eyebrow">
-        TALK IT OUT
-      </div>
-
-      <div
-        class="row"
-        style="margin-top:8px"
-      >
-        <input
-          id="chat1"
-          placeholder="講下你點諗…"
-        >
-
-        <button
-          id="chat1Send"
-          class="btn btn-send"
-          disabled
-          onclick="chat1()"
-        >
-          SEND
-        </button>
-      </div>
-
-      <div
-        id="chatBox"
-        class="chat"
-      >
-        ${renderChatHtml()}
-      </div>
-    </div>
   `;
-  const chatInput = $("#chat1");
-  const chatSend = $("#chat1Send");
-
-  if (chatInput && chatSend) {
-    const updateSendButton = () => {
-      const hasText =
-        chatInput.value.trim().length > 0;
-
-      chatSend.disabled = !hasText;
-
-      chatSend.classList.toggle(
-        "ready",
-        hasText
-      );
-    };
-
-    chatInput.addEventListener(
-      "input",
-      updateSendButton
-    );
-
-    updateSendButton();
-  }
-
-  scrollChat();
 }
 
 window.vote1 = async (index) => {
@@ -2429,30 +2393,6 @@ window.vote1 = async (index) => {
     type: "g1:vote",
     option: index
   });
-};
-
-window.chat1 = () => {
-  const input = $("#chat1");
-  const button = $("#chat1Send");
-
-  if (!input) return;
-
-  const text =
-    input.value.trim();
-
-  if (!text) return;
-
-  send({
-    type: "g1:chat",
-    text
-  });
-
-  input.value = "";
-
-  if (button) {
-    button.disabled = true;
-    button.classList.remove("ready");
-  }
 };
 
 window.next1 = () => {
@@ -2958,6 +2898,13 @@ function renderGame2(game) {
         </span>
       </div>
 
+      ${
+        S.room.g2Settings?.mode === "offline"
+          ? `<p class="notice" style="margin-top:12px">
+              線下版：${mine ? "輪到你當面講解釋，講完可以撳「講完」。" : "請聽佢當面講解釋。"}計時完會自動輪到下一位。
+            </p>
+            ${mine ? `<button class="btn btn-dark" style="margin-top:12px" onclick="done2()">講完</button>` : ""}`
+          : `
       <div
         id="chatBox"
         class="chat"
@@ -2991,7 +2938,8 @@ function renderGame2(game) {
         >
           SEND
         </button>
-      </div>
+      </div>`
+      }
     `;
 
     const chatInput = $("#chat2");
@@ -3146,6 +3094,10 @@ window.chat2 = () => {
     button.disabled = true;
     button.classList.remove("ready");
   }
+};
+
+window.done2 = () => {
+  send({ type: "g2:done" });
 };
 
 window.ready2 = () => {

@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=29">
+  <link rel="stylesheet" href="./style.css?v=30">
 </head>
 
 <body>
@@ -336,6 +336,19 @@
             class="hidden"
           >
             <div class="label-row">
+              <span>玩法模式</span>
+            </div>
+            <div id="g2ModeBox" class="filter-box g2-mode-box">
+              <button type="button" class="filter-chip g2-mode-chip active" data-mode="online">
+                <strong>線上版</strong>
+                <small>各自喺屋企玩，有聊天室討論</small>
+              </button>
+              <button type="button" class="filter-chip g2-mode-chip" data-mode="offline">
+                <strong>線下版</strong>
+                <small>大家喺同一個地方，當面傾，冇聊天室</small>
+              </button>
+            </div>
+            <div class="label-row" style="margin-top:14px">
               <span>每人發言時間</span>
             </div>
             <div id="g2TimeBox" class="filter-box">
@@ -1142,7 +1155,8 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=48" defer></script>
+<script src="./chat.js?v=2" defer></script>
+<script src="./app.js?v=49" defer></script>
 
 </body>
 </html>
