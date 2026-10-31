@@ -85,7 +85,9 @@ const G8_REVEAL_MS = 4500;
 const G8_SURVIVE = 200;   // 每局生存到最後
 const G8_CARDS = ["radar", "cross", "torpedo", "shield"];
 const G8_ATTACK = ["radar", "cross", "torpedo"];
-const G8_HAND = { duel: 1, brawl: 2, team: 3 };
+const G8_HAND = { duel: 2, brawl: 2, team: 3 };
+const G8_DRAW_MS = 12000;      // 抽道具：時間到自動幫未拉嘅人抽
+const G8_DRAW_SHOW_MS = 3200;  // 全部抽完之後留時間睇老虎機停低
 const G8_BRAWL_STYLES = ["sync", "seq"];
 const G8_MODES = ["duel", "brawl", "team"];
 const G8_SHIPS_BIG = [
@@ -873,7 +875,10 @@ results:g.results||null
       readyCount:Object.keys(g.ready||{}).length,
       readyTotal:room.players.filter(p=>p.connected).length,
       myReady:!!(viewerId && g.ready?.[viewerId]),
-      cards:myKey ? (g.cards?.[myKey]||[]) : [],
+      cards:myKey && (g.phase!=="draw" || g.spun?.[myKey]) ? (g.cards?.[myKey]||[]) : [],
+      handSize:G8_HAND[g.mode]||2,
+      spun:g.phase==="draw" ? Object.keys(g.spun||{}) : [],
+      spunBy:myKey && g.spun?.[myKey] ? g.spun[myKey] : null,
       myShield,
       myTarget:myKey && g.pairs ? (g.pairs[myKey]||null) : null,
       myPick:myKey && g.picks?.[myKey] ? g.picks[myKey] : null,
@@ -1131,6 +1136,7 @@ export class GameRoom extends DurableObject {
       case "g8:ping": return this.onG8Ping(session.playerId,msg.r,msg.c);
       case "g8:fire": return this.onG8Fire(session.playerId,msg.target,msg.r,msg.c,msg.card);
       case "g8:shield": return this.onG8Shield(session.playerId,msg.shipId);
+      case "g8:spin": return this.onG8Spin(session.playerId);
       case "g8:brawl": return this.onG8Brawl(session.playerId,msg.style);
       case "g8:end": return this.onG8End(session.playerId);
       case "g8:restart": return this.onG8Restart(session.playerId);
@@ -2982,7 +2988,7 @@ async onG1Next(playerId){
       game:"game8",
       mode,
       style,
-      phase:"placing",
+      phase:"draw",
       round,
       totalRounds:this.room.g8Rounds||3,
       turnMs:this.room.g8TurnMs||20000,
@@ -3013,8 +3019,43 @@ async onG1Next(playerId){
       airCycle:0,
       roundPts:{},
       roundWinners:[],
-      endsAt:Date.now()+G8_PLACE_MS
+      spun:{},
+      endsAt:Date.now()+G8_DRAW_MS
     };
+    // 擺船之前先抽道具：手牌一開始就決定，拉老虎機先揭曉。1v1／大亂鬥每人 2 件、分隊每隊 3 件，同一手唔重複。
+    const g=this.room.gameState;
+    const count=G8_HAND[mode]||2;
+    for(const k of Object.keys(boards)) g.cards[k]=shuffle(G8_CARDS).slice(0,count);
+    await this.commitGame8();
+  }
+
+  // 有在線成員嘅參加者都拉咗？
+  g8AllSpun(g){
+    return Object.keys(g.boards).every(k=>g.spun?.[k] || !this.g8Members(g,k).some(id=>this.room.players.some(p=>p.id===id && p.connected)));
+  }
+
+  async onG8Spin(playerId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="draw") return;
+    const key=this.g8KeyOf(g,playerId);
+    if(!key || g.spun[key]) return;
+    g.spun[key]=playerId;
+    if(this.g8AllSpun(g)) g.endsAt=Math.min(g.endsAt,Date.now()+G8_DRAW_SHOW_MS);
+    await this.commitGame8();
+  }
+
+  // 抽道具時間到：未拉嘅自動幫佢拉；全部都揭曉咗就入擺船。
+  async afterDrawGame8(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="draw") return;
+    const left=Object.keys(g.boards).filter(k=>!g.spun[k]);
+    if(left.length){
+      for(const k of left) g.spun[k]="auto";
+      g.endsAt=Date.now()+G8_DRAW_SHOW_MS;
+      return this.commitGame8();
+    }
+    g.phase="placing";
+    g.endsAt=Date.now()+G8_PLACE_MS;
     await this.commitGame8();
   }
 
@@ -3122,11 +3163,7 @@ async onG1Next(playerId){
         }
       }
     }
-    // 派道具：1v1 每人 1 件、大亂鬥每人 2 件、分隊每隊 3 件；同一手唔會重複。
-    g.cards={};
     const keys=Object.keys(g.boards);
-    const count=G8_HAND[g.mode]||1;
-    for(const k of keys) g.cards[k]=shuffle(G8_CARDS).slice(0,count);
     const start=(g.round-1)%keys.length;
     g.order=[...keys.slice(start),...keys.slice(0,start)];
     g.cycle=1;
@@ -3493,6 +3530,7 @@ async onG1Next(playerId){
   async timeoutGame8(){
     const g=this.room.gameState;
     if(!g || g.game!=="game8") return;
+    if(g.phase==="draw") return this.afterDrawGame8();
     if(g.phase==="placing") return this.finishPlacingGame8();
     if(g.phase==="roundover") return this.afterRoundGame8();
     if(g.phase==="pick") return this.resolveSyncGame8();
@@ -3524,6 +3562,10 @@ async onG1Next(playerId){
   async g8AfterDisconnect(){
     const g=this.room.gameState;
     if(!g || g.game!=="game8") return false;
+    if(g.phase==="draw" && this.g8AllSpun(g)){
+      const soon=Date.now()+G8_DRAW_SHOW_MS;
+      if(g.endsAt>soon){ g.endsAt=soon; await this.commitGame8(); return true; }
+    }
     if(g.phase==="placing" && this.g8AllPlaced(g)){
       await this.finishPlacingGame8();
       return true;
@@ -3975,7 +4017,7 @@ async onG1Next(playerId){
       return;
     }
 
-    if(g?.game==="game8" && ["placing","turn","roundover","pick","reveal"].includes(g.phase) && g.endsAt && Date.now()+50>=g.endsAt){
+    if(g?.game==="game8" && ["draw","placing","turn","roundover","pick","reveal"].includes(g.phase) && g.endsAt && Date.now()+50>=g.endsAt){
       await this.timeoutGame8();
       return;
     }

@@ -5522,6 +5522,18 @@ const G8_TEXT = {
       radar: (k) => `雷達：${k} 格有船`,
       shot: (who, target, cell) => `${who}打${target} ${cell}`
     },
+    drawTitle: "抽道具！",
+    drawHint: (n) => `拉一下老虎機，抽 ${n} 件道具帶落場`,
+    drawTeamHint: (n) => `隊入面任何一個人拉都得，全隊共用 ${n} 件道具`,
+    drawGot: "抽到呢啲道具，擺船時諗下點用",
+    drawBy: (n) => `${n} 幫你哋隊拉咗`,
+    pull: "拉！",
+    drawSpinning: "轉緊…",
+    drawAuto: "時間到會自動幫你拉",
+    drawDone: "抽咗",
+    drawWho: "邊個抽咗",
+    myItems: "你帶落場嘅道具",
+    teamItems: "隊伍帶落場嘅道具",
     syncTitle: "揀格開炮！",
     syncTarget: (n) => `今輪你打：${n}`,
     syncSub: "系統隨機配對 · 每人打一個、亦只被一個人打",
@@ -5664,6 +5676,18 @@ const G8_TEXT = {
       radar: (k) => `雷達：${k} 格有船`,
       shot: (who, target, cell) => `${who}打${target} ${cell}`
     },
+    drawTitle: "抽道具！",
+    drawHint: (n) => `拉一下拉霸，抽 ${n} 件道具帶上場`,
+    drawTeamHint: (n) => `隊上任何一人拉都可以，全隊共用 ${n} 件道具`,
+    drawGot: "抽到這些道具，擺船時想想怎麼用",
+    drawBy: (n) => `${n} 幫你們隊拉了`,
+    pull: "拉！",
+    drawSpinning: "轉動中…",
+    drawAuto: "時間到會自動幫你拉",
+    drawDone: "已抽",
+    drawWho: "誰抽了",
+    myItems: "你帶上場的道具",
+    teamItems: "隊伍帶上場的道具",
     syncTitle: "選格開砲！",
     syncTarget: (n) => `這一輪你打：${n}`,
     syncSub: "系統隨機配對 · 每人打一個，也只會被一個人打",
@@ -5963,8 +5987,9 @@ function renderGame8(game) {
   }
   if (shell) shell.dataset.g8team = team;
   panel?.classList.toggle("g8-hot", !!game.hot && (game.phase === "turn" || game.phase === "pick"));
-  if (game.phase !== "gameover" && game.phase !== "placing") g8TrackEvents(game);
+  if (game.phase !== "gameover" && game.phase !== "placing" && game.phase !== "draw") g8TrackEvents(game);
 
+  if (game.phase === "draw") return renderGame8Draw(game);
   if (game.phase === "placing") return renderGame8Placing(game);
   if (game.phase === "turn") return renderGame8Turn(game);
   if (game.phase === "pick") return renderGame8Pick(game);
@@ -6138,6 +6163,83 @@ function g8SideOf(game, id) {
   return null;
 }
 
+// 抽道具：老虎機，每件道具一格，撳「拉！」之後逐格停低。
+function g8DrawStatus(game) {
+  const t = g8T();
+  const spun = new Set(game.spun || []);
+  const keys = game.mode === "team" ? ["navy", "pirate"] : game.order.length ? game.order : game.boards.map((b) => b.id);
+  return keys.map((k) => `<span class="g8-mem ${spun.has(k) ? "shoot" : ""}">${game.mode === "team" ? g8Badge(k, 18) + " " : ""}${esc(g8KeyName(game, k))}${spun.has(k) ? " · " + esc(t.drawDone) : ""}</span>`).join("");
+}
+
+function g8ReelFace(card) {
+  const t = g8T();
+  if (!card) return `<span class="g8-reel-item q"><b>?</b></span>`;
+  return `<span class="g8-reel-item ${card === "shield" ? "def" : ""}">${g8CardIcon(card, 30)}<small>${esc(t.cards[card])}</small></span>`;
+}
+
+function renderGame8Draw(game) {
+  const t = g8T();
+  const me = game.myKey;
+  const n = game.handSize || 2;
+  const cards = game.cards || [];
+  const spun = !!(me && game.spunBy && cards.length);
+  const animKey = `${S.room?.code}:${game.round}`;
+  const animate = spun && S.g8SpinAnim !== animKey;
+  // 轉緊：只更新其他人狀態，唔好打斷動畫
+  if (!animate && Date.now() < (S.g8SpinUntil || 0) && $("#gamePanel .g8-slot")) {
+    const st = $("#g8DrawStatus");
+    if (st) st.innerHTML = g8DrawStatus(game);
+    return;
+  }
+  const pool = ["radar", "cross", "torpedo", "shield"];
+  const reels = Array.from({ length: n }, (_, i) => {
+    let strip;
+    if (animate) strip = [...Array.from({ length: 14 + i * 4 }, (_, j) => pool[(j + i * 2) % 4]), cards[i]];
+    else strip = [spun ? cards[i] : null];
+    return `<div class="g8-reel ${spun ? "done" : ""}"><div class="g8-reel-strip" data-steps="${strip.length - 1}" style="--i:${i}">${strip.map(g8ReelFace).join("")}</div></div>`;
+  }).join("");
+  const by = game.spunBy && game.spunBy !== S.playerId && game.spunBy !== "auto" ? g8Nick(game.spunBy) : null;
+  const result = spun ? `
+    <div class="g8-drawn ${animate ? "wait" : ""}">
+      ${cards.map((c) => `<div class="g8-card ${c === "shield" ? "def" : ""}"><span class="g8-card-face ${c === "shield" ? "def" : ""}">${g8CardIcon(c, 22)}</span><span class="g8-card-text"><strong>${esc(t.cards[c])}</strong><small>${esc(t.cardDesc[c])}</small></span></div>`).join("")}
+    </div>` : "";
+  const hint = game.mode === "team" ? t.drawTeamHint(n) : t.drawHint(n);
+  $("#gamePanel").innerHTML = `
+    <div class="g8-root g8-drawroot">
+      ${g8Head(game, `${t.roundLabel(game.round, game.totalRounds)} · ${t.modes[game.mode]}`, t.drawTitle)}
+      <p class="g8-note" id="g8DrawNote">${esc(animate ? t.drawSpinning : spun ? (by ? t.drawBy(by) : t.drawGot) : hint)}</p>
+      <div class="g8-slot ${spun ? "" : "idle"}">
+        <div class="g8-slot-top"><span></span><span></span><span></span></div>
+        <div class="g8-reels" style="--n:${n}">${reels}</div>
+      </div>
+      ${me && !spun ? `<button type="button" class="btn btn-yellow g8-main-btn g8-pull" onclick="g8Spin()">${esc(t.pull)}</button><p class="g8-note center">${esc(t.drawAuto)}</p>` : ""}
+      ${result}
+      <div class="g8-section"><div class="eyebrow">${esc(t.drawWho)}</div><div id="g8DrawStatus" class="g8-mems">${g8DrawStatus(game)}</div></div>
+    </div>
+  `;
+  startTimer($("#time"), game.endsAt);
+  if (animate) {
+    S.g8SpinAnim = animKey;
+    const longest = 1.5 + 0.55 * (n - 1);
+    S.g8SpinUntil = Date.now() + longest * 1000 + 250;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.querySelectorAll("#gamePanel .g8-reel-strip").forEach((el) => {
+        const steps = Number(el.dataset.steps);
+        el.classList.add("go");
+        el.style.transform = `translateY(calc(-${steps} * var(--reel-h)))`;
+      });
+    }));
+    setTimeout(() => {
+      $("#gamePanel .g8-drawn")?.classList.remove("wait");
+      $("#gamePanel .g8-slot")?.classList.add("win");
+      const note = $("#g8DrawNote");
+      if (note) note.textContent = by ? t.drawBy(by) : t.drawGot;
+    }, longest * 1000);
+  }
+}
+
+window.g8Spin = () => send({ type: "g8:spin" });
+
 function renderGame8Placing(game) {
   const t = g8T();
   const myBoard = game.boards.find((b) => b.id === game.myKey);
@@ -6171,6 +6273,7 @@ function renderGame8Placing(game) {
         mineOwner: game.mode === "team" ? S.playerId : null
       })}
       <div class="g8-tray2">${tray}</div>
+      ${(game.cards || []).length ? `<div class="g8-items"><span class="eyebrow">${esc(game.mode === "team" ? t.teamItems : t.myItems)}</span><div>${game.cards.map((c) => `<span class="g8-item ${c === "shield" ? "def" : ""}">${g8CardIcon(c, 16)}${esc(t.cards[c])}</span>`).join("")}</div></div>` : ""}
       <div class="g8-tools">
         <button type="button" class="g8-tool" onclick="g8Random()" ${game.myReady ? "disabled" : ""}>${g8Icon("shuffle", 18)}${esc(t.random)}</button>
       </div>
@@ -6263,6 +6366,7 @@ window.g8RotateShip = (id) => {
     drag = { id: src.dataset.ship, len, v, grab, cellSize, ghost, onBoard, startX: event.clientX, startY: event.clientY, moved: false, anchor: null };
     S.g8Dragging = true;
     S.g8Sel = drag.id;
+    document.documentElement.classList.add("g8-noscroll");
     move(event);
   });
 
@@ -6285,6 +6389,7 @@ window.g8RotateShip = (id) => {
     const d = drag;
     drag = null;
     d.ghost.remove();
+    document.documentElement.classList.remove("g8-noscroll");
     clearPreview();
     S.g8Dragging = false;
     if (!d.moved) {
@@ -6300,6 +6405,8 @@ window.g8RotateShip = (id) => {
     if (S.room?.gameState) renderGame8(S.room.gameState);
   }
 
+  // 手機：拖船時唔俾成頁跟住捲
+  document.addEventListener("touchmove", (event) => { if (drag) event.preventDefault(); }, { passive: false });
   document.addEventListener("pointerup", end);
   document.addEventListener("pointercancel", end);
 })();
