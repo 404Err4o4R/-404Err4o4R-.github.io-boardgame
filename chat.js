@@ -15,6 +15,8 @@
       all: "全房",
       dead: "淘汰區",
       deadHint: "只有已出局嘅玩家睇到同講到",
+      teamHint: (l) => `隊伍頻道：只有${l}隊友睇到同講到`,
+      placeholderTeam: "同隊友講…",
       placeholder: "講啲嘢…",
       placeholderDead: "同出局隊友講…",
       send: "發送",
@@ -49,6 +51,8 @@
       all: "全房",
       dead: "淘汰區",
       deadHint: "只有已出局的玩家能看到和發言",
+      teamHint: (l) => `隊伍頻道：只有${l}隊友能看到和發言`,
+      placeholderTeam: "和隊友說…",
       placeholder: "說點什麼…",
       placeholderDead: "和出局的隊友說…",
       send: "發送",
@@ -99,13 +103,14 @@
     room: null,
     playerId: null,
     policy: null,
-    messages: [],      // 全部收到嘅訊息（全房 + 淘汰區），按 id 排
+    messages: [],      // 全部收到嘅訊息（全房 + 隊伍 + 淘汰區），按 id 排
     seen: new Set(),
     tab: "all",
     open: false,       // 手機：展開；電腦：側欄打開
     desktopOpen: true,
-    unread: { all: 0, dead: 0 },
+    unread: { all: 0, team: 0, dead: 0 },
     wasDead: false,
+    teamKey: null,
     menuFor: null
   };
 
@@ -142,12 +147,13 @@
         <span class="rc-people"></span>
         <div class="rc-tabs hidden" role="tablist">
           <button type="button" class="rc-tab" role="tab" data-tab="all"><span class="rc-tab-label"></span><span class="rc-badge hidden"></span></button>
+          <button type="button" class="rc-tab" role="tab" data-tab="team"><span class="rc-tab-label"></span><span class="rc-badge hidden"></span></button>
           <button type="button" class="rc-tab" role="tab" data-tab="dead"><span class="rc-tab-label"></span><span class="rc-badge hidden"></span></button>
         </div>
         <span class="rc-spacer"></span>
         <button type="button" class="rc-toggle"></button>
       </div>
-      <div class="rc-dead-hint hidden"></div>
+      <div class="rc-hint hidden"></div>
       <div class="rc-log" role="log" aria-live="polite"></div>
       <div class="rc-menu hidden" role="menu"></div>
       <form class="rc-form" autocomplete="off">
@@ -229,6 +235,7 @@
 
   function setTab(tab) {
     if (tab === "dead" && !C.policy?.deadChannel) tab = "all";
+    if (tab === "team" && !C.policy?.teamChannel) tab = "all";
     C.tab = tab;
     C.unread[tab] = 0;
     renderLog();
@@ -294,7 +301,11 @@
   }
 
   function visible() {
-    return C.messages.filter((m) => (C.tab === "dead" ? m.channel === "dead" : m.channel !== "dead"));
+    return C.messages.filter((m) => chOf(m) === C.tab);
+  }
+
+  function chOf(m) {
+    return m.channel === "dead" ? "dead" : m.channel === "team" ? "team" : "all";
   }
 
   function nearBottom(log) {
@@ -351,8 +362,22 @@
     if (pol.deadChannel !== C.wasDead && pol.deadChannel) renderLog();
     C.wasDead = !!pol.deadChannel;
 
+    // 隊伍頻道：分隊有變（或者冇咗）就清走舊隊伍訊息
+    const teamKey = pol.teamChannel?.key || null;
+    if (teamKey !== C.teamKey) {
+      C.messages = C.messages.filter((m) => m.channel !== "team" || m.team === teamKey);
+      C.unread.team = 0;
+      if (!teamKey && C.tab === "team") C.tab = "all";
+      C.teamKey = teamKey;
+      renderLog();
+    }
+    const lang = C.room?.language === "zh" ? "zh" : "yue";
+    const teamLabel = pol.teamChannel ? (pol.teamChannel.label?.[lang] || pol.teamChannel.key) : "";
+
     el.classList.toggle("open", open);
     el.classList.toggle("rc-dead", C.tab === "dead");
+    el.classList.toggle("rc-team", C.tab === "team");
+    el.style.setProperty("--team", pol.teamChannel?.color || "#22408C");
     shell?.classList.toggle("chat-collapsed", desktop && !open);
     C.fab.classList.toggle("hidden", !(desktop && !open));
 
@@ -361,21 +386,24 @@
     el.querySelector(".rc-people").textContent = T.people(online);
 
     const tabs = el.querySelector(".rc-tabs");
-    tabs.classList.toggle("hidden", !pol.deadChannel);
-    el.querySelector(".rc-people").classList.toggle("hidden", !!pol.deadChannel);
+    const multi = !!(pol.deadChannel || pol.teamChannel);
+    tabs.classList.toggle("hidden", !multi);
+    el.querySelector(".rc-people").classList.toggle("hidden", multi);
     tabs.querySelectorAll(".rc-tab").forEach((b) => {
+      const tabOn = b.dataset.tab === "all" || (b.dataset.tab === "dead" ? pol.deadChannel : !!pol.teamChannel);
+      b.classList.toggle("hidden", !tabOn);
       const active = b.dataset.tab === C.tab;
       b.classList.toggle("active", active);
       b.setAttribute("aria-selected", active ? "true" : "false");
-      b.querySelector(".rc-tab-label").textContent = b.dataset.tab === "dead" ? T.dead : T.all;
+      b.querySelector(".rc-tab-label").textContent = b.dataset.tab === "dead" ? T.dead : b.dataset.tab === "team" ? teamLabel : T.all;
       const badge = b.querySelector(".rc-badge");
       const n = active ? 0 : C.unread[b.dataset.tab];
       badge.textContent = n > 9 ? "9+" : String(n);
       badge.classList.toggle("hidden", !n);
     });
-    const hint = el.querySelector(".rc-dead-hint");
-    hint.textContent = T.deadHint;
-    hint.classList.toggle("hidden", C.tab !== "dead");
+    const hint = el.querySelector(".rc-hint");
+    hint.textContent = C.tab === "dead" ? T.deadHint : C.tab === "team" ? T.teamHint(teamLabel) : "";
+    hint.classList.toggle("hidden", C.tab === "all");
 
     const toggle = el.querySelector(".rc-toggle");
     if (desktop) {
@@ -393,13 +421,14 @@
     C.fab.querySelector(".rc-fab-label").textContent = T.title;
     C.fab.setAttribute("aria-label", T.openChat);
     const fabBadge = C.fab.querySelector(".rc-badge");
-    const total = C.unread.all + C.unread.dead;
+    const total = C.unread.all + C.unread.team + C.unread.dead;
     fabBadge.textContent = total > 9 ? "9+" : String(total);
     fabBadge.classList.toggle("hidden", !total);
 
     // 可唔可以講嘢
     let reason = null;
     if (C.tab === "dead") reason = pol.canSendDead ? null : pol.reason;
+    else if (C.tab === "team") reason = pol.canSendTeam ? null : (pol.teamReason || "locked");
     else reason = pol.canSend ? null : pol.reason;
     const lockText =
       reason === "muted" ? T.muted :
@@ -417,7 +446,7 @@
     if (reason) closeMenu();
 
     const input = form.querySelector("input");
-    input.placeholder = C.tab === "dead" ? T.placeholderDead : T.placeholder;
+    input.placeholder = C.tab === "dead" ? T.placeholderDead : C.tab === "team" ? T.placeholderTeam : T.placeholder;
     input.setAttribute("aria-label", input.placeholder);
     el.querySelector(".rc-send").setAttribute("aria-label", T.send);
     updateCount();
@@ -498,8 +527,9 @@
       C.policy = room?.roomChat || null;
       C.messages = [];
       C.seen = new Set();
-      C.unread = { all: 0, dead: 0 };
+      C.unread = { all: 0, team: 0, dead: 0 };
       C.wasDead = false;
+      C.teamKey = null;
       C.tab = "all";
       (history || []).forEach(addMessage);
       build();
@@ -517,7 +547,7 @@
 
     onMessage(msg) {
       if (!C.el || !addMessage(msg)) return;
-      const ch = msg.channel === "dead" ? "dead" : "all";
+      const ch = chOf(msg);
       const showing = ch === C.tab;
       if (showing) {
         const log = C.el.querySelector(".rc-log");
@@ -547,6 +577,7 @@
       C.open = false;
       C.tab = "all";
       C.wasDead = false;
+      C.teamKey = null;
       closeMenu();
       if (C.el) {
         C.el.querySelector(".rc-log").replaceChildren();

@@ -1089,6 +1089,8 @@ results:g.results||null
      lockPlayers(room)  → 呢啲玩家暫停聊天（例如將來 Wavelength 出提示嗰個）
      deadIds(room)      → 呢啲玩家開「淘汰區」頻道，全房頻道只可以睇
      announceRounds     → false 就唔出「第 N 回合開始」系統訊息
+     teams(room)        → 分隊模式：回傳 { 隊伍key: { ids:[玩家id], label:{yue,zh}, color } }，
+                          每隊自動有「隊伍頻道」，只有同隊隊友睇到同講到
 ========================= */
 const CHAT_RULES = {
   game1: { lockPhases:["vote"], roundWord:"question" },
@@ -1097,9 +1099,38 @@ const CHAT_RULES = {
   game5: { announceRounds:false },
   game6: { lockPhases:["answering"] },
   game7: { deadIds: g7DeadIds },
+  game8: { teams: g8Teams },
   // 心中有數：出題人知道目標位置，出提示同估嘅時候佢唔可以講嘢；其他人照傾
   game9: { lockPlayers: g9LockedIds }
 };
+
+// Battleship 隊伍模式：海軍／海盜
+function g8Teams(room){
+  const g=room.gameState;
+  const t=room.g8Teams;
+  if(!g || g.game!=="game8" || g.mode!=="team" || !t) return null;
+  return {
+    navy:{ ids:t.navy||[], label:{yue:"海軍",zh:"海軍"}, color:"#22408C" },
+    pirate:{ ids:t.pirate||[], label:{yue:"海盜",zh:"海盜"}, color:"#B3192B" }
+  };
+}
+
+function chatTeams(room){
+  const rule=chatRule(room);
+  if(typeof rule.teams!=="function") return null;
+  const phase=room.gameState?.phase||"waiting";
+  if(phase==="waiting") return null;
+  return rule.teams(room)||null;
+}
+
+function chatTeamOf(room, playerId){
+  const teams=chatTeams(room);
+  if(!teams || !playerId) return null;
+  for(const [key,t] of Object.entries(teams)){
+    if((t.ids||[]).includes(playerId)) return {key, label:t.label||{yue:key,zh:key}, color:t.color||null, ids:t.ids||[]};
+  }
+  return null;
+}
 
 function g9LockedIds(room){
   const g=room.gameState;
@@ -1140,10 +1171,16 @@ function chatPolicy(room, viewerId=null){
   else if(phaseLocked) reason="locked";
   else if(lockedIds.includes(viewerId)) reason="lockedSelf";
   else if(dead) reason="dead";
+  const team=enabled ? chatTeamOf(room, viewerId) : null;
+  // 隊伍頻道：禁言同鎖聊天一樣生效，出局（淘汰區）唔影響同隊友傾
+  const teamReason = !team ? null : isMuted ? "muted" : phaseLocked ? "locked" : lockedIds.includes(viewerId) ? "lockedSelf" : null;
   return {
     enabled,
     canSend: !reason,
     reason,
+    teamChannel: team ? {key:team.key, label:team.label, color:team.color} : null,
+    canSendTeam: !!team && !teamReason,
+    teamReason,
     deadChannel: enabled && dead,
     canSendDead: enabled && dead && !isMuted,
     muted,
@@ -1205,6 +1242,7 @@ export class GameRoom extends DurableObject {
         chat:[],
         roomChat:[],   // 全房聊天室（所有 game 共用），最近 ROOM_CHAT_HISTORY 條
         deadChat:[],   // 數字炸彈「淘汰區」，每個回合開始清空
+        teamChat:{},   // 隊伍頻道：{ 隊伍key: [訊息] }，分隊改變就清空
         chatSeq:0,
         chatMuted:[],
         // Game 1 每題鎖定嗰刻嘅投票快照，儲埋嚟計「結算」嗰陣嘅心有靈犀指數。
@@ -4411,7 +4449,9 @@ async onG1Next(playerId){
   chatHistoryFor(viewerId){
     const all=(this.room.roomChat||[]);
     const dead=viewerId && chatDeadIds(this.room).includes(viewerId) ? (this.room.deadChat||[]) : [];
-    return [...all,...dead].sort((a,b)=>a.id-b.id);
+    const team=chatTeamOf(this.room, viewerId);
+    const teamMsgs=team ? ((this.room.teamChat||{})[team.key]||[]) : [];
+    return [...all,...dead,...teamMsgs].sort((a,b)=>a.id-b.id);
   }
 
   nextChatId(){
@@ -4445,6 +4485,14 @@ async onG1Next(playerId){
       this.pushChatSystem("round",{n:round,word:rule.roundWord||"round"});
       changed=true;
     }
+    // 分隊有變（新一局重新分隊）就清空隊伍頻道
+    const teams=chatTeams(this.room);
+    const sig=teams ? JSON.stringify(Object.entries(teams).map(([k,t])=>[k,[...(t.ids||[])].sort()])) : "";
+    if(sig!==(this.room.teamChatSig||"")){
+      this.room.teamChatSig=sig;
+      this.room.teamChat={};
+      changed=true;
+    }
     const next={playing,round};
     if(next.playing!==t.playing || next.round!==t.round){ this.room.chatTrack=next; changed=true; }
     return changed;
@@ -4455,9 +4503,11 @@ async onG1Next(playerId){
     if(!p) return;
     const pol=chatPolicy(this.room,playerId);
     if(!pol.enabled) return;
-    const ch=channel==="dead" ? "dead" : "all";
-    if(ch==="dead" ? !pol.canSendDead : !pol.canSend){
-      return this.sendToPlayer(playerId,{type:"chat:denied",reason:pol.reason||"locked"});
+    const ch=channel==="dead" ? "dead" : channel==="team" ? "team" : "all";
+    const allowed=ch==="dead" ? pol.canSendDead : ch==="team" ? pol.canSendTeam : pol.canSend;
+    if(!allowed){
+      const reason=ch==="team" ? (pol.teamReason||"locked") : (pol.reason||"locked");
+      return this.sendToPlayer(playerId,{type:"chat:denied",reason});
     }
     const clean=Array.from(String(text||"").replace(/[\u0000-\u001f\u007f]/g,"").replace(/\s+/g," ").trim())
       .slice(0,ROOM_CHAT_MAX_CHARS).join("");
@@ -4475,6 +4525,20 @@ async onG1Next(playerId){
     this.chatRate.set(playerId,times);
 
     const msg={id:this.nextChatId(),kind:"player",channel:ch,playerId,nickname:p.nickname,seat:p.seat,text:clean,at:now};
+    if(ch==="team"){
+      const team=chatTeamOf(this.room, playerId);
+      if(!team) return;
+      msg.team=team.key;
+      const all=this.room.teamChat||(this.room.teamChat={});
+      all[team.key]=[...(all[team.key]||[]),msg].slice(-ROOM_CHAT_HISTORY);
+      await this.save();
+      const ids=new Set(team.ids);
+      for(const ws of this.ctx.getWebSockets()){
+        const a=ws.deserializeAttachment() || {};
+        if(a.playerId && ids.has(a.playerId)) this.safeSend(ws,{type:"chat:msg",msg});
+      }
+      return;
+    }
     if(ch==="dead"){
       this.room.deadChat=[...(this.room.deadChat||[]),msg].slice(-ROOM_CHAT_HISTORY);
       await this.save();
