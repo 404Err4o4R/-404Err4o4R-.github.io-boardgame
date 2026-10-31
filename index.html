@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=25">
+  <link rel="stylesheet" href="./style.css?v=28">
 </head>
 
 <body>
@@ -411,7 +411,7 @@
             class="hidden"
           >
             <div class="label-row">
-              <span>回合數</span>
+              <span>局數</span>
             </div>
             <div id="g8RoundsBox" class="filter-box">
               <button type="button" class="filter-chip g8-rounds-chip" data-rounds="1">1</button>
@@ -420,7 +420,7 @@
               <button type="button" class="filter-chip g8-rounds-chip" data-rounds="4">4</button>
               <button type="button" class="filter-chip g8-rounds-chip" data-rounds="5">5</button>
             </div>
-            <p class="notice" style="margin:6px 0 0" data-zh="每輪約 5–10 分鐘，人數越多越久。">每輪大約 5–10 分鐘，人越多越耐。</p>
+            <p class="notice" style="margin:6px 0 0" data-zh="每局約 5–10 分鐘，人數越多越久。總分最高的人獲勝。">每局大約 5–10 分鐘，人越多越耐。總分最高嗰個贏。</p>
 
             <div class="label-row" style="margin-top:14px">
               <span data-zh="每砲思考時間">每炮思考時間</span>
@@ -430,8 +430,8 @@
               <button type="button" class="filter-chip g8-time-chip active" data-sec="20">20 秒</button>
               <button type="button" class="filter-chip g8-time-chip" data-sec="30">30 秒</button>
             </div>
-            <p class="notice" style="margin:6px 0 0" data-zh="模式（1v1／大亂鬥／分隊）在大廳等人到齊後再選擇。2–6 人。">
-              模式（1v1／大亂鬥／分隊）喺大廳等齊人之後先揀。2–6 人。
+            <p class="notice" style="margin:6px 0 0" data-zh="模式（1v1／大亂鬥／分隊）和大亂鬥的同步／輪流制在大廳等人到齊後再選擇。2–6 人。">
+              模式（1v1／大亂鬥／分隊）同大亂鬥嘅同步／輪流制，喺大廳等齊人之後先揀。2–6 人。
             </p>
           </div>
 
@@ -918,7 +918,7 @@
         </h3>
 
         <p>
-          擺好船，輪流開炮，打沉晒對方艦隊就贏。1v1、大亂鬥、分隊三種玩法。
+          擺好船開炮，打中有分，生存到最後有獎勵。1v1、大亂鬥、分隊三種玩法。
         </p>
 
         <div class="tag-row">
@@ -1059,7 +1059,7 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=44" defer></script>
+<script src="./app.js?v=47" defer></script>
 
 </body>
 </html>

@@ -1248,3 +1248,128 @@ button.g8-c:hover{border-color:#F2D965}
   .hh-en{font-size:34px;line-height:1}
   .hh-zh{font-size:17px;line-height:1.4}
 }
+
+/* 海戰棋 v2：船圖、拖放擺船 */
+.g8-board{position:relative}
+.g8-board > *{min-width:0}
+.g8-sea{aspect-ratio:1;border-radius:6px;background:var(--g8-sea);border:2px solid var(--g8-sea);box-sizing:border-box}
+.g8-board.small .g8-sea{border-radius:3px;border-width:1px}
+.g8-board .g8-c{background:transparent;border-color:transparent;z-index:2}
+.g8-board .g8-c.hit{background:#FF7A59;border-color:#1f2740}
+.g8-board .g8-c.hit.onship{background:rgba(255,122,89,.72)}
+.g8-board .g8-c.sunk{background:rgba(180,56,31,.82);border-color:#1f2740}
+.g8-board .g8-c.miss{background:transparent}
+.g8-board .g8-c.ping{background:rgba(242,217,101,.22)}
+.g8-board .g8-c.drop-ok{background:rgba(185,221,91,.55);border-color:#B9DD5B;border-style:solid}
+.g8-board .g8-c.drop-bad{background:rgba(255,122,89,.55);border-color:#FF7A59;border-style:solid}
+.g8-board.dragboard .g8-c{pointer-events:none}
+.g8-shipart{display:block;z-index:1;padding:2px;box-sizing:border-box;border-radius:10px;min-height:0}
+.g8-board.small .g8-shipart{padding:1px;border-radius:4px}
+.g8-shipart svg{display:block;width:100%;height:100%}
+.g8-shipart.mate{opacity:.65}
+.g8-shipart.sunk{filter:saturate(.4) brightness(.8)}
+.g8-shipart.sel{outline:3px solid #F2D965;outline-offset:-1px}
+.g8-shipart.drag,.g8-tship.drag{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.g8-rot-slot{position:relative;z-index:3;pointer-events:none}
+.g8-rot{pointer-events:auto;position:absolute;top:-12px;right:-12px;width:34px;height:34px;border-radius:50%;border:2px solid #1f2740;background:#F2D965;color:#1f2740;display:grid;place-items:center;box-shadow:0 3px 0 #1f2740;cursor:pointer}
+.g8-tray2{display:flex;flex-wrap:wrap;gap:8px}
+.g8-tship{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(254,254,242,.14);min-height:44px}
+.g8-tship-art{display:block;height:30px;width:calc(var(--len) * 30px)}
+.g8-tship-art svg{display:block;width:100%;height:100%}
+.g8-tship-meta{display:flex;flex-direction:column;line-height:1.15}
+.g8-tship-meta b{font-size:13px}
+.g8-tship-meta small{font-size:11px;font-weight:800;opacity:.8}
+.g8-tship.placed{opacity:.5}
+.g8-tship.mate{opacity:.55}
+.g8-ghost{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;opacity:.92;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+.g8-ghost svg{display:block;width:100%;height:100%}
+.g8-placing{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.g8-fl-art{display:block;height:16px;width:calc(var(--len) * 16px);flex-shrink:0}
+.g8-fl-art svg{display:block;width:100%;height:100%}
+.g8-fl.dead .g8-fl-art{filter:saturate(.3) brightness(.75)}
+
+/* ===== Battleship v2：道具、提示、特效、同步制、計分 ===== */
+.g8-pts{font-size:11px;font-weight:900;padding:3px 9px;border-radius:999px;background:#F2D965;color:#1f2740}
+.g8-cycle + .g8-pts{margin-left:0}
+.g8-cards-row{flex-wrap:wrap}
+.g8-cards-row .g8-card{flex:1 1 150px;flex-wrap:wrap}
+.g8-card-face.def{background:#8FE3D0}
+.g8-card.def.on{border-color:#8FE3D0}
+.g8-shield-pick{flex-basis:100%;display:flex;flex-direction:column;gap:6px;padding-top:4px}
+.g8-shield-pick small{font-size:11px;font-weight:900;opacity:.8}
+.g8-shield-pick div{display:flex;gap:6px;flex-wrap:wrap}
+.g8-card .g8-shield-pick button{flex:1;min-height:38px;border-color:#8FE3D0;color:#8FE3D0;white-space:nowrap}
+.g8-card .g8-shield-pick button:hover{background:#8FE3D0;color:#1f2740}
+.g8-shield-on{display:flex;align-items:center;gap:10px;background:#1f2740;color:#FEFEF2;border:2px solid #8FE3D0;border-radius:16px;padding:8px 10px}
+.g8-shield-on .g8-card-face{width:32px;height:36px}
+.g8-shield-on b{display:block;font-family:"Fredoka",sans-serif;font-size:15px}
+.g8-shield-on small{display:block;font-size:11px;font-weight:800;opacity:.8}
+.g8-bubble{position:relative;z-index:3;pointer-events:none;border-radius:999px;border:2px solid rgba(143,227,208,.85);background:radial-gradient(ellipse at 50% 40%,rgba(143,227,208,.28),rgba(143,227,208,.06));box-shadow:0 0 10px rgba(143,227,208,.6);margin:-2px;animation:g8breathe 2.4s ease-in-out infinite}
+@keyframes g8breathe{0%,100%{opacity:.75}50%{opacity:1}}
+
+/* 提示 */
+#g8Toasts{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:80;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;width:min(92vw,420px)}
+.g8-toast{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 18px;border-radius:14px;border:2px solid #1f2740;box-shadow:0 4px 0 #1f2740;font-weight:900;font-size:16px;color:#1f2740;background:#FEFEF2;animation:g8tin .25s ease-out both;text-align:center}
+.g8-toast small{font-size:12px;font-weight:800;opacity:.8}
+.g8-toast.t-hit{background:#FF7A59}
+.g8-toast.t-sunk{background:#B4381F;color:#FEFEF2}
+.g8-toast.t-block{background:#8FE3D0}
+.g8-toast.t-self{background:#F2D965}
+.g8-toast.out{opacity:0;transform:translateY(-8px);transition:.35s}
+@keyframes g8tin{from{opacity:0;transform:translateY(-10px) scale(.96)}to{opacity:1;transform:none}}
+
+/* 特效 */
+.g8-fx,.g8-fx-radar,.g8-fx-wake{position:relative;z-index:4;pointer-events:none}
+.g8-fx{display:grid;place-items:center}
+.g8-fx.boom::before{content:"";position:absolute;inset:-40%;border-radius:50%;background:radial-gradient(circle,#FFE48A 0 25%,#FF7A59 45%,rgba(255,122,89,0) 70%);transform:scale(.1);opacity:0;animation:g8pop 1.1s ease-out var(--d,0s) both}
+.g8-fx.boom i{position:absolute;left:50%;top:50%;width:4px;height:11px;margin-left:-2px;border-radius:2px;background:#F2D965;transform-origin:50% 0;opacity:0;animation:g8spark 1s ease-out calc(var(--d,0s) + .08s) both}
+.g8-fx.splash::before,.g8-fx.splash::after{content:"";position:absolute;inset:12%;border-radius:50%;border:3px solid #FEFEF2;opacity:0;animation:g8ring 1s ease-out var(--d,0s) both}
+.g8-fx.splash::after{animation-delay:calc(var(--d,0s) + .22s)}
+.g8-fx.air::before{animation-name:g8pop}
+@keyframes g8pop{0%{transform:scale(.1);opacity:0}15%{opacity:1}45%{transform:scale(1.15);opacity:.95}100%{transform:scale(1.45);opacity:0}}
+@keyframes g8spark{0%{opacity:0;transform:rotate(var(--r)) translateY(0)}25%{opacity:1}100%{opacity:0;transform:rotate(var(--r)) translateY(24px)}}
+@keyframes g8ring{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.7);opacity:0}}
+.g8-fx.block .dome{position:absolute;inset:-18%;border-radius:50%;border:3px solid #8FE3D0;background:radial-gradient(ellipse at 50% 40%,rgba(143,227,208,.45),rgba(143,227,208,.1));box-shadow:0 0 16px rgba(143,227,208,.9);opacity:0;animation:g8dome 1.6s ease-out var(--d,0s) both}
+.g8-fx.block .ball{position:absolute;left:34%;top:-90%;width:32%;aspect-ratio:1;border-radius:50%;background:#1f2740;border:2px solid #FEFEF2;opacity:0;animation:g8fall 1.6s ease-in var(--d,0s) both}
+@keyframes g8dome{0%,25%{transform:scale(.5);opacity:0}38%{transform:scale(1.1);opacity:1}55%{transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+@keyframes g8fall{0%{transform:translateY(0);opacity:1}30%{transform:translateY(240%);opacity:1}40%{transform:translate(120%,120%);opacity:.6}55%,100%{transform:translate(220%,-40%);opacity:0}}
+.g8-fx-radar{border:2px dashed #F2D965;border-radius:8px;overflow:hidden;animation:g8fade 2.4s ease-out both}
+.g8-fx-radar::before{content:"";position:absolute;left:50%;top:50%;width:150%;height:150%;transform-origin:0 0;background:conic-gradient(from 0deg,rgba(242,217,101,.65),rgba(242,217,101,0) 70deg);animation:g8sweep 1.2s linear 2 both}
+.g8-fx-radar b{position:absolute;right:-1px;top:-1px;background:#F2D965;color:#1f2740;border:2px solid #1f2740;border-radius:999px;font-family:"Fredoka",sans-serif;font-size:14px;padding:0 7px;opacity:0;animation:g8show .2s 1.1s both}
+@keyframes g8sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes g8show{to{opacity:1}}
+@keyframes g8fade{0%,80%{opacity:1}100%{opacity:0}}
+.g8-fx-wake{align-self:center;height:34%;border-radius:4px;background:linear-gradient(90deg,rgba(254,254,242,0),rgba(254,254,242,.85));transform-origin:0 50%;transform:scaleX(0);animation:g8wake var(--dur,.9s) cubic-bezier(.5,0,.7,1) both,g8fade 1.8s ease-out both}
+.g8-fx-wake i{position:absolute;right:-14px;top:50%;transform:translateY(-50%) scaleX(var(--inv,1));color:#1f2740;display:flex}
+@keyframes g8wake{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* 同步制 */
+.g8-target{display:flex;align-items:center;gap:10px;background:#FEFEF2;color:#1f2740;border-radius:16px;padding:10px 12px;font-weight:900}
+.g8-target b{display:block;font-size:15px}
+.g8-target small{display:block;font-size:11px;font-weight:800;opacity:.7}
+.g8-av{width:36px;height:36px;border-radius:50%;background:#F2D965;border:2px solid #1f2740;display:grid;place-items:center;font-family:"Fredoka",sans-serif;font-size:17px;flex-shrink:0}
+.g8-pickstat{display:flex;justify-content:space-between;align-items:center;background:rgba(254,254,242,.14);border-radius:12px;padding:8px 12px;font-weight:800;font-size:13px}
+.g8-dots{display:flex;gap:4px}
+.g8-dots i{width:10px;height:10px;border-radius:50%;background:rgba(254,254,242,.3)}
+.g8-dots i.on{background:#B9DD5B}
+.g8-done{background:rgba(254,254,242,.14);border-radius:14px;padding:12px}
+.g8-rvlist{display:flex;flex-direction:column;gap:6px}
+.g8-rv{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(254,254,242,.14);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:800}
+.g8-rv.me{outline:2px solid #F2D965}
+.g8-rv b{flex-shrink:0;font-size:11px;font-weight:900;padding:2px 9px;border-radius:999px;background:#FEFEF2;color:#1f2740}
+.g8-rv b.hit{background:#FF7A59}
+.g8-rv b.sunk{background:#B4381F;color:#FEFEF2}
+.g8-rv b.block{background:#8FE3D0}
+.g8-styles .g8-mode small{opacity:.85}
+
+/* 計分 */
+.g8-bonus{margin:6px 0 0;display:inline-block;background:#F2D965;color:#1f2740;border-radius:999px;padding:3px 12px;font-weight:900;font-size:13px}
+.g8-rank-name small{display:block;font-size:11px;font-weight:800;opacity:.8}
+.g8-rank-name .g8-badge{vertical-align:middle}
+.g8-rule{font-size:11px;opacity:.85}
+@media (prefers-reduced-motion: reduce){
+  .g8-fx::before,.g8-fx i,.g8-fx .dome,.g8-fx .ball,.g8-fx-radar::before,.g8-fx-wake{animation-duration:.01s!important}
+}
+.g8-cards-row .g8-card.def.on{flex-basis:100%}
+.g8-cards-row.multi .g8-card.def.on .g8-card-text small{display:block}
+.g8-nudge{position:relative;left:.25em}

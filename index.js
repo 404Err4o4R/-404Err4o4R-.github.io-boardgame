@@ -75,10 +75,18 @@ const G8_ROUND_MAX = 5;
 const G8_PLACE_MS = 60000;
 const G8_ROUNDOVER_MS = 6000;
 const G8_OFFLINE_TURN_MS = 1500;
-const G8_HOT_BRAWL = 8;   // 大亂鬥第 8 輪開始白熱化
+const G8_HOT_SYNC = 8;    // 大亂鬥同步制：第 8 輪開始白熱化
+const G8_HOT_SEQ = { 3: 8, 4: 7, 5: 6, 6: 5 }; // 大亂鬥輪流制：按人數
 const G8_HOT_TEAM = 20;   // 分隊第 20 輪開始白熱化
-const G8_TEAM_CARDS = 2;
-const G8_CARDS = ["radar", "cross", "torpedo"];
+const G8_HOT_TIME_MS = 5 * 60 * 1000; // 一局 5 分鐘仲未有人出局就提早白熱化
+const G8_SYNC_MS = 60000;
+const G8_SYNC_HOT_MS = 30000;
+const G8_REVEAL_MS = 4500;
+const G8_SURVIVE = 200;   // 每局生存到最後
+const G8_CARDS = ["radar", "cross", "torpedo", "shield"];
+const G8_ATTACK = ["radar", "cross", "torpedo"];
+const G8_HAND = { duel: 1, brawl: 2, team: 3 };
+const G8_BRAWL_STYLES = ["sync", "seq"];
 const G8_MODES = ["duel", "brawl", "team"];
 const G8_SHIPS_BIG = [
   { len: 4, name: "戰艦" }, { len: 3, name: "巡洋艦" }, { len: 3, name: "潛艇" }, { len: 2, name: "驅逐艦" }
@@ -480,7 +488,8 @@ function publicRoom(room, viewerId=null) {
     g8Settings: room.game==="game8" ? {
       turnMs: room.g8TurnMs||20000,
       rounds: room.g8Rounds||3,
-      mode: room.g8Mode||null
+      mode: room.g8Mode||null,
+      brawl: room.g8Brawl||"sync"
     } : null,
     g7Settings: room.game==="game7" ? {
       turnMs: room.g7TurnMs||G7_TURN_MS_OPTIONS[0],
@@ -834,17 +843,26 @@ results:g.results||null
         myShips: (g.phase==="placing" && mine) ? b.ships.map(s=>({id:s.id,len:s.len,name:s.name,owner:s.owner,placed:!!s.cells})) : null
       };
     });
+    // 雷達結果只畀用嗰個人（或者佢隊）睇。
+    const evView=(ev)=>ev ? ({...ev, radar: ev.key===myKey ? ev.radar : null}) : null;
+    const scoreOf=(k)=>{ const s=room.g8Score?.[k]||{hit:0,surv:0}; return {hit:s.hit,surv:s.surv,total:s.hit+s.surv*G8_SURVIVE}; };
+    const scoreKeys = g.mode==="team" ? ["navy","pirate"] : (room.g8Roster||[]);
+    const myShield = myKey && g.shields?.[myKey] ? g.shields[myKey].shipId : null;
+    const pickAlive = g.phase==="pick" ? (g.order||[]).filter(k=>!g.boards[k]?.dead) : [];
     const base8={
       phase:g.phase,
       mode:g.mode,
+      style:g.style||"seq",
       round:g.round,
       totalRounds:g.totalRounds,
       turnMs:g.turnMs,
       size:g.size,
       hotAt:g.hotAt||0,
-      hot:!!(g.hotAt && g.cycle>=g.hotAt),
+      hot:!!(g.hotAt && (g.cycle>=g.hotAt || g.hotForced)),
+      hotForced:!!g.hotForced,
       cycle:g.cycle||1,
       teams:g.teams||null,
+      sides:g.sides||null,
       myKey,
       boards,
       order:g.order||[],
@@ -856,10 +874,19 @@ results:g.results||null
       readyTotal:room.players.filter(p=>p.connected).length,
       myReady:!!(viewerId && g.ready?.[viewerId]),
       cards:myKey ? (g.cards?.[myKey]||[]) : [],
+      myShield,
+      myTarget:myKey && g.pairs ? (g.pairs[myKey]||null) : null,
+      myPick:myKey && g.picks?.[myKey] ? g.picks[myKey] : null,
+      pickDone:pickAlive.filter(k=>g.picks?.[k]).length,
+      pickTotal:pickAlive.length,
+      reveal:g.phase==="reveal" ? (g.reveal||[]).map(evView) : null,
       pings:myKey && g.pings?.[myKey] ? Object.entries(g.pings[myKey]).map(([id,cell])=>{ const [r,c]=cell.split(",").map(Number); return {id,r,c}; }) : [],
       radar:(g.radar||[]).filter(x=>x.key===myKey),
-      last:g.last||null,
+      last:evView(g.last),
       airLog:g.airCycle===g.cycle ? (g.airLog||null) : null,
+      scores:Object.fromEntries(scoreKeys.map(k=>[k,scoreOf(k)])),
+      roundPts:g.roundPts||{},
+      survive:G8_SURVIVE,
       roundWinners:g.roundWinners||[],
       winners:room.g8Winners||[],
       teamWins:room.g8TeamWins||null,
@@ -990,6 +1017,7 @@ export class GameRoom extends DurableObject {
         g8TurnMs:clampG8TurnMs(body.g8TurnMs),
         g8Rounds:clampG8Rounds(body.g8Rounds),
         g8Mode:null,
+        g8Brawl:"sync",
         hostId:null,
         players:[],
         gameState:null,
@@ -1102,6 +1130,8 @@ export class GameRoom extends DurableObject {
       case "g8:ready": return this.onG8Ready(session.playerId,msg.ready);
       case "g8:ping": return this.onG8Ping(session.playerId,msg.r,msg.c);
       case "g8:fire": return this.onG8Fire(session.playerId,msg.target,msg.r,msg.c,msg.card);
+      case "g8:shield": return this.onG8Shield(session.playerId,msg.shipId);
+      case "g8:brawl": return this.onG8Brawl(session.playerId,msg.style);
       case "g8:end": return this.onG8End(session.playerId);
       case "g8:restart": return this.onG8Restart(session.playerId);
       case "g7:guess": return this.onG7Guess(session.playerId,msg.value);
@@ -2833,8 +2863,12 @@ async onG1Next(playerId){
      Game 8 · Battleship 海戰棋
   ========================= */
 
-  g8Config(mode){
-    if(mode==="brawl") return { size:6, ships:G8_SHIPS_SMALL, hotAt:G8_HOT_BRAWL };
+  // 人數同制度決定白熱化由第幾輪開始。
+  g8Config(mode,style,count){
+    if(mode==="brawl"){
+      const hotAt = style==="sync" ? G8_HOT_SYNC : (G8_HOT_SEQ[count] || 5);
+      return { size:6, ships:G8_SHIPS_SMALL, hotAt };
+    }
     return { size:8, ships:G8_SHIPS_BIG, hotAt: mode==="team" ? G8_HOT_TEAM : 0 };
   }
 
@@ -2862,6 +2896,16 @@ async onG1Next(playerId){
     await this.broadcastRoom();
   }
 
+  // 大亂鬥：同步制定輪流制，由房主揀。
+  async onG8Brawl(playerId,style){
+    if(playerId!==this.room.hostId) return;
+    if(this.room.gameState && this.room.gameState.phase!=="waiting") return;
+    if(!G8_BRAWL_STYLES.includes(style)) return;
+    this.room.g8Brawl=style;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
   async startGame8(){
     const connected=this.room.players.filter(p=>p.connected);
     const allowed=g8AllowedModes(connected.length);
@@ -2872,6 +2916,7 @@ async onG1Next(playerId){
     this.room.g8Stats={};
     this.room.g8Winners=[];
     this.room.g8TeamWins={navy:0,pirate:0};
+    this.room.g8Score={};
     this.room.g8Teams=null;
     if(mode==="team"){
       const ids=shuffle(connected.map(p=>p.id));
@@ -2879,18 +2924,45 @@ async onG1Next(playerId){
       this.room.g8Teams={navy:ids.slice(0,half),pirate:ids.slice(half)};
     }
     this.room.g8Roster=connected.map(p=>p.id);
+    // 1v1：兩個人隨機分做海軍同海盜，成場固定。
+    this.room.g8Sides=null;
+    if(mode==="duel"){
+      const ids=shuffle(connected.map(p=>p.id));
+      this.room.g8Sides={[ids[0]]:"navy",[ids[1]]:"pirate"};
+    }
     await this.beginRoundGame8(1);
   }
 
   g8Stat(id){
     this.room.g8Stats=this.room.g8Stats||{};
-    return this.room.g8Stats[id] ||= {cells:0,hits:0,sinks:0,airHit:0};
+    return this.room.g8Stats[id] ||= {cells:0,hits:0,sinks:0,airHit:0,blocked:0};
+  }
+
+  // 分數：每個參加者（玩家或隊伍）各自累積打中分同存活次數。
+  g8ScoreOf(key){
+    this.room.g8Score=this.room.g8Score||{};
+    return this.room.g8Score[key] ||= {hit:0,surv:0};
+  }
+
+  g8Total(key){
+    const s=this.room.g8Score?.[key];
+    return s ? s.hit + s.surv*G8_SURVIVE : 0;
+  }
+
+  g8SyncScores(){
+    const teams=this.room.g8Teams;
+    for(const p of this.room.players){
+      if(!(this.room.g8Roster||[]).includes(p.id)) continue;
+      const key = teams ? ((teams.navy||[]).includes(p.id) ? "navy" : (teams.pirate||[]).includes(p.id) ? "pirate" : null) : p.id;
+      p.score = key ? this.g8Total(key) : 0;
+    }
   }
 
   async beginRoundGame8(round){
     const mode=this.room.g8Mode;
-    const cfg=this.g8Config(mode);
     const roster=(this.room.g8Roster||[]).filter(id=>this.room.players.some(p=>p.id===id));
+    const style = mode==="brawl" ? (this.room.g8Brawl||"sync") : "seq";
+    const cfg=this.g8Config(mode,style,roster.length);
     const participants = mode==="team" ? ["navy","pirate"] : roster;
     const boards={};
     for(const key of participants){
@@ -2909,13 +2981,17 @@ async onG1Next(playerId){
     this.room.gameState={
       game:"game8",
       mode,
+      style,
       phase:"placing",
       round,
       totalRounds:this.room.g8Rounds||3,
       turnMs:this.room.g8TurnMs||20000,
       size:cfg.size,
       hotAt:cfg.hotAt,
+      hotForced:false,
+      startedAt:null,
       teams:this.room.g8Teams||null,
+      sides:this.room.g8Sides||null,
       boards,
       ready:{},
       order:[],
@@ -2924,12 +3000,18 @@ async onG1Next(playerId){
       shooterIdx:{navy:0,pirate:0},
       cycle:1,
       turnSeq:prev?.game==="game8" ? (prev.turnSeq||0) : 0,
+      evSeq:prev?.game==="game8" ? (prev.evSeq||0) : 0,
       cards:{},
+      shields:{},
+      pairs:null,
+      picks:{},
+      reveal:null,
       pings:{},
       radar:[],
       last:null,
       airLog:null,
       airCycle:0,
+      roundPts:{},
       roundWinners:[],
       endsAt:Date.now()+G8_PLACE_MS
     };
@@ -3040,17 +3122,17 @@ async onG1Next(playerId){
         }
       }
     }
-    // 派技能卡：1v1／大亂鬥每人一張；分隊每隊兩張。
+    // 派道具：1v1 每人 1 件、大亂鬥每人 2 件、分隊每隊 3 件；同一手唔會重複。
     g.cards={};
     const keys=Object.keys(g.boards);
-    for(const k of keys){
-      const count = g.mode==="team" ? G8_TEAM_CARDS : 1;
-      g.cards[k]=Array.from({length:count},()=>G8_CARDS[Math.floor(Math.random()*G8_CARDS.length)]);
-    }
+    const count=G8_HAND[g.mode]||1;
+    for(const k of keys) g.cards[k]=shuffle(G8_CARDS).slice(0,count);
     const start=(g.round-1)%keys.length;
     g.order=[...keys.slice(start),...keys.slice(0,start)];
     g.cycle=1;
-    this.setTurnGame8(g.order[0]);
+    g.startedAt=Date.now();
+    if(g.style==="sync") this.beginPickGame8();
+    else this.setTurnGame8(g.order[0]);
     await this.commitGame8();
   }
 
@@ -3059,7 +3141,15 @@ async onG1Next(playerId){
   }
 
   g8Hot(g){
-    return !!(g.hotAt && g.cycle>=g.hotAt);
+    return !!(g.hotAt && (g.cycle>=g.hotAt || g.hotForced));
+  }
+
+  // 一局玩咗 5 分鐘仲未有人出局：提早白熱化（只限大亂鬥同分隊）。
+  g8CheckHot(g){
+    if(!g.hotAt || g.hotForced || !g.startedAt) return;
+    if(Date.now()-g.startedAt < G8_HOT_TIME_MS) return;
+    if(g.mode==="brawl" && Object.values(g.boards).some(b=>b.dead)) return;
+    g.hotForced=true;
   }
 
   setTurnGame8(key){
@@ -3067,6 +3157,9 @@ async onG1Next(playerId){
     g.phase="turn";
     g.cur=key;
     g.turnSeq=(g.turnSeq||0)+1;
+    // 防護罩維持到自己下一次開炮之前。
+    if(g.shields?.[key]) delete g.shields[key];
+    this.g8CheckHot(g);
     let shooter=key;
     if(g.mode==="team"){
       const members=g.teams?.[key]||[];
@@ -3087,24 +3180,93 @@ async onG1Next(playerId){
     return free;
   }
 
-  // 打一格：返回結果。sunk 係呢一炮打沉嘅船名。
-  g8ShootCell(g,board,r,c,by,air){
+  // 打中分：船格數 × 10 ＋ 早段加分（第 1 輪 +30，每輪少 3）。
+  g8ShotPts(g,ship){
+    return ship.len*10 + Math.max(0, 30-3*((g.cycle||1)-1));
+  }
+
+  // 打一格：返回結果。被防護罩擋咗嘅格唔會揭開，亦冇分。
+  g8ShootCell(g,board,r,c,by,air,byKey){
     const k=r+","+c;
     if(board.shots[k]) return null;
     const ship=board.ships.find(s=>s.cells && s.cells.some(([rr,cc])=>rr===r&&cc===c));
+    const sh=g.shields?.[board.id];
+    if(ship && !ship.sunk && sh && sh.shipId===ship.id){
+      sh.blocks=(sh.blocks||0)+1;
+      if(sh.by) this.g8Stat(sh.by).blocked++;
+      return {r,c,res:"blocked",pts:0};
+    }
     const res=ship ? "hit" : "miss";
     board.shots[k]={res,air:!!air};
     if(by){
       const st=this.g8Stat(by); st.cells++; if(ship) st.hits++;
     }
     if(ship && air && ship.owner) this.g8Stat(ship.owner).airHit++;
+    let pts=0;
+    if(ship && !air && byKey){
+      pts=this.g8ShotPts(g,ship);
+      this.g8ScoreOf(byKey).hit+=pts;
+      g.roundPts[byKey]=(g.roundPts[byKey]||0)+pts;
+    }
     let sunk=null;
     if(ship && !ship.sunk && ship.cells.every(([rr,cc])=>board.shots[rr+","+cc])){
       ship.sunk=true; sunk=ship.name;
       if(by) this.g8Stat(by).sinks++;
     }
     if(board.ships.every(s=>s.sunk)) board.dead=true;
-    return {r,c,res,sunk};
+    return {r,c,res,sunk,pts};
+  }
+
+  // 一次攻擊（普通炮或者攻擊道具），返回打過嘅格。
+  g8Attack(g,by,key,target,r,c,card){
+    const board=g.boards[target];
+    const cells=[];
+    let radar=null;
+    if(card==="radar"){
+      let count=0;
+      for(let rr=r-1;rr<=r+1;rr++) for(let cc=c-1;cc<=c+1;cc++){
+        if(rr<0||cc<0||rr>=g.size||cc>=g.size) continue;
+        if(board.shots[rr+","+cc]) continue;
+        if(board.ships.some(s=>s.cells && s.cells.some(([a,b])=>a===rr&&b===cc))) count++;
+      }
+      g.radar.push({key,board:target,r,c,count});
+      radar=count;
+    } else if(card==="cross"){
+      for(const [rr,cc] of [[r,c],[r-1,c],[r,c+1],[r+1,c],[r,c-1]]){
+        if(rr<0||cc<0||rr>=g.size||cc>=g.size) continue;
+        const x=this.g8ShootCell(g,board,rr,cc,by,false,key); if(x) cells.push(x);
+      }
+    } else if(card==="torpedo"){
+      for(let cc=0;cc<g.size;cc++){
+        const x=this.g8ShootCell(g,board,r,cc,by,false,key);
+        if(!x) continue;
+        cells.push(x);
+        if(x.res!=="miss") break;
+      }
+    } else {
+      const x=this.g8ShootCell(g,board,r,c,by,false,key); if(x) cells.push(x);
+    }
+    return {cells,radar};
+  }
+
+  g8Event(g,ev){
+    g.evSeq=(g.evSeq||0)+1;
+    return {seq:g.evSeq,cycle:g.cycle,...ev};
+  }
+
+  // 白熱化空襲：每塊仲未出局嘅板隨機炸一格（防護罩一樣擋得到）。
+  g8AirStrike(g){
+    const air=[];
+    for(const k of g.order){
+      const b=g.boards[k];
+      if(b.dead) continue;
+      const free=this.g8ShotsLeft(b,g.size);
+      if(!free.length) continue;
+      const [rr,cc]=free[Math.floor(Math.random()*free.length)];
+      const x=this.g8ShootCell(g,b,rr,cc,null,true,null);
+      if(x) air.push({board:k,...x});
+    }
+    return air;
   }
 
   async onG8Ping(playerId,r,c){
@@ -3122,7 +3284,9 @@ async onG1Next(playerId){
 
   async onG8Fire(playerId,target,r,c,card){
     const g=this.room.gameState;
-    if(!g || g.game!=="game8" || g.phase!=="turn") return;
+    if(!g || g.game!=="game8") return;
+    if(g.phase==="pick") return this.onG8Pick(playerId,r,c,card);
+    if(g.phase!=="turn") return;
     if(g.shooter!==playerId) return this.errorPlayer(playerId,"未輪到你開炮。");
     r=Number(r); c=Number(c);
     if(!Number.isInteger(r)||!Number.isInteger(c)||r<0||c<0||r>=g.size||c>=g.size) return this.errorPlayer(playerId,"請揀一格。");
@@ -3130,11 +3294,11 @@ async onG1Next(playerId){
     if(g.mode!=="brawl") target=g.order.find(k=>k!==key);
     const board=g.boards[target];
     if(!board || target===key || board.dead) return this.errorPlayer(playerId,"請揀一個仲未出局嘅對手。");
-    if(card && !G8_CARDS.includes(card)) return;
+    if(card && !G8_ATTACK.includes(card)) return;
     if(card){
       const hand=g.cards[key]||[];
       const idx=hand.indexOf(card);
-      if(idx<0) return this.errorPlayer(playerId,"冇呢張技能卡。");
+      if(idx<0) return this.errorPlayer(playerId,"冇呢件道具。");
       hand.splice(idx,1);
     } else if(board.shots[r+","+c]){
       return this.errorPlayer(playerId,"呢格已經打過。");
@@ -3144,35 +3308,37 @@ async onG1Next(playerId){
 
   async fireGame8(by,key,target,r,c,card,auto){
     const g=this.room.gameState;
-    const board=g.boards[target];
-    const results=[];
-    if(card==="radar"){
-      let count=0;
-      for(let rr=r-1;rr<=r+1;rr++) for(let cc=c-1;cc<=c+1;cc++){
-        if(rr<0||cc<0||rr>=g.size||cc>=g.size) continue;
-        if(board.shots[rr+","+cc]) continue;
-        if(board.ships.some(s=>s.cells && s.cells.some(([a,b])=>a===rr&&b===cc))) count++;
-      }
-      g.radar.push({key,board:target,r,c,count});
-    } else if(card==="cross"){
-      for(const [rr,cc] of [[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]]){
-        if(rr<0||cc<0||rr>=g.size||cc>=g.size) continue;
-        const x=this.g8ShootCell(g,board,rr,cc,by,false); if(x) results.push(x);
-      }
-    } else if(card==="torpedo"){
-      for(let cc=0;cc<g.size;cc++){
-        const x=this.g8ShootCell(g,board,r,cc,by,false);
-        if(!x) continue;
-        results.push(x);
-        if(x.res==="hit") break;
-      }
-    } else {
-      const x=this.g8ShootCell(g,board,r,c,by,false); if(x) results.push(x);
-    }
-    g.last={by,key,target,card,r,c,auto:!!auto,cells:results,radar:card==="radar" ? g.radar[g.radar.length-1].count : null};
+    const {cells,radar}=this.g8Attack(g,by,key,target,r,c,card);
+    g.last=this.g8Event(g,{by,key,target,card,r,c,auto:!!auto,cells,radar});
     if(g.pings[key]) g.pings[key]={};
     if(g.mode==="team") g.shooterIdx[key]=(g.shooterIdx[key]||0)+1;
     await this.advanceGame8();
+  }
+
+  // 防護罩：揀一隻自己（或者自己隊）未沉嘅船，唔使犧牲開炮。
+  async onG8Shield(playerId,shipId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8") return;
+    let key;
+    if(g.phase==="turn"){
+      if(g.shooter!==playerId) return this.errorPlayer(playerId,"未輪到你。");
+      key=g.cur;
+    } else if(g.phase==="pick"){
+      key=this.g8KeyOf(g,playerId);
+      if(!key || !g.pairs?.[key] || g.boards[key]?.dead) return;
+      if(g.picks?.[key]) return this.errorPlayer(playerId,"已經確定咗開炮，唔可以再開防護罩。");
+    } else return;
+    if(g.shields?.[key]) return this.errorPlayer(playerId,"防護罩已經開咗。");
+    const hand=g.cards[key]||[];
+    const idx=hand.indexOf("shield");
+    if(idx<0) return this.errorPlayer(playerId,"冇防護罩。");
+    const ship=g.boards[key].ships.find(s=>s.id===shipId && s.cells && !s.sunk);
+    if(!ship) return this.errorPlayer(playerId,"請揀一隻未沉嘅船。");
+    hand.splice(idx,1);
+    g.shields=g.shields||{};
+    g.shields[key]={shipId:ship.id,by:playerId,blocks:0};
+    await this.save();
+    await this.broadcastRoom();
   }
 
   // 下一個參加者；行完一圈 cycle+1，白熱化期間每圈完結空襲每塊板一格。
@@ -3190,20 +3356,10 @@ async onG1Next(playerId){
       if(!g.boards[k].dead && k===g.cur && i===order.length){ next=k; break; }
     }
     if(wrapped){
-      const ended=g.cycle;
+      const wasHot=this.g8Hot(g);
       g.cycle++;
-      if(g.hotAt && ended>=g.hotAt){
-        const air=[];
-        for(const k of order){
-          const b=g.boards[k];
-          if(b.dead) continue;
-          const free=this.g8ShotsLeft(b,g.size);
-          if(!free.length) continue;
-          const [rr,cc]=free[Math.floor(Math.random()*free.length)];
-          const x=this.g8ShootCell(g,b,rr,cc,null,true);
-          if(x) air.push({board:k,...x});
-        }
-        g.airLog=air;
+      if(wasHot){
+        g.airLog=this.g8AirStrike(g);
         g.airCycle=g.cycle;
         if(await this.checkRoundOverGame8()) return;
         if(g.boards[next]?.dead) next=g.order.find(k=>!g.boards[k].dead);
@@ -3213,16 +3369,110 @@ async onG1Next(playerId){
     await this.commitGame8();
   }
 
+  /* ---- 大亂鬥同步制 ---- */
+
+  // 每輪隨機配對：每人打一個、亦只會被一個人打（冇人打自己）。
+  beginPickGame8(){
+    const g=this.room.gameState;
+    const alive=this.g8Alive(g);
+    let perm=null;
+    for(let t=0;t<200;t++){
+      const p=shuffle(alive);
+      if(p.every((k,i)=>k!==alive[i])){ perm=p; break; }
+    }
+    if(!perm){ const s=shuffle(alive); perm=alive.map(k=>s[(s.indexOf(k)+1)%s.length]); }
+    g.pairs={};
+    alive.forEach((k,i)=>{ g.pairs[k]=perm[i]; });
+    g.picks={};
+    g.reveal=null;
+    g.phase="pick";
+    g.cur=null; g.shooter=null;
+    g.turnSeq=(g.turnSeq||0)+1;
+    this.g8CheckHot(g);
+    const ms=this.g8Hot(g) ? G8_SYNC_HOT_MS : G8_SYNC_MS;
+    const anyOnline=alive.some(k=>this.room.players.some(p=>p.id===k && p.connected));
+    g.endsAt=Date.now()+(anyOnline ? ms : G8_OFFLINE_TURN_MS);
+  }
+
+  g8AllPicked(g){
+    const alive=this.g8Alive(g).filter(k=>this.room.players.some(p=>p.id===k && p.connected));
+    return alive.length>0 && alive.every(k=>g.picks?.[k]);
+  }
+
+  async onG8Pick(playerId,r,c,card){
+    const g=this.room.gameState;
+    const key=this.g8KeyOf(g,playerId);
+    if(!key || !g.pairs?.[key] || g.boards[key]?.dead) return this.errorPlayer(playerId,"你已經出局。");
+    if(g.picks[key]) return;
+    r=Number(r); c=Number(c);
+    if(!Number.isInteger(r)||!Number.isInteger(c)||r<0||c<0||r>=g.size||c>=g.size) return this.errorPlayer(playerId,"請揀一格。");
+    const board=g.boards[g.pairs[key]];
+    if(card && !G8_ATTACK.includes(card)) return;
+    if(card){
+      const hand=g.cards[key]||[];
+      const idx=hand.indexOf(card);
+      if(idx<0) return this.errorPlayer(playerId,"冇呢件道具。");
+      hand.splice(idx,1);
+    } else if(board.shots[r+","+c]){
+      return this.errorPlayer(playerId,"呢格已經打過。");
+    }
+    g.picks[key]={r,c,card:card||null};
+    if(this.g8AllPicked(g)) return this.resolveSyncGame8();
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  // 全部人一齊開炮，之後（白熱化）空襲，再入揭曉畫面。
+  async resolveSyncGame8(){
+    const g=this.room.gameState;
+    if(!g || g.phase!=="pick") return;
+    const shooters=this.g8Alive(g);
+    const events=[];
+    for(const key of shooters){
+      const target=g.pairs?.[key];
+      if(!target) continue;
+      let pick=g.picks[key], auto=false;
+      if(!pick){
+        const free=this.g8ShotsLeft(g.boards[target],g.size);
+        const [r,c]=free[Math.floor(Math.random()*free.length)]||[0,0];
+        pick={r,c,card:null}; auto=true;
+      }
+      const {cells,radar}=this.g8Attack(g,key,key,target,pick.r,pick.c,pick.card);
+      events.push(this.g8Event(g,{by:key,key,target,card:pick.card,r:pick.r,c:pick.c,auto,cells,radar}));
+    }
+    if(this.g8Hot(g)){
+      g.airLog=this.g8AirStrike(g);
+      g.airCycle=g.cycle;
+    } else g.airLog=null;
+    g.shields={};
+    g.reveal=events;
+    g.last=null;
+    g.phase="reveal";
+    g.endsAt=Date.now()+G8_REVEAL_MS;
+    await this.commitGame8();
+  }
+
+  async afterRevealGame8(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game8" || g.phase!=="reveal") return;
+    if(await this.checkRoundOverGame8()) return;
+    g.cycle++;
+    this.beginPickGame8();
+    await this.commitGame8();
+  }
+
   async checkRoundOverGame8(){
     const g=this.room.gameState;
     const alive=this.g8Alive(g);
     if(alive.length>1) return false;
-    // 剩返一個就佢贏；如果空襲同時炸沉晒最後幾個（同歸於盡），呢輪冇贏家，算平手。
+    // 剩返一個就佢生存到最後（+200）；同一輪全部沉晒就平手，冇存活獎勵，打中分照計。
     const winKeys=alive;
-    const winners=[...new Set(winKeys.flatMap(k=>this.g8Members(g,k)))];
-    for(const id of winners){
-      const p=this.room.players.find(x=>x.id===id); if(p) p.score=(p.score||0)+1;
+    for(const k of winKeys){
+      this.g8ScoreOf(k).surv++;
+      g.roundPts[k]=(g.roundPts[k]||0)+G8_SURVIVE;
     }
+    this.g8SyncScores();
+    const winners=[...new Set(winKeys.flatMap(k=>this.g8Members(g,k)))];
     if(g.mode==="team" && winKeys[0]) this.room.g8TeamWins[winKeys[0]]=(this.room.g8TeamWins[winKeys[0]]||0)+1;
     this.room.g8Winners=[...(this.room.g8Winners||[]),{round:g.round,keys:winKeys,ids:winners}];
     g.roundWinners=winKeys;
@@ -3245,6 +3495,8 @@ async onG1Next(playerId){
     if(!g || g.game!=="game8") return;
     if(g.phase==="placing") return this.finishPlacingGame8();
     if(g.phase==="roundover") return this.afterRoundGame8();
+    if(g.phase==="pick") return this.resolveSyncGame8();
+    if(g.phase==="reveal") return this.afterRevealGame8();
     if(g.phase!=="turn") return;
     const key=g.cur;
     let target;
@@ -3260,6 +3512,7 @@ async onG1Next(playerId){
   async finishGame8(endedEarly){
     const g=this.room.gameState;
     if(!g || g.game!=="game8") return;
+    this.g8SyncScores();
     g.phase="gameover";
     g.endsAt=null;
     g.cur=null; g.shooter=null;
@@ -3274,6 +3527,16 @@ async onG1Next(playerId){
     if(g.phase==="placing" && this.g8AllPlaced(g)){
       await this.finishPlacingGame8();
       return true;
+    }
+    if(g.phase==="pick"){
+      if(this.g8AllPicked(g)){ await this.resolveSyncGame8(); return true; }
+      const anyOnline=this.g8Alive(g).some(k=>this.room.players.some(p=>p.id===k && p.connected));
+      const soon=Date.now()+G8_OFFLINE_TURN_MS;
+      if(!anyOnline && (!g.endsAt || g.endsAt>soon)){
+        g.endsAt=soon;
+        await this.commitGame8();
+        return true;
+      }
     }
     if(g.phase==="turn"){
       const p=this.room.players.find(x=>x.id===g.shooter);
@@ -3712,7 +3975,7 @@ async onG1Next(playerId){
       return;
     }
 
-    if(g?.game==="game8" && (g.phase==="placing" || g.phase==="turn" || g.phase==="roundover") && g.endsAt && Date.now()+50>=g.endsAt){
+    if(g?.game==="game8" && ["placing","turn","roundover","pick","reveal"].includes(g.phase) && g.endsAt && Date.now()+50>=g.endsAt){
       await this.timeoutGame8();
       return;
     }
