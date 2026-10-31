@@ -57,12 +57,12 @@ export const GAME9_SPECTRA = [
     "id": 5,
     "text": {
       "yue": {
-        "left": "悶",
-        "right": "好玩"
+        "left": "Tier F",
+        "right": "Tier S"
       },
       "zh": {
-        "left": "沉悶",
-        "right": "有趣"
+        "left": "爛",
+        "right": "夯"
       }
     }
   },
@@ -70,8 +70,8 @@ export const GAME9_SPECTRA = [
     "id": 6,
     "text": {
       "yue": {
-        "left": "平",
-        "right": "貴"
+        "left": "平到傻",
+        "right": "貴到hihi"
       },
       "zh": {
         "left": "便宜",
@@ -87,8 +87,8 @@ export const GAME9_SPECTRA = [
         "right": "型"
       },
       "zh": {
-        "left": "令人尷尬",
-        "right": "很酷"
+        "left": "超尬",
+        "right": "酷"
       }
     }
   },
@@ -96,7 +96,7 @@ export const GAME9_SPECTRA = [
     "id": 8,
     "text": {
       "yue": {
-        "left": "難食",
+        "left": "難食到嘔",
         "right": "好食"
       },
       "zh": {
@@ -109,7 +109,7 @@ export const GAME9_SPECTRA = [
     "id": 9,
     "text": {
       "yue": {
-        "left": "冇用",
+        "left": "廢",
         "right": "好有用"
       },
       "zh": {
@@ -123,11 +123,11 @@ export const GAME9_SPECTRA = [
     "text": {
       "yue": {
         "left": "唔浪漫",
-        "right": "好浪漫"
+        "right": "好冧"
       },
       "zh": {
         "left": "不浪漫",
-        "right": "很浪漫"
+        "right": "浪漫na"
       }
     }
   },
@@ -135,7 +135,7 @@ export const GAME9_SPECTRA = [
     "id": 11,
     "text": {
       "yue": {
-        "left": "蠢",
+        "left": "白卡",
         "right": "天才"
       },
       "zh": {
@@ -148,12 +148,12 @@ export const GAME9_SPECTRA = [
     "id": 12,
     "text": {
       "yue": {
-        "left": "小事",
-        "right": "大事"
+        "left": "piece of cake",
+        "right": "搞唔掂"
       },
       "zh": {
         "left": "小事一樁",
-        "right": "天大的事"
+        "right": "完蛋啦"
       }
     }
   },
@@ -174,12 +174,12 @@ export const GAME9_SPECTRA = [
     "id": 14,
     "text": {
       "yue": {
-        "left": "冇 kick",
-        "right": "好有 kick"
+        "left": "is ok",
+        "right": "好kick"
       },
       "zh": {
-        "left": "索然無味",
-        "right": "怦然心動"
+        "left": "還好",
+        "right": "完全打咩"
       }
     }
   },
@@ -204,7 +204,7 @@ export const GAME9_SPECTRA = [
         "right": "即刻原諒"
       },
       "zh": {
-        "left": "不可原諒",
+        "left": "不可饒恕",
         "right": "立即原諒"
       }
     }
