@@ -6677,7 +6677,19 @@ function renderGame8Turn(game) {
   const myBoard = game.boards.find((b) => b.id === me);
   const viewingEnemy = viewId !== me;
   const meOut = game.mode === "brawl" && myBoard?.dead;
+  // 成個介面跟住睇緊嗰塊板嘅陣營：去到敵方海域就變敵方顏色
+  if (game.mode !== "brawl") {
+    const shell = $("#gameShell");
+    const viewSide = game.mode === "team" ? viewId : g8SideOf(game, viewId);
+    if (shell && viewSide) shell.dataset.g8team = viewSide;
+  }
   const holding = S.g8Hold && Date.now() < S.g8Hold.until && viewId === S.g8Hold.board;
+  // 1v1／分隊：成個介面跟住而家睇緊嘅棋盤變色（睇對手＝對手顏色，睇自己＝自己顏色）
+  if (game.mode !== "brawl") {
+    const viewSide = game.mode === "team" ? viewId : g8SideOf(game, viewId);
+    const shell = $("#gameShell");
+    if (shell && viewSide) shell.dataset.g8team = viewSide;
+  }
 
   let title;
   if (isShooter) title = game.mode === "team" ? t.yourShooter : t.yourTurn;
