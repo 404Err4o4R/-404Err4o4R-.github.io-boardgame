@@ -6168,7 +6168,7 @@ function g8BoardHtml(game, board, opts = {}) {
       if (opts.aim && opts.aim.r === r && opts.aim.c === c) {
         cls.push("aim");
         inner = g8Icon("aim", opts.small ? 12 : 20);
-      } else if (opts.aimRow !== undefined && opts.aimRow === r && !st) {
+      } else if (opts.aimRow !== undefined && opts.aimRow === r) {
         cls.push("aimrow");
       }
       if (pingAt[k] && !st) {
@@ -6218,7 +6218,8 @@ function g8BoardHtml(game, board, opts = {}) {
     }
   }
   const cols = opts.small ? n : n + 1;
-  return `<div class="g8-board ${opts.small ? "small" : ""} ${opts.drag ? "dragboard" : ""}" data-board="${board.id}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${cols},auto)">${items.join("")}</div>`;
+  const side = g8SideOf(game, board.id) || (game.mode === "team" ? board.id : "");
+  return `<div class="g8-board ${opts.small ? "small" : ""} ${opts.drag ? "dragboard" : ""} ${side ? "side-" + side : ""}" data-board="${board.id}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${cols},auto)">${items.join("")}</div>`;
 }
 
 function g8SideOf(game, id) {
@@ -6424,8 +6425,27 @@ window.g8RotateShip = (id) => {
   const board = game?.boards.find((b) => b.id === game.myKey);
   const ship = board?.ships.find((s) => s.id === id && s.cells?.length);
   if (!ship) return;
-  const [r, c] = ship.cells[0];
-  send({ type: "g8:place", shipId: id, r, c, horiz: g8ShipVertical(ship) });
+  const n = game.size;
+  const toVertical = !g8ShipVertical(ship);
+  const occ = new Set();
+  for (const s of board.ships) if (s.id !== id) for (const [r, c] of s.cells || []) occ.add(r + "," + c);
+  const fits = (r, c) => {
+    for (let i = 0; i < ship.len; i++) {
+      const rr = toVertical ? r + i : r, cc = toVertical ? c : c + i;
+      if (rr < 0 || cc < 0 || rr >= n || cc >= n || occ.has(rr + "," + cc)) return false;
+    }
+    return true;
+  };
+  // 原位轉唔到（出界或者撞船）：搵最近一個轉得到嘅位
+  const [r0, c0] = ship.cells[0];
+  let best = null;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    if (!fits(r, c)) continue;
+    const d = Math.abs(r - r0) + Math.abs(c - c0);
+    if (!best || d < best.d) best = { r, c, d };
+  }
+  if (!best) return flash(g8T().cantPlace);
+  send({ type: "g8:place", shipId: id, r: best.r, c: best.c, horiz: !toVertical });
 };
 
 /* 拖船：滑鼠同手指都用 pointer events；拖緊嘅時候唔重畫，放手先重畫。 */
@@ -6505,7 +6525,8 @@ window.g8RotateShip = (id) => {
 
   function move(event) {
     if (!drag) return;
-    if (Math.abs(event.clientX - drag.startX) + Math.abs(event.clientY - drag.startY) > 6) drag.moved = true;
+    // 手指撳落去通常會郁少少：郁超過 14px 先當係拖，唔係就當撳一下（揀船、出旋轉掣）
+    if (Math.abs(event.clientX - drag.startX) + Math.abs(event.clientY - drag.startY) > 14) drag.moved = true;
     const half = drag.cellSize / 2;
     const left = event.clientX - (drag.v ? half : drag.grab * drag.cellSize + half);
     const top = event.clientY - (drag.v ? drag.grab * drag.cellSize + half : half);
@@ -6656,7 +6677,19 @@ function renderGame8Turn(game) {
   const myBoard = game.boards.find((b) => b.id === me);
   const viewingEnemy = viewId !== me;
   const meOut = game.mode === "brawl" && myBoard?.dead;
+  // 成個介面跟住睇緊嗰塊板嘅陣營：去到敵方海域就變敵方顏色
+  if (game.mode !== "brawl") {
+    const shell = $("#gameShell");
+    const viewSide = game.mode === "team" ? viewId : g8SideOf(game, viewId);
+    if (shell && viewSide) shell.dataset.g8team = viewSide;
+  }
   const holding = S.g8Hold && Date.now() < S.g8Hold.until && viewId === S.g8Hold.board;
+  // 1v1／分隊：成個介面跟住而家睇緊嘅棋盤變色（睇對手＝對手顏色，睇自己＝自己顏色）
+  if (game.mode !== "brawl") {
+    const viewSide = game.mode === "team" ? viewId : g8SideOf(game, viewId);
+    const shell = $("#gameShell");
+    if (shell && viewSide) shell.dataset.g8team = viewSide;
+  }
 
   let title;
   if (isShooter) title = game.mode === "team" ? t.yourShooter : t.yourTurn;

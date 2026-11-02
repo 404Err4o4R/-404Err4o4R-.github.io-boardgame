@@ -568,7 +568,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 #gameShell[data-game="game6"]{--card:#B9DD5B;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#3C5A1E;--strip:#B9DD5B;--strip-fg:#1f2740}
 #gameShell[data-game="game8"]{--card:#22408C;--card-fg:#FEFEF2;--sel:#F2D965;--sel-fg:#1f2740;--deep:#F2D965;--strip:#C9D6F2;--strip-fg:#1f2740;--ring:#F2D965;--g8-sea:#3459AD}
 #gameShell[data-game="game8"][data-g8team="navy"]{--card:#3D69C8;--g8-sea:#1F3D86}
-#gameShell[data-game="game8"][data-g8team="pirate"]{--card:#C53D3D;--g8-sea:#1F3D86}
+#gameShell[data-game="game8"][data-g8team="pirate"]{--card:#C53D3D;--g8-sea:#8E2A2F}
 #gameShell[data-game="game8"][data-g8team="tie"]{--card:#22408C}
 #gameShell[data-game="game7"]{--card:#F7577A;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#7A1030;--strip:#FFD3DD;--strip-fg:#7A1030}
 
@@ -1613,7 +1613,6 @@ button.g8-c:hover{border-color:#F2D965}
 }
 /* ===== Battleship：抽道具老虎機、拖船鎖畫面 ===== */
 html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;touch-action:none}
-.g8-placing .g8-board.dragboard{touch-action:none}
 .g8-items{display:flex;flex-direction:column;gap:6px}
 .g8-items div{display:flex;gap:6px;flex-wrap:wrap}
 .g8-item{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#F2D965;color:#1f2740;font-weight:900;font-size:12px}
@@ -1675,3 +1674,15 @@ html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;
 .g1-unanimous{text-align:center;font-size:15px}
 .g1-unanimous-title{font-size:24px;font-weight:900;margin-bottom:4px}
 #gamePanel .g1-paused-note{font-weight:800;opacity:1!important}
+
+/* ===== Battleship：手機修正 ===== */
+/* 道具覆蓋範圍：黃色虛線＋淡黃底（要蓋過 .g8-board .g8-c 嘅透明邊） */
+.g8-board .g8-c.preview,.g8-board .g8-c.aimrow{border:2px dashed #F2D965;background:rgba(242,217,101,.18)}
+.g8-board .g8-c.aim{border:2px solid #F2D965;background:rgba(242,217,101,.22)}
+/* 每塊棋盤用返擁有者嘅顏色：海軍藍、海盜紅 */
+.g8-board.side-navy{--g8-sea:#1F3D86}
+.g8-board.side-pirate{--g8-sea:#8E2A2F}
+/* 旋轉掣大啲，手指易撳 */
+.g8-rot{width:40px;height:40px;top:-15px;right:-15px}
+/* 睇邊塊棋盤，成個介面就變成嗰邊嘅顏色（入咗敵方海域嘅感覺） */
+#gameShell[data-game="game8"].is-playing #gamePanel{transition:background-color .35s ease}
