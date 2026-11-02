@@ -568,7 +568,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 #gameShell[data-game="game6"]{--card:#B9DD5B;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#3C5A1E;--strip:#B9DD5B;--strip-fg:#1f2740}
 #gameShell[data-game="game8"]{--card:#22408C;--card-fg:#FEFEF2;--sel:#F2D965;--sel-fg:#1f2740;--deep:#F2D965;--strip:#C9D6F2;--strip-fg:#1f2740;--ring:#F2D965;--g8-sea:#3459AD}
 #gameShell[data-game="game8"][data-g8team="navy"]{--card:#3D69C8;--g8-sea:#1F3D86}
-#gameShell[data-game="game8"][data-g8team="pirate"]{--card:#C53D3D;--g8-sea:#1F3D86}
+#gameShell[data-game="game8"][data-g8team="pirate"]{--card:#C53D3D;--g8-sea:#8E2A2F}
 #gameShell[data-game="game8"][data-g8team="tie"]{--card:#22408C}
 #gameShell[data-game="game7"]{--card:#F7577A;--card-fg:#1f2740;--sel:#1f2740;--sel-fg:#FEFEF2;--deep:#7A1030;--strip:#FFD3DD;--strip-fg:#7A1030}
 
@@ -1684,3 +1684,5 @@ html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;
 .g8-board.side-pirate{--g8-sea:#8E2A2F}
 /* 旋轉掣大啲，手指易撳 */
 .g8-rot{width:40px;height:40px;top:-15px;right:-15px}
+/* 睇邊塊棋盤，成個介面就變成嗰邊嘅顏色（入咗敵方海域嘅感覺） */
+#gameShell[data-game="game8"].is-playing #gamePanel{transition:background-color .35s ease}
