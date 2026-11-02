@@ -1613,7 +1613,6 @@ button.g8-c:hover{border-color:#F2D965}
 }
 /* ===== Battleship：抽道具老虎機、拖船鎖畫面 ===== */
 html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;touch-action:none}
-.g8-placing .g8-board.dragboard{touch-action:none}
 .g8-items{display:flex;flex-direction:column;gap:6px}
 .g8-items div{display:flex;gap:6px;flex-wrap:wrap}
 .g8-item{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#F2D965;color:#1f2740;font-weight:900;font-size:12px}
@@ -1675,3 +1674,13 @@ html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;
 .g1-unanimous{text-align:center;font-size:15px}
 .g1-unanimous-title{font-size:24px;font-weight:900;margin-bottom:4px}
 #gamePanel .g1-paused-note{font-weight:800;opacity:1!important}
+
+/* ===== Battleship：手機修正 ===== */
+/* 道具覆蓋範圍：黃色虛線＋淡黃底（要蓋過 .g8-board .g8-c 嘅透明邊） */
+.g8-board .g8-c.preview,.g8-board .g8-c.aimrow{border:2px dashed #F2D965;background:rgba(242,217,101,.18)}
+.g8-board .g8-c.aim{border:2px solid #F2D965;background:rgba(242,217,101,.22)}
+/* 每塊棋盤用返擁有者嘅顏色：海軍藍、海盜紅 */
+.g8-board.side-navy{--g8-sea:#1F3D86}
+.g8-board.side-pirate{--g8-sea:#8E2A2F}
+/* 旋轉掣大啲，手指易撳 */
+.g8-rot{width:40px;height:40px;top:-15px;right:-15px}
