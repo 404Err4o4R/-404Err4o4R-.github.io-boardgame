@@ -1976,32 +1976,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 77,
-    "category": "食物題",
-    "type": "binary",
-    "question": "香菜你？",
-    "options": [
-      "加倍",
-      "全部拿走"
-    ],
-    "text": {
-      "yue": {
-        "question": "香菜你？",
-        "options": [
-          "加倍",
-          "全部拿走"
-        ]
-      },
-      "zh": {
-        "question": "香菜你？",
-        "options": [
-          "加倍",
-          "全部拿走"
-        ]
-      }
-    }
-  },
-  {
     "id": 78,
     "category": "食物題",
     "type": "binary",
@@ -2106,110 +2080,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 82,
-    "category": "食物題",
-    "type": "binary",
-    "question": "臭豆腐你敢嗎？",
-    "options": [
-      "愛死",
-      "聞到就走"
-    ],
-    "text": {
-      "yue": {
-        "question": "臭豆腐你敢嗎？",
-        "options": [
-          "愛死",
-          "聞到就走"
-        ]
-      },
-      "zh": {
-        "question": "臭豆腐你敢嗎？",
-        "options": [
-          "愛死",
-          "聞到就走"
-        ]
-      }
-    }
-  },
-  {
-    "id": 83,
-    "category": "食物題",
-    "type": "binary",
-    "question": "榴槤？",
-    "options": [
-      "神物",
-      "生化武器"
-    ],
-    "text": {
-      "yue": {
-        "question": "榴槤？",
-        "options": [
-          "神物",
-          "生化武器"
-        ]
-      },
-      "zh": {
-        "question": "榴槤？",
-        "options": [
-          "神物",
-          "生化武器"
-        ]
-      }
-    }
-  },
-  {
-    "id": 84,
-    "category": "食物題",
-    "type": "binary",
-    "question": "苦瓜你吃嗎？",
-    "options": [
-      "吃",
-      "打死不吃"
-    ],
-    "text": {
-      "yue": {
-        "question": "苦瓜你吃嗎？",
-        "options": [
-          "吃",
-          "打死不吃"
-        ]
-      },
-      "zh": {
-        "question": "苦瓜你吃嗎？",
-        "options": [
-          "吃",
-          "打死不吃"
-        ]
-      }
-    }
-  },
-  {
-    "id": 85,
-    "category": "食物題",
-    "type": "binary",
-    "question": "內臟（豬紅、粉腸）？",
-    "options": [
-      "吃得很開心",
-      "不行"
-    ],
-    "text": {
-      "yue": {
-        "question": "內臟（豬紅、粉腸）？",
-        "options": [
-          "吃得很開心",
-          "不行"
-        ]
-      },
-      "zh": {
-        "question": "內臟（豬紅、粉腸）？",
-        "options": [
-          "吃得很開心",
-          "不行"
-        ]
-      }
-    }
-  },
-  {
     "id": 86,
     "category": "食物題",
     "type": "binary",
@@ -2227,7 +2097,7 @@ export const GAME1_QUESTIONS = [
         ]
       },
       "zh": {
-        "question": "生蠔？",
+        "question": "生牡蠣？",
         "options": [
           "一打起跳",
           "不敢"
@@ -2465,58 +2335,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "死忠同一款",
           "每次都試新的"
-        ]
-      }
-    }
-  },
-  {
-    "id": 96,
-    "category": "食物題",
-    "type": "binary",
-    "question": "在家煮氣味很重的東西（螺螄粉之類）？",
-    "options": [
-      "煮爆",
-      "不可能"
-    ],
-    "text": {
-      "yue": {
-        "question": "在家煮氣味很重的東西（螺螄粉之類）？",
-        "options": [
-          "煮爆",
-          "不可能"
-        ]
-      },
-      "zh": {
-        "question": "在家煮氣味很重的東西（螺螄粉之類）？",
-        "options": [
-          "煮爆",
-          "不可能"
-        ]
-      }
-    }
-  },
-  {
-    "id": 97,
-    "category": "食物題",
-    "type": "binary",
-    "question": "辣度你要？",
-    "options": [
-      "大辣",
-      "微辣都不要"
-    ],
-    "text": {
-      "yue": {
-        "question": "辣度你要？",
-        "options": [
-          "大辣",
-          "微辣都不要"
-        ]
-      },
-      "zh": {
-        "question": "辣度你要？",
-        "options": [
-          "大辣",
-          "微辣都不要"
         ]
       }
     }
@@ -2912,32 +2730,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 113,
-    "category": "食物題",
-    "type": "binary",
-    "question": "芥末你敢嗎？",
-    "options": [
-      "一大坨",
-      "一點都不要"
-    ],
-    "text": {
-      "yue": {
-        "question": "芥末你敢嗎？",
-        "options": [
-          "一大坨",
-          "一點都不要"
-        ]
-      },
-      "zh": {
-        "question": "芥末你敢嗎？",
-        "options": [
-          "一大坨",
-          "一點都不要"
-        ]
-      }
-    }
-  },
-  {
     "id": 114,
     "category": "食物題",
     "type": "binary",
@@ -2985,32 +2777,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "直接吃都可以",
           "一定挑掉"
-        ]
-      }
-    }
-  },
-  {
-    "id": 116,
-    "category": "食物題",
-    "type": "binary",
-    "question": "皮蛋？",
-    "options": [
-      "讚",
-      "接受不了"
-    ],
-    "text": {
-      "yue": {
-        "question": "皮蛋？",
-        "options": [
-          "讚",
-          "接受不了"
-        ]
-      },
-      "zh": {
-        "question": "皮蛋？",
-        "options": [
-          "讚",
-          "接受不了"
         ]
       }
     }
@@ -3141,32 +2907,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "全部挑掉",
           "忍著吃完"
-        ]
-      }
-    }
-  },
-  {
-    "id": 122,
-    "category": "食物題",
-    "type": "binary",
-    "question": "蒜頭你？",
-    "options": [
-      "越多越好",
-      "不要"
-    ],
-    "text": {
-      "yue": {
-        "question": "蒜頭你？",
-        "options": [
-          "越多越好",
-          "不要"
-        ]
-      },
-      "zh": {
-        "question": "蒜頭你？",
-        "options": [
-          "越多越好",
-          "不要"
         ]
       }
     }
@@ -3583,32 +3323,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "必須有菠蘿",
           "只要肉"
-        ]
-      }
-    }
-  },
-  {
-    "id": 139,
-    "category": "食物題",
-    "type": "binary",
-    "question": "雞蛋你要？",
-    "options": [
-      "太陽蛋流心",
-      "全熟"
-    ],
-    "text": {
-      "yue": {
-        "question": "雞蛋你要？",
-        "options": [
-          "太陽蛋流心",
-          "全熟"
-        ]
-      },
-      "zh": {
-        "question": "雞蛋你要？",
-        "options": [
-          "太陽蛋流心",
-          "全熟"
         ]
       }
     }
@@ -11050,32 +10764,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 426,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "人有自由意志嗎？",
-    "options": [
-      "有",
-      "沒有"
-    ],
-    "text": {
-      "yue": {
-        "question": "人有自由意志嗎？",
-        "options": [
-          "有",
-          "沒有"
-        ]
-      },
-      "zh": {
-        "question": "人有自由意志嗎？",
-        "options": [
-          "有",
-          "沒有"
-        ]
-      }
-    }
-  },
-  {
     "id": 427,
     "category": "哲學題",
     "type": "binary",
@@ -11232,32 +10920,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 433,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "人生有意義嗎？",
-    "options": [
-      "有",
-      "沒有"
-    ],
-    "text": {
-      "yue": {
-        "question": "人生有意義嗎？",
-        "options": [
-          "有",
-          "沒有"
-        ]
-      },
-      "zh": {
-        "question": "人生有意義嗎？",
-        "options": [
-          "有",
-          "沒有"
-        ]
-      }
-    }
-  },
-  {
     "id": 434,
     "category": "哲學題",
     "type": "binary",
@@ -11305,58 +10967,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "客觀存在",
           "因人而異"
-        ]
-      }
-    }
-  },
-  {
-    "id": 436,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "人生可以重來你要嗎？",
-    "options": [
-      "要",
-      "不要"
-    ],
-    "text": {
-      "yue": {
-        "question": "人生可以重來你要嗎？",
-        "options": [
-          "要",
-          "不要"
-        ]
-      },
-      "zh": {
-        "question": "人生可以重來你要嗎？",
-        "options": [
-          "要",
-          "不要"
-        ]
-      }
-    }
-  },
-  {
-    "id": 437,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "動物該有法律權利嗎？",
-    "options": [
-      "該",
-      "不該"
-    ],
-    "text": {
-      "yue": {
-        "question": "動物該有法律權利嗎？",
-        "options": [
-          "該",
-          "不該"
-        ]
-      },
-      "zh": {
-        "question": "動物該有法律權利嗎？",
-        "options": [
-          "該",
-          "不該"
         ]
       }
     }
@@ -11461,32 +11071,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "支持",
           "反對"
-        ]
-      }
-    }
-  },
-  {
-    "id": 442,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "快樂比真相重要嗎？",
-    "options": [
-      "快樂",
-      "真相"
-    ],
-    "text": {
-      "yue": {
-        "question": "快樂比真相重要嗎？",
-        "options": [
-          "快樂",
-          "真相"
-        ]
-      },
-      "zh": {
-        "question": "快樂比真相重要嗎？",
-        "options": [
-          "快樂",
-          "真相"
         ]
       }
     }
@@ -11695,32 +11279,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "有",
           "沒有"
-        ]
-      }
-    }
-  },
-  {
-    "id": 451,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "你想看到自己的未來嗎？",
-    "options": [
-      "想",
-      "不想"
-    ],
-    "text": {
-      "yue": {
-        "question": "你想看到自己的未來嗎？",
-        "options": [
-          "想",
-          "不想"
-        ]
-      },
-      "zh": {
-        "question": "你想看到自己的未來嗎？",
-        "options": [
-          "想",
-          "不想"
         ]
       }
     }
@@ -12012,32 +11570,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 463,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "有一種藥能讓你永遠開心，你吃嗎？",
-    "options": [
-      "吃",
-      "不吃"
-    ],
-    "text": {
-      "yue": {
-        "question": "有一種藥能讓你永遠開心，你吃嗎？",
-        "options": [
-          "吃",
-          "不吃"
-        ]
-      },
-      "zh": {
-        "question": "有一種藥能讓你永遠開心，你吃嗎？",
-        "options": [
-          "吃",
-          "不吃"
-        ]
-      }
-    }
-  },
-  {
     "id": 464,
     "category": "哲學題",
     "type": "binary",
@@ -12168,32 +11700,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 469,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "選擇越多人越幸福嗎？",
-    "options": [
-      "是",
-      "不是"
-    ],
-    "text": {
-      "yue": {
-        "question": "選擇越多人越幸福嗎？",
-        "options": [
-          "是",
-          "不是"
-        ]
-      },
-      "zh": {
-        "question": "選擇越多人越幸福嗎？",
-        "options": [
-          "是",
-          "不是"
-        ]
-      }
-    }
-  },
-  {
     "id": 470,
     "category": "哲學題",
     "type": "binary",
@@ -12241,84 +11747,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "是",
           "不是"
-        ]
-      }
-    }
-  },
-  {
-    "id": 472,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "你支持複製人技術嗎？",
-    "options": [
-      "支持",
-      "反對"
-    ],
-    "text": {
-      "yue": {
-        "question": "你支持複製人技術嗎？",
-        "options": [
-          "支持",
-          "反對"
-        ]
-      },
-      "zh": {
-        "question": "你支持複製人技術嗎？",
-        "options": [
-          "支持",
-          "反對"
-        ]
-      }
-    }
-  },
-  {
-    "id": 473,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "遺忘是好事嗎？",
-    "options": [
-      "是",
-      "不是"
-    ],
-    "text": {
-      "yue": {
-        "question": "遺忘是好事嗎？",
-        "options": [
-          "是",
-          "不是"
-        ]
-      },
-      "zh": {
-        "question": "遺忘是好事嗎？",
-        "options": [
-          "是",
-          "不是"
-        ]
-      }
-    }
-  },
-  {
-    "id": 474,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "能知道所有真相，你要嗎？",
-    "options": [
-      "要",
-      "不要"
-    ],
-    "text": {
-      "yue": {
-        "question": "能知道所有真相，你要嗎？",
-        "options": [
-          "要",
-          "不要"
-        ]
-      },
-      "zh": {
-        "question": "能知道所有真相，你要嗎？",
-        "options": [
-          "要",
-          "不要"
         ]
       }
     }
@@ -12397,32 +11825,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "是",
           "不是"
-        ]
-      }
-    }
-  },
-  {
-    "id": 478,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "為了世界和平放棄部分自由？",
-    "options": [
-      "願意",
-      "不願意"
-    ],
-    "text": {
-      "yue": {
-        "question": "為了世界和平放棄部分自由？",
-        "options": [
-          "願意",
-          "不願意"
-        ]
-      },
-      "zh": {
-        "question": "為了世界和平放棄部分自由？",
-        "options": [
-          "願意",
-          "不願意"
         ]
       }
     }
@@ -12558,32 +11960,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 484,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "你支持 AI 取代人類工作嗎？",
-    "options": [
-      "支持",
-      "反對"
-    ],
-    "text": {
-      "yue": {
-        "question": "你支持 AI 取代人類工作嗎？",
-        "options": [
-          "支持",
-          "反對"
-        ]
-      },
-      "zh": {
-        "question": "你支持 AI 取代人類工作嗎？",
-        "options": [
-          "支持",
-          "反對"
-        ]
-      }
-    }
-  },
-  {
     "id": 485,
     "category": "哲學題",
     "type": "binary",
@@ -12709,32 +12085,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "是",
           "不是"
-        ]
-      }
-    }
-  },
-  {
-    "id": 490,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "有絕對的對與錯嗎？",
-    "options": [
-      "有",
-      "沒有"
-    ],
-    "text": {
-      "yue": {
-        "question": "有絕對的對與錯嗎？",
-        "options": [
-          "有",
-          "沒有"
-        ]
-      },
-      "zh": {
-        "question": "有絕對的對與錯嗎？",
-        "options": [
-          "有",
-          "沒有"
         ]
       }
     }
@@ -19734,32 +19084,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 760,
-    "category": "食物題",
-    "type": "binary",
-    "question": "飲奶茶你要？",
-    "options": [
-      "走甜",
-      "正常甜"
-    ],
-    "text": {
-      "yue": {
-        "question": "飲奶茶你要？",
-        "options": [
-          "走甜",
-          "正常甜"
-        ]
-      },
-      "zh": {
-        "question": "喝奶茶你要？",
-        "options": [
-          "去糖",
-          "正常甜度"
-        ]
-      }
-    }
-  },
-  {
     "id": 761,
     "category": "食物題",
     "type": "binary",
@@ -19994,32 +19318,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 770,
-    "category": "食物題",
-    "type": "binary",
-    "question": "食生蠔/刺身你係？",
-    "options": [
-      "好鍾意",
-      "完全唔敢食"
-    ],
-    "text": {
-      "yue": {
-        "question": "食生蠔/刺身你係？",
-        "options": [
-          "好鍾意",
-          "完全唔敢食"
-        ]
-      },
-      "zh": {
-        "question": "吃生蠔/生魚片你是？",
-        "options": [
-          "很喜歡",
-          "完全不敢吃"
-        ]
-      }
-    }
-  },
-  {
     "id": 771,
     "category": "食物題",
     "type": "binary",
@@ -20041,32 +19339,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "中式(粥/腸粉)",
           "西式(吐司/蛋)"
-        ]
-      }
-    }
-  },
-  {
-    "id": 772,
-    "category": "食物題",
-    "type": "binary",
-    "question": "食嘢你會唔會加辣椒醬？",
-    "options": [
-      "一定加",
-      "唔加"
-    ],
-    "text": {
-      "yue": {
-        "question": "食嘢你會唔會加辣椒醬？",
-        "options": [
-          "一定加",
-          "唔加"
-        ]
-      },
-      "zh": {
-        "question": "吃東西你會不會加辣椒醬？",
-        "options": [
-          "一定加",
-          "不加"
         ]
       }
     }
@@ -20231,21 +19503,21 @@ export const GAME1_QUESTIONS = [
     "id": 779,
     "category": "食物題",
     "type": "binary",
-    "question": "你食豬紅/豬雜？",
+    "question": "你食豬紅？",
     "options": [
       "照食如儀",
       "諗起都驚"
     ],
     "text": {
       "yue": {
-        "question": "你食豬紅/豬雜？",
+        "question": "你食豬紅？",
         "options": [
           "照食如儀",
           "諗起都驚"
         ]
       },
       "zh": {
-        "question": "你吃豬血/豬雜嗎？",
+        "question": "你吃豬血嗎？",
         "options": [
           "照吃不誤",
           "想到就怕"
@@ -20332,32 +19604,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 783,
-    "category": "食物題",
-    "type": "binary",
-    "question": "你食蜆蚧/生蠔？",
-    "options": [
-      "大口啜",
-      "睇到都反胃"
-    ],
-    "text": {
-      "yue": {
-        "question": "你食蜆蚧/生蠔？",
-        "options": [
-          "大口啜",
-          "睇到都反胃"
-        ]
-      },
-      "zh": {
-        "question": "你吃蜆/生蠔嗎？",
-        "options": [
-          "大口吸",
-          "看了都反胃"
-        ]
-      }
-    }
-  },
-  {
     "id": 784,
     "category": "食物題",
     "type": "binary",
@@ -20384,58 +19630,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 785,
-    "category": "食物題",
-    "type": "binary",
-    "question": "麻辣鍋湯底你會？",
-    "options": [
-      "飲晒佢",
-      "一啖都辣到喊"
-    ],
-    "text": {
-      "yue": {
-        "question": "麻辣鍋湯底你會？",
-        "options": [
-          "飲晒佢",
-          "一啖都辣到喊"
-        ]
-      },
-      "zh": {
-        "question": "麻辣鍋湯底你會？",
-        "options": [
-          "整碗喝光",
-          "一口都辣到哭"
-        ]
-      }
-    }
-  },
-  {
-    "id": 786,
-    "category": "食物題",
-    "type": "binary",
-    "question": "芝士榴槤你係？",
-    "options": [
-      "絕配",
-      "罪過"
-    ],
-    "text": {
-      "yue": {
-        "question": "芝士榴槤你係？",
-        "options": [
-          "絕配",
-          "罪過"
-        ]
-      },
-      "zh": {
-        "question": "芝士榴槤你是？",
-        "options": [
-          "絕配",
-          "罪過"
-        ]
-      }
-    }
-  },
-  {
     "id": 787,
     "category": "食物題",
     "type": "binary",
@@ -20457,32 +19651,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "挑戰一下也行",
           "打死都不會"
-        ]
-      }
-    }
-  },
-  {
-    "id": 788,
-    "category": "食物題",
-    "type": "binary",
-    "question": "咖喱魚蛋辣底你會？",
-    "options": [
-      "一定要爆辣",
-      "微辣都頂唔順"
-    ],
-    "text": {
-      "yue": {
-        "question": "咖喱魚蛋辣底你會？",
-        "options": [
-          "一定要爆辣",
-          "微辣都頂唔順"
-        ]
-      },
-      "zh": {
-        "question": "咖哩魚蛋辣度你會？",
-        "options": [
-          "一定要爆辣",
-          "微辣都受不了"
         ]
       }
     }
@@ -20618,32 +19786,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 794,
-    "category": "食物題",
-    "type": "binary",
-    "question": "榴槤味零食你會？",
-    "options": [
-      "照食可以",
-      "見到就閃"
-    ],
-    "text": {
-      "yue": {
-        "question": "榴槤味零食你會？",
-        "options": [
-          "照食可以",
-          "見到就閃"
-        ]
-      },
-      "zh": {
-        "question": "榴槤口味零食你會？",
-        "options": [
-          "照吃可以",
-          "看到就閃"
-        ]
-      }
-    }
-  },
-  {
     "id": 795,
     "category": "食物題",
     "type": "binary",
@@ -20748,32 +19890,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 799,
-    "category": "食物題",
-    "type": "binary",
-    "question": "牛雜你係？",
-    "options": [
-      "一流",
-      "敬謝不敏"
-    ],
-    "text": {
-      "yue": {
-        "question": "牛雜你係？",
-        "options": [
-          "一流",
-          "敬謝不敏"
-        ]
-      },
-      "zh": {
-        "question": "牛雜你是？",
-        "options": [
-          "一流",
-          "敬謝不敏"
-        ]
-      }
-    }
-  },
-  {
     "id": 800,
     "category": "食物題",
     "type": "binary",
@@ -20852,58 +19968,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 803,
-    "category": "食物題",
-    "type": "binary",
-    "question": "芫茜你係？",
-    "options": [
-      "靈魂配料",
-      "肥皂味，唔要"
-    ],
-    "text": {
-      "yue": {
-        "question": "芫茜你係？",
-        "options": [
-          "靈魂配料",
-          "肥皂味，唔要"
-        ]
-      },
-      "zh": {
-        "question": "香菜你是？",
-        "options": [
-          "靈魂配料",
-          "肥皂味，不要"
-        ]
-      }
-    }
-  },
-  {
-    "id": 804,
-    "category": "食物題",
-    "type": "binary",
-    "question": "榴槤薄餅你係？",
-    "options": [
-      "天才發明",
-      "黑暗料理"
-    ],
-    "text": {
-      "yue": {
-        "question": "榴槤薄餅你係？",
-        "options": [
-          "天才發明",
-          "黑暗料理"
-        ]
-      },
-      "zh": {
-        "question": "榴槤披薩你是？",
-        "options": [
-          "天才發明",
-          "黑暗料理"
-        ]
-      }
-    }
-  },
-  {
     "id": 805,
     "category": "食物題",
     "type": "binary",
@@ -20925,32 +19989,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "羶味剛剛好",
           "羶到吃不下"
-        ]
-      }
-    }
-  },
-  {
-    "id": 806,
-    "category": "食物題",
-    "type": "binary",
-    "question": "麻辣香鍋你係？",
-    "options": [
-      "越辣越有癮",
-      "睇到都出汗"
-    ],
-    "text": {
-      "yue": {
-        "question": "麻辣香鍋你係？",
-        "options": [
-          "越辣越有癮",
-          "睇到都出汗"
-        ]
-      },
-      "zh": {
-        "question": "麻辣香鍋你是？",
-        "options": [
-          "越辣越上癮",
-          "看了就冒汗"
         ]
       }
     }
@@ -21008,32 +20046,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 809,
-    "category": "食物題",
-    "type": "binary",
-    "question": "麻辣鴨脖你係？",
-    "options": [
-      "啃到停唔到口",
-      "太費事，唔想食"
-    ],
-    "text": {
-      "yue": {
-        "question": "麻辣鴨脖你係？",
-        "options": [
-          "啃到停唔到口",
-          "太費事，唔想食"
-        ]
-      },
-      "zh": {
-        "question": "麻辣鴨脖你是？",
-        "options": [
-          "啃到停不下來",
-          "太費工，不想吃"
-        ]
-      }
-    }
-  },
-  {
     "id": 810,
     "category": "食物題",
     "type": "binary",
@@ -21055,58 +20067,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "越臭越想念",
           "聞到就想走"
-        ]
-      }
-    }
-  },
-  {
-    "id": 811,
-    "category": "食物題",
-    "type": "binary",
-    "question": "你食豬腦？",
-    "options": [
-      "滑嫩一流",
-      "諗起質感就驚"
-    ],
-    "text": {
-      "yue": {
-        "question": "你食豬腦？",
-        "options": [
-          "滑嫩一流",
-          "諗起質感就驚"
-        ]
-      },
-      "zh": {
-        "question": "你吃豬腦嗎？",
-        "options": [
-          "滑嫩一流",
-          "想到口感就怕"
-        ]
-      }
-    }
-  },
-  {
-    "id": 812,
-    "category": "食物題",
-    "type": "binary",
-    "question": "涼拌豬耳你係？",
-    "options": [
-      "爽脆一流",
-      "質感接受唔到"
-    ],
-    "text": {
-      "yue": {
-        "question": "涼拌豬耳你係？",
-        "options": [
-          "爽脆一流",
-          "質感接受唔到"
-        ]
-      },
-      "zh": {
-        "question": "涼拌豬耳你是？",
-        "options": [
-          "爽脆一流",
-          "口感接受不了"
         ]
       }
     }
@@ -21138,32 +20098,6 @@ export const GAME1_QUESTIONS = [
     }
   },
   {
-    "id": 814,
-    "category": "食物題",
-    "type": "binary",
-    "question": "榴槤糯米糍你係？",
-    "options": [
-      "一次食三個",
-      "見到都唔夾"
-    ],
-    "text": {
-      "yue": {
-        "question": "榴槤糯米糍你係？",
-        "options": [
-          "一次食三個",
-          "見到都唔夾"
-        ]
-      },
-      "zh": {
-        "question": "榴槤糯米糍你是？",
-        "options": [
-          "一次吃三個",
-          "看到都不合拍"
-        ]
-      }
-    }
-  },
-  {
     "id": 815,
     "category": "食物題",
     "type": "binary",
@@ -21185,32 +20119,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "Q彈一流",
           "太油膩接受不了"
-        ]
-      }
-    }
-  },
-  {
-    "id": 816,
-    "category": "食物題",
-    "type": "binary",
-    "question": "辣條你係？",
-    "options": [
-      "一包接一包",
-      "完全唔明點解有人食"
-    ],
-    "text": {
-      "yue": {
-        "question": "辣條你係？",
-        "options": [
-          "一包接一包",
-          "完全唔明點解有人食"
-        ]
-      },
-      "zh": {
-        "question": "辣條你是？",
-        "options": [
-          "一包接一包",
-          "完全不懂為什麼有人吃"
         ]
       }
     }
@@ -21263,162 +20171,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "挑戰一下OK",
           "想到形狀就怕"
-        ]
-      }
-    }
-  },
-  {
-    "id": 819,
-    "category": "食物題",
-    "type": "binary",
-    "question": "你會唔會食鵝腸？",
-    "options": [
-      "一流，越彈越正",
-      "質感接受唔到"
-    ],
-    "text": {
-      "yue": {
-        "question": "你會唔會食鵝腸？",
-        "options": [
-          "一流，越彈越正",
-          "質感接受唔到"
-        ]
-      },
-      "zh": {
-        "question": "你會不會吃鵝腸？",
-        "options": [
-          "一流，越彈越好",
-          "口感接受不了"
-        ]
-      }
-    }
-  },
-  {
-    "id": 820,
-    "category": "食物題",
-    "type": "binary",
-    "question": "苦瓜排骨湯你係？",
-    "options": [
-      "苦得有層次",
-      "苦到飲唔落"
-    ],
-    "text": {
-      "yue": {
-        "question": "苦瓜排骨湯你係？",
-        "options": [
-          "苦得有層次",
-          "苦到飲唔落"
-        ]
-      },
-      "zh": {
-        "question": "苦瓜排骨湯你是？",
-        "options": [
-          "苦得有層次",
-          "苦到喝不下"
-        ]
-      }
-    }
-  },
-  {
-    "id": 821,
-    "category": "食物題",
-    "type": "binary",
-    "question": "你食烤生蠔？",
-    "options": [
-      "一打起跳",
-      "淨睇都覺得腥"
-    ],
-    "text": {
-      "yue": {
-        "question": "你食烤生蠔？",
-        "options": [
-          "一打起跳",
-          "淨睇都覺得腥"
-        ]
-      },
-      "zh": {
-        "question": "你吃烤生蠔嗎？",
-        "options": [
-          "一打起跳",
-          "光看就覺得腥"
-        ]
-      }
-    }
-  },
-  {
-    "id": 822,
-    "category": "食物題",
-    "type": "binary",
-    "question": "麻辣兔頭你係？",
-    "options": [
-      "啃到停唔到口",
-      "睇到個樣就驚"
-    ],
-    "text": {
-      "yue": {
-        "question": "麻辣兔頭你係？",
-        "options": [
-          "啃到停唔到口",
-          "睇到個樣就驚"
-        ]
-      },
-      "zh": {
-        "question": "麻辣兔頭你是？",
-        "options": [
-          "啃到停不下來",
-          "看到樣子就怕"
-        ]
-      }
-    }
-  },
-  {
-    "id": 823,
-    "category": "食物題",
-    "type": "binary",
-    "question": "你食皮蛋瘦肉粥？",
-    "options": [
-      "一流，加多幾隻都得",
-      "皮蛋味接受唔到"
-    ],
-    "text": {
-      "yue": {
-        "question": "你食皮蛋瘦肉粥？",
-        "options": [
-          "一流，加多幾隻都得",
-          "皮蛋味接受唔到"
-        ]
-      },
-      "zh": {
-        "question": "你吃皮蛋瘦肉粥嗎？",
-        "options": [
-          "一流，多加幾顆都行",
-          "皮蛋味接受不了"
-        ]
-      }
-    }
-  },
-  {
-    "id": 824,
-    "category": "食物題",
-    "type": "binary",
-    "question": "榴槤咖啡你係？",
-    "options": [
-      "值得一試",
-      "諗起個組合就怪"
-    ],
-    "text": {
-      "yue": {
-        "question": "榴槤咖啡你係？",
-        "options": [
-          "值得一試",
-          "諗起個組合就怪"
-        ]
-      },
-      "zh": {
-        "question": "榴槤咖啡你是？",
-        "options": [
-          "值得一試",
-          "想到這組合就怪"
         ]
       }
     }
@@ -22537,32 +21289,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "認同",
           "以德報怨更好"
-        ]
-      }
-    }
-  },
-  {
-    "id": 868,
-    "category": "哲學題",
-    "type": "binary",
-    "question": "你相唔相信「一切發生都有原因」？",
-    "options": [
-      "相信",
-      "唔相信"
-    ],
-    "text": {
-      "yue": {
-        "question": "你相唔相信「一切發生都有原因」？",
-        "options": [
-          "相信",
-          "唔相信"
-        ]
-      },
-      "zh": {
-        "question": "你相不相信「一切發生都有原因」？",
-        "options": [
-          "相信",
-          "不相信"
         ]
       }
     }
