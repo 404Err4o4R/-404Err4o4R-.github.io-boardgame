@@ -46,7 +46,7 @@ const CATEGORY_COLORS = {
 };
 
 // 淺色分類（例如遊戲嘅 slime green）直接做字色會睇唔到：
-// 寫字用深一級嘅同色系，填色背景上面用深藍字。
+// 寫字用深一級嘅同色系；chip 填色背景上面同其他分類一樣用白字。
 const CATEGORY_TEXT_COLORS = {
   "遊戲": "#5E8E1A"
 };
@@ -149,9 +149,8 @@ function filterChipStyle(category, active) {
   const color = CATEGORY_COLORS[category];
   if (!color) return "";
 
-  const fg = LIGHT_CATEGORIES.has(category) ? "#1f2740" : "#fff";
   return active
-    ? `background:${color};border-color:${color};color:${fg}`
+    ? `background:${color};border-color:${color};color:#fff`
     : `border-color:${LIGHT_CATEGORIES.has(category) ? color : color + "77"};color:${categoryTextColor(category)}`;
 }
 
