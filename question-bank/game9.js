@@ -97,11 +97,11 @@ export const GAME9_SPECTRA = [
     "text": {
       "yue": {
         "left": "難食到嘔",
-        "right": "好食"
+        "right": "超級好食"
       },
       "zh": {
-        "left": "難吃",
-        "right": "好吃"
+        "left": "超級難吃",
+        "right": "爆幹好吃"
       }
     }
   },
@@ -165,7 +165,7 @@ export const GAME9_SPECTRA = [
         "right": "Green Flag"
       },
       "zh": {
-        "left": "雷",
+        "left": "超雷",
         "right": "安全"
       }
     }
@@ -174,7 +174,7 @@ export const GAME9_SPECTRA = [
     "id": 14,
     "text": {
       "yue": {
-        "left": "is ok",
+        "left": "ok",
         "right": "好kick"
       },
       "zh": {
@@ -239,7 +239,7 @@ export const GAME9_SPECTRA = [
     "id": 19,
     "text": {
       "yue": {
-        "left": "做咗會被炒",
+        "left": "做咗會炒魷",
         "right": "做咗會升職"
       },
       "zh": {
