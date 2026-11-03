@@ -2097,7 +2097,7 @@ export const GAME1_QUESTIONS = [
         ]
       },
       "zh": {
-        "question": "生牡蠣？",
+        "question": "牡蠣？",
         "options": [
           "一打起跳",
           "不敢"
@@ -19298,21 +19298,21 @@ export const GAME1_QUESTIONS = [
     "question": "你鍾意飲？",
     "options": [
       "珍珠奶茶",
-      "果汁"
+      "果茶"
     ],
     "text": {
       "yue": {
         "question": "你鍾意飲？",
         "options": [
           "珍珠奶茶",
-          "果汁"
+          "果茶"
         ]
       },
       "zh": {
         "question": "你喜歡喝？",
         "options": [
           "珍珠奶茶",
-          "果汁"
+          "果茶"
         ]
       }
     }
@@ -19391,32 +19391,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "老火湯",
           "例湯"
-        ]
-      }
-    }
-  },
-  {
-    "id": 775,
-    "category": "食物題",
-    "type": "binary",
-    "question": "食嘢你會唔會撈飯？",
-    "options": [
-      "一定撈",
-      "唔撈，各食各"
-    ],
-    "text": {
-      "yue": {
-        "question": "食嘢你會唔會撈飯？",
-        "options": [
-          "一定撈",
-          "唔撈，各食各"
-        ]
-      },
-      "zh": {
-        "question": "吃東西你會不會拌飯？",
-        "options": [
-          "一定拌",
-          "不拌，各吃各的"
         ]
       }
     }
@@ -19895,21 +19869,21 @@ export const GAME1_QUESTIONS = [
     "type": "binary",
     "question": "咸蛋黃你係？",
     "options": [
-      "咩都撈落去",
+      "好正",
       "完全接受唔到"
     ],
     "text": {
       "yue": {
         "question": "咸蛋黃你係？",
         "options": [
-          "咩都撈落去",
+          "好正",
           "完全接受唔到"
         ]
       },
       "zh": {
         "question": "鹹蛋黃你是？",
         "options": [
-          "什麼都能拌進去",
+          "很好吃",
           "完全接受不了"
         ]
       }
@@ -20025,14 +19999,14 @@ export const GAME1_QUESTIONS = [
     "type": "binary",
     "question": "你會唔會食生蛋撈飯？",
     "options": [
-      "一流,幾撈都得",
+      "一流，幾撈都得",
       "生嘅嘢驚"
     ],
     "text": {
       "yue": {
         "question": "你會唔會食生蛋撈飯？",
         "options": [
-          "一流,幾撈都得",
+          "一流，幾撈都得",
           "生嘅嘢驚"
         ]
       },
@@ -20078,14 +20052,14 @@ export const GAME1_QUESTIONS = [
     "question": "你食納豆？",
     "options": [
       "拌到起絲先夠味",
-      "黐笠感受唔到"
+      "黐笠笠接受唔到"
     ],
     "text": {
       "yue": {
         "question": "你食納豆？",
         "options": [
           "拌到起絲先夠味",
-          "黐笠感受唔到"
+          "黐笠笠接受唔到"
         ]
       },
       "zh": {
@@ -20093,110 +20067,6 @@ export const GAME1_QUESTIONS = [
         "options": [
           "拌到起絲才夠味",
           "黏黏的受不了"
-        ]
-      }
-    }
-  },
-  {
-    "id": 815,
-    "category": "食物題",
-    "type": "binary",
-    "question": "你食豬皮？",
-    "options": [
-      "Q彈一流",
-      "太肥膩接受唔到"
-    ],
-    "text": {
-      "yue": {
-        "question": "你食豬皮？",
-        "options": [
-          "Q彈一流",
-          "太肥膩接受唔到"
-        ]
-      },
-      "zh": {
-        "question": "你吃豬皮嗎？",
-        "options": [
-          "Q彈一流",
-          "太油膩接受不了"
-        ]
-      }
-    }
-  },
-  {
-    "id": 817,
-    "category": "食物題",
-    "type": "binary",
-    "question": "你食黑蒜？",
-    "options": [
-      "甘甜一流",
-      "睇到個色就怕"
-    ],
-    "text": {
-      "yue": {
-        "question": "你食黑蒜？",
-        "options": [
-          "甘甜一流",
-          "睇到個色就怕"
-        ]
-      },
-      "zh": {
-        "question": "你吃黑蒜嗎？",
-        "options": [
-          "甘甜一流",
-          "看到顏色就怕"
-        ]
-      }
-    }
-  },
-  {
-    "id": 818,
-    "category": "食物題",
-    "type": "binary",
-    "question": "沙蟲/海腸你係？",
-    "options": [
-      "挑戰下OK",
-      "診起條形狀就驚"
-    ],
-    "text": {
-      "yue": {
-        "question": "沙蟲/海腸你係？",
-        "options": [
-          "挑戰下OK",
-          "診起條形狀就驚"
-        ]
-      },
-      "zh": {
-        "question": "沙蟲/海腸你是？",
-        "options": [
-          "挑戰一下OK",
-          "想到形狀就怕"
-        ]
-      }
-    }
-  },
-  {
-    "id": 825,
-    "category": "食物題",
-    "type": "binary",
-    "question": "你食鹹魚？",
-    "options": [
-      "惹味一流",
-      "味太重頂唔順"
-    ],
-    "text": {
-      "yue": {
-        "question": "你食鹹魚？",
-        "options": [
-          "惹味一流",
-          "味太重頂唔順"
-        ]
-      },
-      "zh": {
-        "question": "你吃鹹魚嗎？",
-        "options": [
-          "下飯一流",
-          "味道太重受不了"
         ]
       }
     }
