@@ -1588,10 +1588,17 @@ button.g8-c:hover{border-color:#F2D965}
 .rc.rc-dead .rc-send{background:#E8467C;color:#fff}
 
 /* 留位，唔好遮住遊戲操作掣 */
-#gameShell.has-chat .game-content{padding-bottom:230px}
+#gameShell.has-chat .game-content{padding-bottom:88px}
+#gameShell.has-chat.chat-collapsed .rc{display:none}
 
 /* 電腦版：右邊固定側欄 */
-.rc-fab{position:fixed;z-index:90;right:24px;bottom:24px;border:0;border-radius:999px;background:#1f2740;color:#FEFEF2;height:52px;padding:0 18px;display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;box-shadow:0 10px 30px rgba(31,39,64,.25)}
+.rc-fab{position:fixed;z-index:90;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));border:0;border-radius:50%;background:#1f2740;color:var(--card,#FEFEF2);width:56px;height:56px;padding:0;display:grid;place-items:center;box-shadow:0 8px 24px rgba(31,39,64,.3)}
+.rc-fab svg{width:24px;height:24px}
+.rc-fab-label{display:none}
+.rc-fab .rc-badge{position:absolute;top:-4px;right:-4px;min-width:22px;height:22px;font-size:12px;border:2px solid #FEFEF2}
+.rc-fab.ping{animation:rcping .6s ease-out}
+@keyframes rcping{0%{transform:scale(1)}35%{transform:scale(1.15)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.rc-fab.ping{animation:none}}
 @media (min-width:1100px){
   .rc{left:auto;right:0;top:0;bottom:0;width:340px;border-radius:0;padding:0;gap:0;box-shadow:none;border-left:1px solid rgba(146,159,193,.25);background:#fff}
   .rc.open{top:0;background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-left:1px solid rgba(146,159,193,.25)}
@@ -1608,8 +1615,10 @@ button.g8-c:hover{border-color:#F2D965}
   .rc.rc-dead .rc-toggle{background:rgba(255,255,255,.12);color:#FEFEF2}
   #gameShell.has-chat{padding-right:340px}
   #gameShell.has-chat.chat-collapsed{padding-right:0}
-  #gameShell.has-chat.chat-collapsed .rc{display:none}
   #gameShell.has-chat .game-content{padding-bottom:24px}
+  .rc-fab{right:24px;bottom:24px;width:auto;height:52px;border-radius:999px;padding:0 18px;display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;color:#FEFEF2}
+  .rc-fab svg{width:20px;height:20px}
+  .rc-fab-label{display:inline}
 }
 /* ===== Battleship：抽道具老虎機、拖船鎖畫面 ===== */
 html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;touch-action:none}

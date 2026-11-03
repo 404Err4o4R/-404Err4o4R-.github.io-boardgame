@@ -380,8 +380,9 @@
     el.classList.toggle("rc-dead", C.tab === "dead");
     el.classList.toggle("rc-team", C.tab === "team");
     el.style.setProperty("--team", pol.teamChannel?.color || "#22408C");
-    shell?.classList.toggle("chat-collapsed", desktop && !open);
-    C.fab.classList.toggle("hidden", !(desktop && !open));
+    // 收埋嗰陣（手機默認收埋）只顯示圓形聊天掣，唔遮住遊戲畫面
+    shell?.classList.toggle("chat-collapsed", !open);
+    C.fab.classList.toggle("hidden", open);
 
     el.querySelector(".rc-title").textContent = T.title;
     const online = (C.room.players || []).filter((p) => p.connected).length;
@@ -553,17 +554,21 @@
       const showing = ch === C.tab;
       if (showing) {
         const log = C.el.querySelector(".rc-log");
-        // 收起狀態（手機底部聊天欄）永遠顯示最新幾條；展開時如果玩家捲咗上去睇舊訊息就唔好扯佢落嚟
-        const compact = !isDesktop() && !C.open;
-        const stick = compact || nearBottom(log) || msg.playerId === C.playerId;
+        // 收埋咗就一律捲到最底；打開緊而玩家捲咗上去睇舊訊息就唔好扯佢落嚟
+        const stick = !currentOpen() || nearBottom(log) || msg.playerId === C.playerId;
         log.appendChild(msgNode(msg));
         if (stick) scrollToEnd();
       }
       const open = currentOpen();
-      // 手機收起狀態都見到最新幾條，所以淨係計「唔喺呢個頁籤」或者「電腦版收埋咗」
-      if (!showing || (isDesktop() && !open)) {
+      // 未讀：唔喺呢個頁籤，或者聊天室收埋咗（系統訊息唔計）
+      if (msg.kind !== "sys" && (!showing || !open)) {
         C.unread[ch] += 1;
         render();
+        if (!open) {
+          C.fab.classList.remove("ping");
+          void C.fab.offsetWidth;
+          C.fab.classList.add("ping");
+        }
       }
     },
 
