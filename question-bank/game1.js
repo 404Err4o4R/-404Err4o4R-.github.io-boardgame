@@ -287,7 +287,7 @@ export const GAME1_QUESTIONS = [
   },
   {
     "id": 12,
-    "category": "個人愛好題",
+    "category": "遊戲",
     "type": "binary",
     "question": "玩遊戲你選難度？",
     "options": [
@@ -807,7 +807,7 @@ export const GAME1_QUESTIONS = [
   },
   {
     "id": 32,
-    "category": "個人愛好題",
+    "category": "遊戲",
     "type": "binary",
     "question": "打電動你選？",
     "options": [
@@ -14457,7 +14457,7 @@ export const GAME1_QUESTIONS = [
   },
   {
     "id": 582,
-    "category": "個人愛好題",
+    "category": "遊戲",
     "type": "binary",
     "question": "打機你係？",
     "options": [
@@ -26024,6 +26024,422 @@ export const GAME1_QUESTIONS = [
         ]
       }
     }
+  },
+  {
+    "id": 1056,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "RPG 你揀？",
+    "options": [
+      "近戰",
+      "遠程"
+    ],
+    "text": {
+      "yue": {
+        "question": "RPG 你揀？",
+        "options": [
+          "近戰",
+          "遠程"
+        ]
+      },
+      "zh": {
+        "question": "RPG 你選？",
+        "options": [
+          "近戰",
+          "遠程"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1057,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "入新地圖你會？",
+    "options": [
+      "跟主線行先",
+      "每個角落探晒先"
+    ],
+    "text": {
+      "yue": {
+        "question": "入新地圖你會？",
+        "options": [
+          "跟主線行先",
+          "每個角落探晒先"
+        ]
+      },
+      "zh": {
+        "question": "進入新地圖你會？",
+        "options": [
+          "先跟主線走",
+          "先探索每個角落"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1058,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "新角色你會？",
+    "options": [
+      "用預設造型",
+      "捏臉捏足一個鐘"
+    ],
+    "text": {
+      "yue": {
+        "question": "新角色你會？",
+        "options": [
+          "用預設造型",
+          "捏臉捏足一個鐘"
+        ]
+      },
+      "zh": {
+        "question": "新角色你會？",
+        "options": [
+          "用預設外觀",
+          "捏臉捏一小時"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1059,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "卡關打唔過 Boss，你會？",
+    "options": [
+      "死都要自己打贏",
+      "即刻睇攻略"
+    ],
+    "text": {
+      "yue": {
+        "question": "卡關打唔過 Boss，你會？",
+        "options": [
+          "死都要自己打贏",
+          "即刻睇攻略"
+        ]
+      },
+      "zh": {
+        "question": "卡關打不過 Boss，你會？",
+        "options": [
+          "死也要自己打過",
+          "馬上看攻略"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1060,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "劇情你會？",
+    "options": [
+      "逐句睇",
+      "狂撳 skip"
+    ],
+    "text": {
+      "yue": {
+        "question": "劇情你會？",
+        "options": [
+          "逐句睇",
+          "狂撳 skip"
+        ]
+      },
+      "zh": {
+        "question": "劇情你會？",
+        "options": [
+          "每句都看",
+          "狂按跳過"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1061,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "稀有道具你會？",
+    "options": [
+      "要用就用",
+      "儲到通關都未用過"
+    ],
+    "text": {
+      "yue": {
+        "question": "稀有道具你會？",
+        "options": [
+          "要用就用",
+          "儲到通關都未用過"
+        ]
+      },
+      "zh": {
+        "question": "稀有道具你會？",
+        "options": [
+          "需要就用",
+          "留到破關都沒用過"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1062,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "遊戲有善惡選擇，你行？",
+    "options": [
+      "好人路線",
+      "壞人路線"
+    ],
+    "text": {
+      "yue": {
+        "question": "遊戲有善惡選擇，你行？",
+        "options": [
+          "好人路線",
+          "壞人路線"
+        ]
+      },
+      "zh": {
+        "question": "遊戲有善惡選擇，你走？",
+        "options": [
+          "善良路線",
+          "邪惡路線"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1063,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "隊友好廢，你會？",
+    "options": [
+      "自己揹",
+      "開咪鬧人"
+    ],
+    "text": {
+      "yue": {
+        "question": "隊友好廢，你會？",
+        "options": [
+          "自己揹",
+          "開咪鬧人"
+        ]
+      },
+      "zh": {
+        "question": "隊友很雷，你會？",
+        "options": [
+          "自己扛下來",
+          "開麥罵人"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1064,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "通關主線之後你會？",
+    "options": [
+      "儲齊所有成就",
+      "即刻轉玩下隻"
+    ],
+    "text": {
+      "yue": {
+        "question": "通關主線之後你會？",
+        "options": [
+          "儲齊所有成就",
+          "即刻轉玩下隻"
+        ]
+      },
+      "zh": {
+        "question": "破完主線之後你會？",
+        "options": [
+          "拿滿所有成就",
+          "立刻換下一款"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1065,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "Save game 你係？",
+    "options": [
+      "隨時隨地都 save",
+      "記得先 save"
+    ],
+    "text": {
+      "yue": {
+        "question": "Save game 你係？",
+        "options": [
+          "隨時隨地都 save",
+          "記得先 save"
+        ]
+      },
+      "zh": {
+        "question": "存檔習慣？",
+        "options": [
+          "隨時存檔",
+          "想起才存"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1066,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "輸咗一局你會？",
+    "options": [
+      "即刻再嚟過",
+      "熄機唞吓"
+    ],
+    "text": {
+      "yue": {
+        "question": "輸咗一局你會？",
+        "options": [
+          "即刻再嚟過",
+          "熄機唞吓"
+        ]
+      },
+      "zh": {
+        "question": "輸了一局你會？",
+        "options": [
+          "馬上再來一局",
+          "關機休息一下"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1067,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "揀寵物／坐騎你會揀？",
+    "options": [
+      "最勁嗰隻",
+      "最得意嗰隻"
+    ],
+    "text": {
+      "yue": {
+        "question": "揀寵物／坐騎你會揀？",
+        "options": [
+          "最勁嗰隻",
+          "最得意嗰隻"
+        ]
+      },
+      "zh": {
+        "question": "選寵物或坐騎你會選？",
+        "options": [
+          "最強的",
+          "最可愛的"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1068,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "恐怖遊戲你會？",
+    "options": [
+      "半夜自己玩",
+      "不了"
+    ],
+    "text": {
+      "yue": {
+        "question": "恐怖遊戲你會？",
+        "options": [
+          "半夜自己玩",
+          "不了"
+        ]
+      },
+      "zh": {
+        "question": "恐怖遊戲你會？",
+        "options": [
+          "半夜自己玩",
+          "玩不了一點"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1069,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "遊戲 ID 你會？",
+    "options": [
+      "認真改",
+      "搞笑名"
+    ],
+    "text": {
+      "yue": {
+        "question": "遊戲 ID 你會？",
+        "options": [
+          "認真改",
+          "搞笑名"
+        ]
+      },
+      "zh": {
+        "question": "遊戲 ID 你會？",
+        "options": [
+          "認真改",
+          "搞笑名"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1070,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "NPC 搵你幫手，你會？",
+    "options": [
+      "有求必應",
+      "主線要緊唔理佢"
+    ],
+    "text": {
+      "yue": {
+        "question": "NPC 搵你幫手，你會？",
+        "options": [
+          "有求必應",
+          "主線要緊唔理佢"
+        ]
+      },
+      "zh": {
+        "question": "NPC 請你幫忙，你會？",
+        "options": [
+          "有求必應",
+          "主線要緊不理他"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1071,
+    "category": "遊戲",
+    "type": "binary",
+    "question": "打緊機有人叫你，你會？",
+    "options": [
+      "即刻 pause",
+      "「等陣，打埋呢鋪先」"
+    ],
+    "text": {
+      "yue": {
+        "question": "打緊機有人叫你，你會？",
+        "options": [
+          "即刻 pause",
+          "「等陣，打埋呢鋪先」"
+        ]
+      },
+      "zh": {
+        "question": "玩遊戲時有人叫你，你會？",
+        "options": [
+          "馬上暫停",
+          "「等一下，打完這局」"
+        ]
+      }
+    }
   }
 ];
 
@@ -26037,5 +26453,6 @@ export const GAME1_CATEGORIES = [
   "哲學題",
   "十八禁題",
   "生活習慣題",
-  "殘酷二選一"
+  "殘酷二選一",
+  "遊戲"
 ];

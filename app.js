@@ -41,8 +41,20 @@ const CATEGORY_COLORS = {
   "個人愛好題": "#8272cc",
   "十八禁題": "#d16b63",
   "生活習慣題": "#b8794a",
-  "殘酷二選一": "#6a4c93"
+  "殘酷二選一": "#6a4c93",
+  "遊戲": "#BBE853"
 };
+
+// 淺色分類（例如遊戲嘅 slime green）直接做字色會睇唔到：
+// 寫字用深一級嘅同色系，填色背景上面用深藍字。
+const CATEGORY_TEXT_COLORS = {
+  "遊戲": "#5E8E1A"
+};
+const LIGHT_CATEGORIES = new Set(["遊戲"]);
+
+function categoryTextColor(category) {
+  return CATEGORY_TEXT_COLORS[category] || categoryColor(category);
+}
 
 const CATEGORY_ORDER = Object.keys(CATEGORY_COLORS);
 
@@ -137,9 +149,10 @@ function filterChipStyle(category, active) {
   const color = CATEGORY_COLORS[category];
   if (!color) return "";
 
+  const fg = LIGHT_CATEGORIES.has(category) ? "#1f2740" : "#fff";
   return active
-    ? `background:${color};border-color:${color};color:#fff`
-    : `border-color:${color}77;color:${color}`;
+    ? `background:${color};border-color:${color};color:${fg}`
+    : `border-color:${LIGHT_CATEGORIES.has(category) ? color : color + "77"};color:${categoryTextColor(category)}`;
 }
 
 function renderCategories() {
@@ -2101,7 +2114,7 @@ function startTimer(element, endsAt) {
 
 function categoryTagHtml(category) {
   if (!category) return "";
-  return `<div class="q-tag" style="color:${categoryColor(category)}">#${esc(roomCategoryLabel(category))}</div>`;
+  return `<div class="q-tag" style="color:${categoryTextColor(category)}">#${esc(roomCategoryLabel(category))}</div>`;
 }
 
 function renderGame1(game) {
@@ -2713,7 +2726,7 @@ function radarChartHtml(byCategory) {
     const lx = cx + (maxR + 42) * cosA;
     const ly = cy + (maxR + 42) * Math.sin(angle);
     const anchor = cosA > 0.35 ? "start" : cosA < -0.35 ? "end" : "middle";
-    const color = categoryColor(c);
+    const color = categoryTextColor(c);
     const rate = byCategory[c].rate;
 
     svg += `
