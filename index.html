@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=36">
+  <link rel="stylesheet" href="./style.css?v=38">
 </head>
 
 <body>
@@ -382,7 +382,16 @@
             class="hidden"
           >
             <div class="label-row">
-              <span data-zh="每回合時間">每 round 時間</span>
+              <span>模式</span>
+            </div>
+            <div id="g6ModeBox" class="filter-box">
+              <button type="button" class="filter-chip g6-mode-chip active" data-mode="classic">經典模式</button>
+              <button type="button" class="filter-chip g6-mode-chip" data-mode="meet">相遇模式</button>
+            </div>
+            <p id="g6ModeNote" class="notice hidden" style="margin:6px 0 0" data-zh="2–4 人。大家一直猜，直到有兩個人寫出同一個詞，最多 300 次；房主可以中途結束。">2–4 人。大家一直估，直至有兩個人寫出同一個詞，最多 300 次；房主可以中途結束。</p>
+
+            <div class="label-row" style="margin-top:14px">
+              <span data-zh="每次時間">每次時間</span>
             </div>
             <div id="g6TimeBox" class="filter-box">
               <button type="button" class="filter-chip g6-time-chip" data-sec="10">10 秒</button>
@@ -390,6 +399,7 @@
               <button type="button" class="filter-chip g6-time-chip" data-sec="30">30 秒</button>
             </div>
 
+            <div id="g6RoundsWrap">
             <div class="label-row" style="margin-top:14px">
               <span>回合數</span>
             </div>
@@ -408,6 +418,7 @@
               class="hidden"
               style="margin-top:8px"
             >
+            </div>
 
             <div class="label-row" style="margin-top:14px">
               <span>投票合併時間</span>
@@ -1156,7 +1167,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script src="./chat.js?v=5" defer></script>
-<script src="./app.js?v=54" defer></script>
+<script src="./app.js?v=56" defer></script>
 
 </body>
 </html>

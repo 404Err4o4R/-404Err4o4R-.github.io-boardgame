@@ -989,6 +989,17 @@ $("#g2RoundsCustom")?.addEventListener("input", () => {
 S.g6AnswerSeconds = 20;
 S.g6Rounds = 10;
 S.g6VoteSeconds = 10;
+S.g6Mode = "classic";
+
+$("#g6ModeBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g6-mode-chip");
+  if (!chip) return;
+  document.querySelectorAll("#g6ModeBox .g6-mode-chip").forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+  S.g6Mode = chip.dataset.mode === "meet" ? "meet" : "classic";
+  $("#g6RoundsWrap")?.classList.toggle("hidden", S.g6Mode === "meet");
+  $("#g6ModeNote")?.classList.toggle("hidden", S.g6Mode !== "meet");
+});
 
 $("#g6TimeBox")?.addEventListener("click", (event) => {
   const chip = event.target.closest(".g6-time-chip");
@@ -1115,7 +1126,7 @@ async function createRoom() {
       throw new Error("自定義回合數要喺 1 至 30 之間。");
     }
 
-    if (S.selectedGame === "game6" && !S.g6Rounds) {
+    if (S.selectedGame === "game6" && S.g6Mode !== "meet" && !S.g6Rounds) {
       throw new Error(S.selectedLanguage === "zh" ? "自訂回合數須介於 3 至 30 之間。" : "自定義回合數要喺 3 至 30 之間。");
     }
 
@@ -1140,6 +1151,7 @@ async function createRoom() {
         g6AnswerSeconds: S.selectedGame === "game6" ? S.g6AnswerSeconds : null,
         g6Rounds: S.selectedGame === "game6" ? S.g6Rounds : null,
         g6VoteSeconds: S.selectedGame === "game6" ? S.g6VoteSeconds : null,
+        g6Mode: S.selectedGame === "game6" ? S.g6Mode : null,
         g7TurnSeconds: S.selectedGame === "game7" ? S.g7TurnSeconds : null,
         g7Rounds: S.selectedGame === "game7" ? S.g7Rounds : null,
         g8TurnSeconds: S.selectedGame === "game8" ? S.g8TurnSeconds : null,
@@ -1618,8 +1630,11 @@ function renderRoom() {
     ${
       room.game === "game6" && room.g6Settings
         ? `<p class="notice" style="margin:10px 0 0">
-            ${lz("每 round", "每回合")} ${Math.round(room.g6Settings.answerMs / 1000)} 秒 ·
-            ${room.g6Settings.rounds} ${lz("round", "回合")} ·
+            ${
+              room.g6Settings.mode === "meet"
+                ? `${lz("相遇模式（2–4 人，最多估 300 次）", "相遇模式（2–4 人，最多猜 300 次）")} · ${lz("每次", "每次")} ${Math.round(room.g6Settings.answerMs / 1000)} 秒 ·`
+                : `${lz("每 round", "每回合")} ${Math.round(room.g6Settings.answerMs / 1000)} 秒 · ${room.g6Settings.rounds} ${lz("round", "回合")} ·`
+            }
             投票合併 ${Math.round(room.g6Settings.voteMs / 1000)} 秒 ·
             ${room.language === "zh" ? "台灣版" : "香港版"}
           </p>`
@@ -4317,10 +4332,14 @@ function g6HistoryHtml(game, opts = {}) {
   const t = g6T();
   const history = game.history || [];
   if (!history.length) return "";
-  const rows = opts.chronological ? history : [...history].reverse();
+  const ordered = opts.chronological ? history : [...history].reverse();
+  // 估緊嘅時候只顯示最近 8 次（相遇模式可以估好多次）；結算紀錄就全部顯示。
+  const rows = opts.all || opts.chronological ? ordered : ordered.slice(0, 8);
+  const hidden = ordered.length - rows.length;
   return `
     <div class="g6-history ${opts.cls || ""}">
       <div class="eyebrow">${esc(opts.title || t.historyTitle)}</div>
+      ${hidden > 0 ? `<small class="g6-hist-more">${esc(lz(`仲有 ${hidden} 次較早嘅紀錄，結束後可以睇返`, `還有 ${hidden} 次較早的紀錄，結束後可以查看`))}</small>` : ""}
       ${rows.map((h) => `
         <div class="g6-hist-row">
           <span class="g6-hist-n">${esc(t.attemptN(h.attempt))}</span>
@@ -4744,6 +4763,7 @@ function g6PairAxes(pair, rounds, maxAttempts) {
 }
 
 function renderGame6Gameover(game) {
+  if (game.mode === "meet") return renderGame6Meet(game);
   const t = g6T();
   S.g6Key = "g6-over";
   const players = S.room.players || [];
@@ -7812,3 +7832,267 @@ window.g9EndEarly = async () => {
 
 // 首頁地區：要等全部函數同常數準備好先套用
 applyRegion(S.region);
+
+
+/* =========================
+   Sync 唔 Sync · 相遇模式結算 + 結果圖（canvas 畫，手機長按儲存）
+========================= */
+
+const G6_MEET_COLORS = [
+  { strong: "#B9DD5B", soft: "#EEF6D3" },
+  { strong: "#FFB3C7", soft: "#FFE6EC" },
+  { strong: "#AFCBE3", soft: "#E3EEF7" },
+  { strong: "#F2D965", soft: "#FBF3C8" }
+];
+const G6_MEET_ROWS = 8; // 結果圖最多顯示最後 8 次
+
+function g6MeetTitle(game) {
+  const r = game.meetResult || {};
+  if (r.met) return lz(`我哋喺第 ${r.attempt} 次相遇咗`, `我們在第 ${r.attempt} 次相遇了`);
+  if (game.endedEarly) return lz(`估咗 ${r.attempt || 0} 次，未相遇`, `猜了 ${r.attempt || 0} 次，還沒相遇`);
+  return lz(`${r.attempt} 次都未相遇`, `${r.attempt} 次都沒有相遇`);
+}
+
+function g6RoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function g6FitText(ctx, text, maxW, size, weight, family) {
+  let s = size;
+  ctx.font = `${weight} ${s}px ${family}`;
+  while (s > 10 && ctx.measureText(text).width > maxW) {
+    s -= 1;
+    ctx.font = `${weight} ${s}px ${family}`;
+  }
+  return s;
+}
+
+async function g6MeetImage(game) {
+  const r = game.meetResult || {};
+  const players = game.meetPlayers || [];
+  const history = game.history || [];
+  const n = Math.max(1, players.length);
+  const finalRow = r.met ? history[history.length - 1] : null;
+  const earlier = r.met ? history.slice(0, -1) : history;
+  const maxEarlier = r.met ? G6_MEET_ROWS - 1 : G6_MEET_ROWS;
+  const shown = earlier.slice(-maxEarlier);
+  const hiddenCount = earlier.length - shown.length;
+
+  try {
+    await Promise.all([
+      document.fonts?.load?.('700 30px "Fredoka"'),
+      document.fonts?.load?.('900 14px "Nunito"'),
+      document.fonts?.load?.('800 14px "Nunito"')
+    ]);
+  } catch {}
+
+  const W = 390, pad = 20, labelW = 46, gap = 6;
+  const cellW = (W - pad * 2 - labelW - gap * n) / n;
+  const rowH = 36, finalH = 76;
+  let H = 22 + 22 + 12 + 40 + 14 + 30 + 10;
+  if (hiddenCount > 0) H += 22;
+  H += shown.length * (rowH + gap);
+  if (finalRow) H += finalH + gap + 6;
+  if (!history.length) H += 40;
+  const mergedNote = r.met && (r.mergedIds || []).length;
+  H += (mergedNote ? 26 : 0) + 18 + 34;
+
+  const scale = 3;
+  const canvas = document.createElement("canvas");
+  canvas.width = W * scale;
+  canvas.height = H * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+  const ink = "#1f2740", sub = "#4b5470";
+  const fred = '"Fredoka", "Nunito", system-ui, sans-serif';
+  const nun = '"Nunito", system-ui, sans-serif';
+
+  ctx.fillStyle = "#FEFEF2";
+  ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = "middle";
+
+  // 頂部遊戲名
+  let y = 22 + 11;
+  ctx.font = `900 13px ${nun}`;
+  const brand = lz("Sync 唔 Sync · 相遇模式", "Sync 唔 Sync · 相遇模式");
+  const bw = ctx.measureText(brand).width + 26;
+  const bx = (W - bw) / 2;
+  g6RoundRect(ctx, bx, y - 9, 18, 18, 6);
+  ctx.fillStyle = "#B9DD5B"; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = ink; ctx.stroke();
+  ctx.fillStyle = ink; ctx.textAlign = "left";
+  ctx.fillText(brand, bx + 26, y + 1);
+
+  // 標題
+  y += 11 + 12 + 20;
+  const title = g6MeetTitle(game);
+  ctx.textAlign = "center";
+  g6FitText(ctx, title, W - pad * 2, 30, 700, fred);
+  ctx.fillStyle = ink;
+  ctx.fillText(title, W / 2, y);
+
+  // 玩家欄頭
+  y += 20 + 14 + 15;
+  players.forEach((p, i) => {
+    const c = G6_MEET_COLORS[i % G6_MEET_COLORS.length];
+    const cx = pad + labelW + gap + i * (cellW + gap);
+    const name = p.nickname;
+    ctx.font = `900 13px ${nun}`;
+    const nameW = Math.min(ctx.measureText(name).width, cellW - 34);
+    const total = 26 + 6 + nameW;
+    const sx = cx + (cellW - total) / 2;
+    ctx.beginPath(); ctx.arc(sx + 13, y, 13, 0, Math.PI * 2); ctx.fillStyle = c.strong; ctx.fill();
+    ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.font = `900 12px ${nun}`;
+    const chars = Array.from(name);
+    const initial = chars.length >= 2 && /^[阿小老]$/.test(chars[0]) ? chars[1] : chars[0];
+    ctx.fillText((initial || "?").toUpperCase(), sx + 13, y + 1);
+    ctx.textAlign = "left";
+    g6FitText(ctx, name, cellW - 34, 13, 900, nun);
+    ctx.fillText(name, sx + 32, y + 1);
+  });
+  y += 15 + 10;
+
+  if (hiddenCount > 0) {
+    ctx.fillStyle = sub; ctx.textAlign = "center"; ctx.font = `800 11px ${nun}`;
+    ctx.fillText(lz(`前面仲有 ${hiddenCount} 次`, `前面還有 ${hiddenCount} 次`), W / 2, y + 8);
+    y += 22;
+  }
+
+  const wordOf = (row, id) => row?.entries.find((e) => e.id === id)?.text || "—";
+
+  for (const row of shown) {
+    ctx.fillStyle = sub; ctx.textAlign = "left"; ctx.font = `800 11px ${nun}`;
+    ctx.fillText(lz(`第 ${row.attempt} 次`, `第 ${row.attempt} 次`), pad, y + rowH / 2);
+    players.forEach((p, i) => {
+      const c = G6_MEET_COLORS[i % G6_MEET_COLORS.length];
+      const cx = pad + labelW + gap + i * (cellW + gap);
+      g6RoundRect(ctx, cx, y, cellW, rowH, 12);
+      ctx.fillStyle = c.soft; ctx.fill();
+      const w = wordOf(row, p.id);
+      ctx.fillStyle = w === "—" ? sub : ink; ctx.textAlign = "center";
+      g6FitText(ctx, w, cellW - 12, 15, 800, nun);
+      ctx.fillText(w, cx + cellW / 2, y + rowH / 2 + 1);
+    });
+    y += rowH + gap;
+  }
+
+  if (finalRow) {
+    y += 6;
+    ctx.fillStyle = ink; ctx.textAlign = "left"; ctx.font = `900 11px ${nun}`;
+    ctx.fillText(lz(`第 ${finalRow.attempt} 次`, `第 ${finalRow.attempt} 次`), pad, y + finalH / 2);
+    const group = new Set(r.groupIds || []);
+    const merged = new Set(r.mergedIds || []);
+    players.forEach((p, i) => {
+      const c = G6_MEET_COLORS[i % G6_MEET_COLORS.length];
+      const cx = pad + labelW + gap + i * (cellW + gap);
+      const inGroup = group.has(p.id);
+      if (inGroup && !merged.has(p.id)) {
+        g6RoundRect(ctx, cx, y + 4, cellW, finalH, 18);
+        ctx.fillStyle = ink; ctx.fill();
+      }
+      g6RoundRect(ctx, cx, y, cellW, finalH, 18);
+      ctx.fillStyle = inGroup ? c.strong : c.soft; ctx.fill();
+      if (inGroup) {
+        ctx.lineWidth = 3; ctx.strokeStyle = ink;
+        ctx.setLineDash(merged.has(p.id) ? [6, 5] : []);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.font = `700 11px ${nun}`;
+        ctx.fillText("✦", cx + cellW / 2, y + 14);
+      }
+      const w = wordOf(finalRow, p.id);
+      ctx.fillStyle = w === "—" ? sub : ink; ctx.textAlign = "center";
+      g6FitText(ctx, w, cellW - 12, inGroup ? 26 : 18, 700, fred);
+      ctx.fillText(w, cx + cellW / 2, y + finalH / 2 + (inGroup ? 6 : 1));
+    });
+    y += finalH + gap;
+  }
+
+  if (!history.length) {
+    ctx.fillStyle = sub; ctx.textAlign = "center"; ctx.font = `800 13px ${nun}`;
+    ctx.fillText(lz("未有紀錄", "沒有紀錄"), W / 2, y + 20);
+    y += 40;
+  }
+
+  if (mergedNote) {
+    y += 8;
+    const names = players.filter((p) => r.mergedIds.includes(p.id)).map((p) => p.nickname).join("、");
+    ctx.fillStyle = sub; ctx.textAlign = "center";
+    const note = lz(`${names} 投票合併 · 意思一樣，都算默契`, `${names} 投票合併 · 意思一樣，也算默契`);
+    g6FitText(ctx, note, W - pad * 2, 12, 800, nun);
+    ctx.fillText(note, W / 2, y + 8);
+    y += 18;
+  }
+
+  // 底部：日期同人數
+  y += 18;
+  ctx.strokeStyle = "rgba(31,39,64,.2)"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke(); ctx.setLineDash([]);
+  y += 16;
+  const d = new Date();
+  const date = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+  ctx.fillStyle = sub; ctx.font = `800 11px ${nun}`;
+  ctx.textAlign = "left";
+  ctx.fillText(r.met ? lz(`${(r.syncAt / 1000).toFixed(1)} 秒 Sync 到`, `${(r.syncAt / 1000).toFixed(1)} 秒 Sync`) : lz("下次再試", "下次再試"), pad, y);
+  ctx.textAlign = "right";
+  ctx.fillText(`${date} · ${players.length} ${lz("人", "人")}`, W - pad, y);
+
+  return canvas.toDataURL("image/png");
+}
+
+function renderGame6Meet(game) {
+  const t = g6T();
+  const key = `g6-meet-${(game.history || []).length}-${game.meetResult?.met ? 1 : 0}`;
+  if (S.g6Key === key && $("#gamePanel .g6-meet")) return;
+  S.g6Key = key;
+  const isHost = S.room.hostId === S.playerId;
+  clearInterval(S.timer);
+
+  $("#gamePanel").innerHTML = `
+    <div class="g6-meet">
+      <div class="eyebrow">GAME OVER · ${esc(lz("相遇模式", "相遇模式"))}${game.endedEarly ? ` · ${esc(t.endedEarly)}` : ""}</div>
+      <h2 class="g6-mid">${esc(g6MeetTitle(game))}</h2>
+      <div class="g6-meet-img">
+        <div class="g6-meet-loading">${esc(lz("生成緊結果圖……", "正在產生結果圖……"))}</div>
+      </div>
+      <p class="g6-sub g6-meet-hint">${esc(lz("手機長按張圖就可以儲存", "手機長按圖片即可儲存"))}</p>
+      <div class="g6-end-actions">
+        <a class="btn btn-dark g6-meet-dl hidden" download="sync-meet.png">${esc(lz("下載圖片", "下載圖片"))}</a>
+        ${isHost ? `<button type="button" class="btn btn-yellow" onclick="g6Restart()">${esc(t.again)}</button>` : `<p class="g6-sub">${esc(t.waitHost)}</p>`}
+        <button type="button" class="btn btn-outline" onclick="leaveRoom()">${esc(t.lobby)}</button>
+      </div>
+      ${
+        (game.history || []).length
+          ? `<details class="g6-log">
+              <summary class="g6-chart-head g6-log-head">
+                <strong>${esc(t.logTitle)}</strong>
+                <small>${esc(lz(`全部 ${(game.history || []).length} 次`, `全部 ${(game.history || []).length} 次`))}</small>
+              </summary>
+              ${g6HistoryHtml(game, { chronological: true, title: t.roundRecord, cls: "g6-record" })}
+            </details>`
+          : ""
+      }
+    </div>
+  `;
+
+  g6MeetImage(game).then((url) => {
+    const box = $("#gamePanel .g6-meet-img");
+    if (!box || S.g6Key !== key) return;
+    box.innerHTML = `<img class="g6-meet-picture" src="${url}" alt="${esc(g6MeetTitle(game))}">`;
+    const dl = $("#gamePanel .g6-meet-dl");
+    if (dl) {
+      dl.href = url;
+      dl.download = `sync-meet-${S.room?.code || ""}.png`;
+      dl.classList.remove("hidden");
+    }
+  }).catch(() => {
+    const box = $("#gamePanel .g6-meet-img");
+    if (box) box.innerHTML = `<div class="g6-meet-loading">${esc(lz("生成唔到圖片", "無法產生圖片"))}</div>`;
+  });
+}

@@ -60,6 +60,8 @@ const G6_VOTE_MS_DEFAULT = 10000;
 const G6_SUCCESS_MS = 10000; // 成功 sync 之後停留 10 秒，畀大家 cap 圖
 const G6_VOID_MS = 5000;
 const G6_MAX_ATTEMPTS = 5;
+const G6_MEET_MAX_ATTEMPTS = 300; // 相遇模式：一局估到有兩個人相遇為止，最多 300 次
+const G6_MEET_MAX_PLAYERS = 4;
 const G6_MAX_UNITS = 105; // 中文字算 15 個單位，英文字元算 7 個：即係中文最多 7 字、英文最多 15 個字元（中英夾雜按比例計）
 const G6_BASE_POINTS = 50;
 const G6_SPEED_POINTS = 50;
@@ -408,6 +410,8 @@ export default {
                 body.g2Rounds || null,
               g2Mode:
                 body.g2Mode === "offline" ? "offline" : "online",
+              g6Mode:
+                body.g6Mode === "meet" ? "meet" : "classic",
               g6AnswerMs:
                 body.g6AnswerSeconds ? body.g6AnswerSeconds*1000 : null,
               g6Rounds:
@@ -534,7 +538,8 @@ function publicRoom(room, viewerId=null) {
     g6Settings: room.game==="game6" ? {
       answerMs: room.g6AnswerMs||20000,
       rounds: room.g6Rounds||10,
-      voteMs: room.g6VoteMs||G6_VOTE_MS_DEFAULT
+      voteMs: room.g6VoteMs||G6_VOTE_MS_DEFAULT,
+      mode: room.g6Mode==="meet" ? "meet" : "classic"
     } : null,
     g8Settings: room.game==="game8" ? {
       turnMs: room.g8TurnMs||20000,
@@ -796,6 +801,7 @@ results:g.results||null
       voteMs:g.voteMs,
       endsAt:g.endsAt||null,
       attempt:g.attempt||1,
+      mode:g.mode||"classic",
       maxAttempts:g.maxAttempts||G6_MAX_ATTEMPTS,
       history:g.history||[]
     };
@@ -851,6 +857,12 @@ results:g.results||null
     if(g.phase==="gameover"){
       base6.endedEarly=!!g.endedEarly;
       base6.playedRounds=g.playedRounds||0;
+      if(g.mode==="meet"){
+        base6.meetResult=g.meetResult||{met:false,attempt:(g.history||[]).length};
+        // 結果圖只畫開局時喺度嘅玩家（開局前走咗嘅人唔計）。
+        const inGame=new Set(g.participants||room.players.map(p=>p.id));
+        base6.meetPlayers=room.players.filter(p=>inGame.has(p.id)).map(p=>({id:p.id,nickname:p.nickname}));
+      }
       base6.sync=room.g6Sync||{};
       base6.ranking=[...room.players]
         .sort((a,b)=>(b.score||0)-(a.score||0))
@@ -1228,6 +1240,7 @@ export class GameRoom extends DurableObject {
         g2Mode:body.g2Mode==="offline"?"offline":"online",
         g6AnswerMs:clampG6AnswerMs(body.g6AnswerMs),
         g6Rounds:clampG6Rounds(body.g6Rounds),
+        g6Mode:body.g6Mode==="meet"?"meet":"classic",
         g6VoteMs:clampG6VoteMs(body.g6VoteMs),
         g7TurnMs:clampG7TurnMs(body.g7TurnMs),
         g7Rounds:clampG7Rounds(body.g7Rounds),
@@ -1420,6 +1433,9 @@ export class GameRoom extends DurableObject {
       return this.safeSend(ws,{type:"error",message:"遊戲已開始，請使用重連方式加入。"});
     }
     if(this.room.players.length>=MAX_PLAYERS) return this.safeSend(ws,{type:"error",message:"房間已滿，最多6人。"});
+    if(this.room.game==="game6" && this.room.g6Mode==="meet" && this.room.players.length>=G6_MEET_MAX_PLAYERS){
+      return this.safeSend(ws,{type:"error",message:this.room.language==="zh"?"相遇模式最多 4 人，房間已滿。":"相遇模式最多 4 人，房間已滿。"});
+    }
     if(this.room.players.some(p=>p.nickname===nickname)) return this.safeSend(ws,{type:"error",message:"暱稱已被使用。"});
     const seat=this.room.players.length;
    const p={
@@ -1531,6 +1547,9 @@ async onReady(playerId, ready){
     if(playerId!==this.room.hostId) return this.errorPlayer(playerId,"只有房主可以開始。");
     const connected=this.room.players.filter(p=>p.connected);
     const minRequired = this.room.game==="game4" ? MIN_PLAYERS_GAME4 : MIN_PLAYERS;
+    if(this.room.game==="game6" && this.room.g6Mode==="meet" && connected.length>G6_MEET_MAX_PLAYERS){
+      return this.errorPlayer(playerId,"相遇模式只可以 2–4 人玩。");
+    }
     if(connected.length<minRequired || connected.length>MAX_PLAYERS){
       return this.errorPlayer(playerId,`需要${minRequired}-6位已連線玩家。`);
     }
@@ -2695,11 +2714,13 @@ async onG1Next(playerId){
       game:"game6",
       phase:"answering",
       round,
-      totalRounds:this.room.g6Rounds||10,
+      totalRounds:this.room.g6Mode==="meet" ? 1 : (this.room.g6Rounds||10),
+      mode:this.room.g6Mode==="meet" ? "meet" : "classic",
+      participants:this.room.players.filter(p=>p.connected).map(p=>p.id),
       answerMs:this.room.g6AnswerMs||20000,
       voteMs:this.room.g6VoteMs||G6_VOTE_MS_DEFAULT,
       attempt:0,
-      maxAttempts:G6_MAX_ATTEMPTS,
+      maxAttempts:this.room.g6Mode==="meet" ? G6_MEET_MAX_ATTEMPTS : G6_MAX_ATTEMPTS,
       history:[], // 之前幾次估咗咩：[{attempt, entries:[{id,nickname,text}]}]
       result:null,
       next:{},
@@ -2958,6 +2979,27 @@ async onG1Next(playerId){
 
     const synced=groups.filter(gr=>gr.syncAt!==null);
 
+    // 相遇模式：有人相遇就成局完結（唔計分），300 次都唔中都完結。
+    if(g.mode==="meet" && (synced.length || g.attempt>=g.maxAttempts)){
+      if(synced.length){
+        const w=synced.reduce((best,gr)=>gr.syncAt<best.syncAt ? gr : best);
+        g.meetResult={
+          met:true,attempt:g.attempt,words:w.words,syncAt:w.syncAt,
+          pairIds:w.members.slice(0,2).map(m=>m.id),
+          groupIds:w.members.map(m=>m.id),
+          mergedIds:w.members.filter(m=>m.merged).map(m=>m.id)
+        };
+      }else{
+        g.meetResult={met:false,attempt:g.attempt};
+      }
+      g.playedRounds=1;
+      g.phase="gameover";
+      g.endsAt=null;
+      await this.save();
+      await this.broadcastRoom();
+      return;
+    }
+
     if(!synced.length){
       if(g.attempt<g.maxAttempts){
         await this.beginAttemptGame6();
@@ -3069,6 +3111,12 @@ async onG1Next(playerId){
     if(playerId!==this.room.hostId) return;
     const g=this.room.gameState;
     if(!g || g.game!=="game6" || g.phase==="gameover") return;
+    if(g.mode==="meet"){
+      // 房主中途結束：用已經估完嘅次數出結果。
+      const done=(g.history||[]).length;
+      g.meetResult={met:false,attempt:done};
+      g.playedRounds=1;
+    }
     g.phase="gameover";
     g.endedEarly=true;
     g.endsAt=null;

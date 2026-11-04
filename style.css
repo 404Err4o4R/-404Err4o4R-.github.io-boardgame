@@ -1695,3 +1695,10 @@ html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;
 .g8-rot{width:40px;height:40px;top:-15px;right:-15px}
 /* 睇邊塊棋盤，成個介面就變成嗰邊嘅顏色（入咗敵方海域嘅感覺） */
 #gameShell[data-game="game8"].is-playing #gamePanel{transition:background-color .35s ease}
+
+/* Sync 唔 Sync 相遇模式結算 */
+.g6-meet-img{background:var(--cream);border-radius:24px;padding:10px;display:grid;place-items:center;min-height:200px}
+.g6-meet-picture{display:block;width:100%;max-width:420px;height:auto;border-radius:18px;-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
+.g6-meet-loading{font-weight:800;color:#4b5470}
+.g6-meet-hint{text-align:center}
+.g6-hist-more{font-size:12px;font-weight:800;opacity:.75}
