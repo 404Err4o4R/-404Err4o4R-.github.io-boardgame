@@ -1702,3 +1702,53 @@ html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;
 .g6-meet-loading{font-weight:800;color:#4b5470}
 .g6-meet-hint{text-align:center}
 .g6-hist-more{font-size:12px;font-weight:800;opacity:.75}
+
+
+/* ---------- 房主管理玩家（等候室） ---------- */
+.player-more{
+  margin-left:auto;
+  width:44px;height:44px;
+  display:grid;place-items:center;
+  border:0;background:transparent;border-radius:12px;
+  color:var(--ink);cursor:pointer;flex:none;
+}
+.player-more:hover{background:rgba(31,39,64,.08)}
+.player-more svg{width:20px;height:20px;fill:currentColor}
+
+.host-sheet-overlay{
+  position:fixed;inset:0;z-index:998;
+  display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(31,39,64,.45);
+}
+.host-sheet{
+  width:min(480px,100%);
+  background:#FEFEF2;color:var(--ink);
+  border-top:3px solid var(--ink);
+  border-radius:22px 22px 0 0;
+  padding:14px 20px calc(24px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:10px;
+  animation:hostSheetUp .18s ease-out;
+}
+@keyframes hostSheetUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.host-sheet-grip{width:44px;height:5px;border-radius:3px;background:#c6c9d4;align-self:center}
+.host-sheet-name{font-size:18px;font-weight:900;padding:6px 0}
+.host-sheet-name span{font-size:13px;font-weight:700;opacity:.6}
+.host-sheet-btn{
+  height:52px;padding:0 16px;text-align:left;
+  border:2px solid var(--ink);border-radius:14px;background:#fff;
+  font:inherit;font-weight:700;color:var(--ink);cursor:pointer;
+}
+.host-sheet-btn.danger{border-color:#B3122E;color:#B3122E}
+.host-sheet-btn:disabled{opacity:.4;cursor:not-allowed}
+.host-sheet-cancel{height:46px;border:0;background:none;font:inherit;color:#4a5068;cursor:pointer}
+@media (min-width:700px){
+  .host-sheet-overlay{align-items:center}
+  .host-sheet{border:3px solid var(--ink);border-radius:22px}
+}
+
+.btn-danger{background:#B3122E;color:#fff}
+.confirm-sub{margin:-10px 0 20px;line-height:1.6;color:#4a5068}
+.kicked-card{text-align:center}
+.kicked-card .kicked-icon{width:64px;height:64px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.player .player-more{order:2;margin-left:0}
+.player .ready-label,.player .not-ready-label{margin-left:auto}

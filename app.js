@@ -90,6 +90,23 @@ function saveSession() {
   } catch {}
 }
 
+/*
+ * 每部瀏覽器一個固定 clientId（localStorage），用嚟記低「被房主移出」嘅人，
+ * 佢再用同一個房號入房都會被拒絕。
+ */
+function getClientId() {
+  try {
+    let id = localStorage.getItem("pt_cid");
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+      localStorage.setItem("pt_cid", id);
+    }
+    return id;
+  } catch {
+    return null;
+  }
+}
+
 function loadSession(code) {
   try {
     return JSON.parse(sessionStorage.getItem("pt:" + code) || "null");
@@ -1232,7 +1249,7 @@ function openSocket(code, mode, saved) {
       socket.send(JSON.stringify(
         mode === "reconnect"
           ? { type: "hello", mode: "reconnect", playerId: saved.playerId, token: saved.token, nickname: S.nickname }
-          : { type: "hello", mode, nickname: S.nickname }
+          : { type: "hello", mode, nickname: S.nickname, clientId: getClientId() }
       ));
     });
 
@@ -1345,6 +1362,14 @@ async function connectRoom(code, mode, saved = null) {
 ========================= */
 
 function handleServerMessage(message) {
+
+  if (message.type === "kicked") {
+    const zhRoom = S.room?.language === "zh";
+    const code = S.room?.code || "";
+    leaveRoom();
+    showKickedNotice(zhRoom, code);
+    return;
+  }
 
   if (message.type === "error") {
     flash(message.message);
@@ -1705,6 +1730,15 @@ function renderRoom() {
             }
           </div>
 ${
+  room.hostId === S.playerId &&
+  player.id !== S.playerId &&
+  (!room.gameState || room.gameState.phase === "waiting")
+    ? `<button type="button" class="player-more" data-pid="${esc(player.id)}" aria-label="${esc(player.nickname)} ${lz("選項", "選項")}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </button>`
+    : ""
+}
+${
   player.host
     ? ""
     : `
@@ -1818,6 +1852,10 @@ const currentPlayer =
   room.players.find(
     p => p.id === S.playerId
   );
+
+document.querySelectorAll(".player-more").forEach((btn) => {
+  btn.addEventListener("click", () => openHostSheet(btn.dataset.pid));
+});
 
 $("#readyBtn")?.addEventListener(
   "click",
@@ -4063,7 +4101,83 @@ function scrollChat() {
 }
 
 
-function askConfirm(message) {
+/* =========================
+   房主管理玩家（等候室）：禁言／轉讓房主／移出房間
+========================= */
+
+function openHostSheet(pid) {
+  const room = S.room;
+  const p = room?.players.find((x) => x.id === pid);
+  if (!p || room.hostId !== S.playerId) return;
+
+  const muted = (room.roomChat?.muted || []).includes(pid);
+  const chatOn = room.roomChat?.enabled !== false;
+  const overlay = document.createElement("div");
+  overlay.className = "host-sheet-overlay";
+  overlay.innerHTML = `
+    <div class="host-sheet" role="dialog" aria-label="${esc(p.nickname)}">
+      <div class="host-sheet-grip"></div>
+      <div class="host-sheet-name">${esc(p.nickname)}${p.connected ? "" : ` <span>(${lz("離線", "離線")})</span>`}</div>
+      ${chatOn ? `<button type="button" class="host-sheet-btn" data-act="mute">${muted ? lz("解除禁言", "解除禁言") : lz("禁言", "禁言")}</button>` : ""}
+      <button type="button" class="host-sheet-btn" data-act="host" ${p.connected ? "" : "disabled"}>${lz("轉讓房主", "轉讓房主")}</button>
+      <button type="button" class="host-sheet-btn danger" data-act="kick">${lz("移出房間", "移出房間")}</button>
+      <button type="button" class="host-sheet-cancel" data-act="cancel">取消</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", async (e) => {
+    if (e.target === overlay) return close();
+    const btn = e.target.closest("[data-act]");
+    if (!btn || btn.disabled) return;
+    const act = btn.dataset.act;
+    close();
+    if (act === "mute") {
+      send({ type: "chat:mute", targetId: pid, muted: !muted });
+    } else if (act === "host") {
+      const ok = await askConfirm(
+        lz(`將房主轉畀「${p.nickname}」？`, `將房主轉讓給「${p.nickname}」？`),
+        {
+          sub: lz(`轉咗之後，開始遊戲、改設定、禁言同移出玩家都由 ${p.nickname} 負責。`,
+                  `轉讓後，開始遊戲、修改設定、禁言和移出玩家都由 ${p.nickname} 負責。`),
+          yes: lz("轉讓", "轉讓")
+        }
+      );
+      if (ok) send({ type: "host:transfer", targetId: pid });
+    } else if (act === "kick") {
+      const ok = await askConfirm(
+        lz(`確定將「${p.nickname}」移出房間？`, `確定將「${p.nickname}」移出房間？`),
+        {
+          sub: lz("佢會返去主頁，而且唔可以再入呢間房。", "對方會返回主頁，而且無法再加入此房間。"),
+          yes: lz("移出", "移出"),
+          danger: true
+        }
+      );
+      if (ok) send({ type: "kick", targetId: pid });
+    }
+  });
+}
+
+// 被房主移出：返主頁之後彈一個提示（跟房間語言）。
+function showKickedNotice(zhRoom, code) {
+  const overlay = document.createElement("div");
+  overlay.className = "confirm-overlay";
+  overlay.innerHTML = `
+    <div class="confirm-card kicked-card">
+      <svg class="kicked-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      <h3>${zhRoom ? "你已被房主移出房間" : "你已被房主移出房間"}</h3>
+      ${code ? `<p class="confirm-sub">${zhRoom ? "房號" : "房號"} ${esc(code)}</p>` : ""}
+      <div class="confirm-actions">
+        <button class="btn btn-dark" data-confirm="yes">${zhRoom ? "返回主頁" : "返主頁"}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector("[data-confirm]").addEventListener("click", () => overlay.remove());
+}
+
+function askConfirm(message, opts = {}) {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
 
@@ -4078,13 +4192,14 @@ function askConfirm(message) {
         <h3>
           ${esc(message)}
         </h3>
+        ${opts.sub ? `<p class="confirm-sub">${esc(opts.sub)}</p>` : ""}
 
         <div class="confirm-actions">
           <button
-            class="btn btn-green"
+            class="btn ${opts.danger ? "btn-danger" : "btn-green"}"
             data-confirm="yes"
           >
-            是
+            ${esc(opts.yes || "是")}
           </button>
 
           <button

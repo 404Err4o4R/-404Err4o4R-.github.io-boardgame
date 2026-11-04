@@ -40,6 +40,9 @@
         leave: (p) => `${p.name} 離開咗房間`,
         mute: (p) => `房主將 ${p.name} 禁言`,
         unmute: (p) => `房主解除咗 ${p.name} 嘅禁言`,
+        kick: (p) => `${p.name} 已被房主移出`,
+        host: (p) => `${p.from} 已將房主轉畀 ${p.to}`,
+        hostAuto: (p) => `房主離開咗，${p.to} 成為新房主`,
         start: () => "遊戲開始",
         end: () => "遊戲結束",
         round: (p) => p.word === "question" ? `第 ${p.n} 題開始` : `第 ${p.n} 回合開始`
@@ -76,6 +79,9 @@
         leave: (p) => `${p.name} 離開了房間`,
         mute: (p) => `房主將 ${p.name} 禁言`,
         unmute: (p) => `房主解除了 ${p.name} 的禁言`,
+        kick: (p) => `${p.name} 已被房主移出`,
+        host: (p) => `${p.from} 已將房主轉讓給 ${p.to}`,
+        hostAuto: (p) => `房主已離開，${p.to} 成為新房主`,
         start: () => "遊戲開始",
         end: () => "遊戲結束",
         round: (p) => p.word === "question" ? `第 ${p.n} 題開始` : `第 ${p.n} 回合開始`

@@ -144,6 +144,10 @@ function corsHeaders() {
 function code() {
   return crypto.randomUUID().replace(/-/g,"").slice(0,6).toUpperCase();
 }
+function cleanClientId(v){
+  return typeof v==="string" && /^[A-Za-z0-9-]{8,64}$/.test(v) ? v : null;
+}
+
 function token() {
   return crypto.randomUUID() + "." + crypto.randomUUID();
 }
@@ -1385,6 +1389,8 @@ export class GameRoom extends DurableObject {
       case "g9:restart": return this.onG9Restart(session.playerId);
       case "chat:send": return this.onRoomChat(session.playerId,msg.text,msg.channel);
       case "chat:mute": return this.onRoomChatMute(session.playerId,msg.targetId,msg.muted);
+      case "kick": return this.onKick(session.playerId,msg.targetId);
+      case "host:transfer": return this.onTransferHost(session.playerId,msg.targetId);
       case "reconnect": return this.onReconnect(ws,session.playerId);
       default: return this.safeSend(ws,{type:"error",message:"未知操作。"});
     }
@@ -1412,6 +1418,7 @@ export class GameRoom extends DurableObject {
   token:token(),
   nickname,
   seat:0,
+  clientId:cleanClientId(msg.clientId),
   connected:true,
   ready:false,
   score:0,
@@ -1432,6 +1439,10 @@ export class GameRoom extends DurableObject {
     if(this.room.gameState?.phase && this.room.gameState.phase!=="waiting"){
       return this.safeSend(ws,{type:"error",message:"遊戲已開始，請使用重連方式加入。"});
     }
+    const clientId=cleanClientId(msg.clientId);
+    if(clientId && (this.room.kicked||[]).includes(clientId)){
+      return this.safeSend(ws,{type:"error",code:"kicked",message:this.room.language==="zh"?"你已被移出此房間，無法再加入。":"你已被移出呢間房，唔可以再入。"});
+    }
     if(this.room.players.length>=MAX_PLAYERS) return this.safeSend(ws,{type:"error",message:"房間已滿，最多6人。"});
     if(this.room.game==="game6" && this.room.g6Mode==="meet" && this.room.players.length>=G6_MEET_MAX_PLAYERS){
       return this.safeSend(ws,{type:"error",message:this.room.language==="zh"?"相遇模式最多 4 人，房間已滿。":"相遇模式最多 4 人，房間已滿。"});
@@ -1443,6 +1454,7 @@ export class GameRoom extends DurableObject {
   token:token(),
   nickname,
   seat,
+  clientId,
   connected:true,
   ready:false,
   score:0,
@@ -1515,13 +1527,14 @@ async onReady(playerId, ready){
       if(wasHost){
         const next = this.room.players.find(x=>x.connected) || this.room.players[0];
         this.room.hostId = next ? next.id : null;
+        if(next) this.pushChatSystem("hostAuto",{to:next.nickname});
       }
     } else {
       p.connected=false;
       p.lastSeen=Date.now();
       if(wasHost){
         const next=this.room.players.find(x=>x.connected && x.id!==p.id);
-        if(next)this.room.hostId=next.id;
+        if(next){ this.room.hostId=next.id; this.pushChatSystem("hostAuto",{to:next.nickname}); }
       }
       if(await this.g6AfterDisconnect()) return;
       if(await this.g7AfterDisconnect()) return;
@@ -4597,6 +4610,46 @@ async onG1Next(playerId){
   }
 
 
+  // 房主移出玩家：只限等候室；被踢嘅人記低 clientId，同一間房唔可以再入。
+  async onKick(playerId,targetId){
+    if(playerId!==this.room.hostId || !targetId || targetId===playerId) return;
+    if(this.room.gameState?.phase && this.room.gameState.phase!=="waiting") return;
+    const target=this.room.players.find(x=>x.id===targetId);
+    if(!target) return;
+    const host=this.room.players.find(x=>x.id===playerId);
+    // 同一部機開兩個分頁測試時，唔好連房主自己都封埋。
+    if(target.clientId && target.clientId!==host?.clientId){
+      this.room.kicked=[...new Set([...(this.room.kicked||[]),target.clientId])];
+    }
+    this.room.players=this.room.players.filter(x=>x.id!==targetId);
+    this.room.chatMuted=(this.room.chatMuted||[]).filter(id=>id!==targetId);
+    this.pushChatSystem("kick",{name:target.nickname});
+    for(const ws of this.ctx.getWebSockets()){
+      const a=ws.deserializeAttachment() || {};
+      if(a.playerId!==targetId) continue;
+      this.safeSend(ws,{type:"kicked"});
+      ws.serializeAttachment({});
+      try{ws.close(4001,"kicked")}catch{}
+    }
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  // 房主手動轉讓：只限等候室，對方要在線。
+  async onTransferHost(playerId,targetId){
+    if(playerId!==this.room.hostId || !targetId || targetId===playerId) return;
+    if(this.room.gameState?.phase && this.room.gameState.phase!=="waiting") return;
+    const target=this.room.players.find(x=>x.id===targetId);
+    const from=this.room.players.find(x=>x.id===playerId);
+    if(!target || !target.connected) return;
+    this.room.hostId=target.id;
+    target.ready=false;
+    if(from) from.ready=false;
+    this.pushChatSystem("host",{from:from?.nickname||"",to:target.nickname});
+    await this.save();
+    await this.broadcastRoom();
+  }
+
   async errorPlayer(playerId,message){
     this.sendToPlayer(playerId,{type:"error",message});
   }
@@ -4640,7 +4693,7 @@ async onG1Next(playerId){
     // If the host leaves, transfer host to the first connected player.
     if(p.id===this.room.hostId){
       const next=this.room.players.find(x=>x.connected && x.id!==p.id);
-      if(next)this.room.hostId=next.id;
+      if(next){ this.room.hostId=next.id; this.pushChatSystem("hostAuto",{to:next.nickname}); }
     }
 
 
