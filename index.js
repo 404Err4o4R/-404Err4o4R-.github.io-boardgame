@@ -60,6 +60,7 @@ const G6_VOTE_MS_DEFAULT = 10000;
 const G6_SUCCESS_MS = 10000; // 成功 sync 之後停留 10 秒，畀大家 cap 圖
 const G6_VOID_MS = 5000;
 const G6_MAX_ATTEMPTS = 5;
+const G6_ATTEMPT_OPTIONS = [5, 300]; // 300 = 「直到相遇」模式
 const G6_MAX_UNITS = 105; // 中文字算 15 個單位，英文字元算 7 個：即係中文最多 7 字、英文最多 15 個字元（中英夾雜按比例計）
 const G6_BASE_POINTS = 50;
 const G6_SPEED_POINTS = 50;
@@ -414,6 +415,8 @@ export default {
                 body.g6Rounds || null,
               g6VoteMs:
                 body.g6VoteSeconds ? body.g6VoteSeconds*1000 : null,
+              g6MaxAttempts:
+                body.g6MaxAttempts || null,
               g7TurnMs:
                 body.g7TurnSeconds ? body.g7TurnSeconds*1000 : null,
               g7Rounds:
@@ -534,7 +537,8 @@ function publicRoom(room, viewerId=null) {
     g6Settings: room.game==="game6" ? {
       answerMs: room.g6AnswerMs||20000,
       rounds: room.g6Rounds||10,
-      voteMs: room.g6VoteMs||G6_VOTE_MS_DEFAULT
+      voteMs: room.g6VoteMs||G6_VOTE_MS_DEFAULT,
+      maxAttempts: room.g6MaxAttempts||G6_MAX_ATTEMPTS
     } : null,
     g8Settings: room.game==="game8" ? {
       turnMs: room.g8TurnMs||20000,
@@ -873,7 +877,7 @@ results:g.results||null
       base6.pairs=pairs.sort((x,y)=>y.count-x.count);
       const events=room.g6Events||[];
       base6.fastest=events.length ? events.reduce((m,e)=>e.t<m.t ? e : m) : null;
-      base6.maxAttempts=G6_MAX_ATTEMPTS;
+      base6.maxAttempts=room.g6MaxAttempts||G6_MAX_ATTEMPTS;
       base6.log=room.g6Log||[];
     }
 
@@ -1229,6 +1233,7 @@ export class GameRoom extends DurableObject {
         g6AnswerMs:clampG6AnswerMs(body.g6AnswerMs),
         g6Rounds:clampG6Rounds(body.g6Rounds),
         g6VoteMs:clampG6VoteMs(body.g6VoteMs),
+        g6MaxAttempts:G6_ATTEMPT_OPTIONS.includes(Number(body.g6MaxAttempts)) ? Number(body.g6MaxAttempts) : G6_MAX_ATTEMPTS,
         g7TurnMs:clampG7TurnMs(body.g7TurnMs),
         g7Rounds:clampG7Rounds(body.g7Rounds),
         g8TurnMs:clampG8TurnMs(body.g8TurnMs),
@@ -2699,7 +2704,7 @@ async onG1Next(playerId){
       answerMs:this.room.g6AnswerMs||20000,
       voteMs:this.room.g6VoteMs||G6_VOTE_MS_DEFAULT,
       attempt:0,
-      maxAttempts:G6_MAX_ATTEMPTS,
+      maxAttempts:this.room.g6MaxAttempts||G6_MAX_ATTEMPTS,
       history:[], // 之前幾次估咗咩：[{attempt, entries:[{id,nickname,text}]}]
       result:null,
       next:{},

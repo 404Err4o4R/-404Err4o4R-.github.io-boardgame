@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=36">
+  <link rel="stylesheet" href="./style.css?v=37">
 </head>
 
 <body>
@@ -408,6 +408,14 @@
               class="hidden"
               style="margin-top:8px"
             >
+
+            <div class="label-row" style="margin-top:14px">
+              <span data-zh="每回合最多猜幾次">每 round 最多估幾多次</span>
+            </div>
+            <div id="g6AttemptsBox" class="filter-box">
+              <button type="button" class="filter-chip g6-attempts-chip active" data-attempts="5">5 次</button>
+              <button type="button" data-zh="300 次（直到相遇）" class="filter-chip g6-attempts-chip" data-attempts="300">300 次（直到相遇）</button>
+            </div>
 
             <div class="label-row" style="margin-top:14px">
               <span>投票合併時間</span>
@@ -1156,7 +1164,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script src="./chat.js?v=5" defer></script>
-<script src="./app.js?v=54" defer></script>
+<script src="./app.js?v=55" defer></script>
 
 </body>
 </html>

@@ -989,6 +989,15 @@ $("#g2RoundsCustom")?.addEventListener("input", () => {
 S.g6AnswerSeconds = 20;
 S.g6Rounds = 10;
 S.g6VoteSeconds = 10;
+S.g6MaxAttempts = 5;
+
+$("#g6AttemptsBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g6-attempts-chip");
+  if (!chip) return;
+  document.querySelectorAll("#g6AttemptsBox .g6-attempts-chip").forEach((el) => el.classList.remove("active"));
+  chip.classList.add("active");
+  S.g6MaxAttempts = Number(chip.dataset.attempts) || 5;
+});
 
 $("#g6TimeBox")?.addEventListener("click", (event) => {
   const chip = event.target.closest(".g6-time-chip");
@@ -1140,6 +1149,7 @@ async function createRoom() {
         g6AnswerSeconds: S.selectedGame === "game6" ? S.g6AnswerSeconds : null,
         g6Rounds: S.selectedGame === "game6" ? S.g6Rounds : null,
         g6VoteSeconds: S.selectedGame === "game6" ? S.g6VoteSeconds : null,
+        g6MaxAttempts: S.selectedGame === "game6" ? S.g6MaxAttempts : null,
         g7TurnSeconds: S.selectedGame === "game7" ? S.g7TurnSeconds : null,
         g7Rounds: S.selectedGame === "game7" ? S.g7Rounds : null,
         g8TurnSeconds: S.selectedGame === "game8" ? S.g8TurnSeconds : null,
@@ -1621,6 +1631,7 @@ function renderRoom() {
             ${lz("每 round", "每回合")} ${Math.round(room.g6Settings.answerMs / 1000)} 秒 ·
             ${room.g6Settings.rounds} ${lz("round", "回合")} ·
             投票合併 ${Math.round(room.g6Settings.voteMs / 1000)} 秒 ·
+            ${room.g6Settings.maxAttempts >= 300 ? lz("最多估 300 次（直到相遇）", "最多猜 300 次（直到相遇）") : lz(`最多估 ${room.g6Settings.maxAttempts || 5} 次`, `最多猜 ${room.g6Settings.maxAttempts || 5} 次`)} ·
             ${room.language === "zh" ? "台灣版" : "香港版"}
           </p>`
         : room.game === "game7" && room.g7Settings
@@ -2053,6 +2064,99 @@ function renderGame() {
   } else {
     renderGame2(game);
   }
+
+  ensureSaveImageButton();
+}
+
+/* =========================
+   結果圖：所有 game 結算畫面都可以生成一張圖，手機長按儲存
+========================= */
+
+const HTML2CANVAS_SRC = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+
+function isResultPhase() {
+  const phase = S.room?.gameState?.phase;
+  return phase === "gameover" || phase === "final";
+}
+
+function ensureSaveImageButton() {
+  if (!isResultPhase()) return;
+  const panel = $("#gamePanel");
+  if (!panel || panel.querySelector(".save-img-row")) return;
+  panel.insertAdjacentHTML("beforeend", `
+    <div class="save-img-row" data-html2canvas-ignore="true">
+      <button type="button" class="btn btn-dark" onclick="saveResultImage()">
+        ${lz("生成結果圖（長按儲存）", "產生結果圖（長按儲存）")}
+      </button>
+    </div>
+  `);
+}
+
+function loadHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  if (S.h2cLoading) return S.h2cLoading;
+  S.h2cLoading = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = HTML2CANVAS_SRC;
+    script.onload = () => resolve(window.html2canvas);
+    script.onerror = () => {
+      S.h2cLoading = null;
+      reject(new Error(lz("載入唔到生成圖片工具，請稍後再試。", "無法載入產生圖片工具，請稍後再試。")));
+    };
+    document.head.appendChild(script);
+  });
+  return S.h2cLoading;
+}
+
+window.saveResultImage = async () => {
+  const panel = $("#gamePanel");
+  if (!panel) return;
+  const button = panel.querySelector(".save-img-row .btn");
+  const label = button?.textContent;
+  if (button) {
+    button.disabled = true;
+    button.textContent = lz("生成緊……", "產生中……");
+  }
+  try {
+    const h2c = await loadHtml2Canvas();
+    if (document.fonts?.ready) await document.fonts.ready;
+    const bg = getComputedStyle(panel).backgroundColor;
+    const canvas = await h2c(panel, {
+      backgroundColor: bg && bg !== "rgba(0, 0, 0, 0)" ? bg : "#FEFEF2",
+      scale: Math.min(2, window.devicePixelRatio || 2),
+      useCORS: true,
+      logging: false
+    });
+    showResultImage(canvas.toDataURL("image/png"));
+  } catch (error) {
+    flash(error.message || lz("生成圖片失敗。", "產生圖片失敗。"));
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = label;
+    }
+  }
+};
+
+function showResultImage(dataUrl) {
+  document.querySelector(".result-img-overlay")?.remove();
+  const name = `${(GAME_NAMES[S.room?.game] || "result").replace(/[\\/:*?"<>|\s]+/g, "-")}-${S.room?.code || ""}.png`;
+  const overlay = document.createElement("div");
+  overlay.className = "result-img-overlay";
+  overlay.innerHTML = `
+    <div class="result-img-card" role="dialog" aria-label="${lz("結果圖", "結果圖")}">
+      <p class="result-img-hint">${lz("手機：長按張圖儲存 · 電腦：撳下載", "手機：長按圖片儲存 · 電腦：按下載")}</p>
+      <img class="result-img" src="${dataUrl}" alt="${lz("今局結果", "本局結果")}">
+      <div class="result-img-actions">
+        <a class="btn btn-yellow" href="${dataUrl}" download="${esc(name)}">${lz("下載", "下載")}</a>
+        <button type="button" class="btn btn-outline" data-close>${lz("關閉", "關閉")}</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay || event.target.closest("[data-close]")) overlay.remove();
+  });
+  document.body.appendChild(overlay);
 }
 
 function startTimer(element, endsAt) {
@@ -4317,7 +4421,10 @@ function g6HistoryHtml(game, opts = {}) {
   const t = g6T();
   const history = game.history || [];
   if (!history.length) return "";
-  const rows = opts.chronological ? history : [...history].reverse();
+  // 估緊嘅時候只顯示最近 8 次（300 次模式會好長）；紀錄畫面就全部顯示。
+  const recent = opts.chronological ? history : [...history].reverse();
+  const rows = opts.chronological ? recent : recent.slice(0, 8);
+  const hidden = recent.length - rows.length;
   return `
     <div class="g6-history ${opts.cls || ""}">
       <div class="eyebrow">${esc(opts.title || t.historyTitle)}</div>
@@ -4329,6 +4436,7 @@ function g6HistoryHtml(game, opts = {}) {
           </span>
         </div>
       `).join("")}
+      ${hidden > 0 ? `<small class="g6-hist-more">${esc(lz(`仲有 ${hidden} 次較早嘅紀錄，結算時可以睇返`, `還有 ${hidden} 次較早的紀錄，結算時可以查看`))}</small>` : ""}
     </div>
   `;
 }
@@ -4896,12 +5004,12 @@ function renderGame6Gameover(game) {
 
 window.g6RadarPick = (id) => {
   S.g6RadarSel = id;
-  if (S.room?.gameState?.phase === "gameover") renderGame6Gameover(S.room.gameState);
+  if (S.room?.gameState?.phase === "gameover") { renderGame6Gameover(S.room.gameState); ensureSaveImageButton(); }
 };
 
 window.g6PairPick = (key) => {
   S.g6PairSel = key;
-  if (S.room?.gameState?.phase === "gameover") renderGame6Gameover(S.room.gameState);
+  if (S.room?.gameState?.phase === "gameover") { renderGame6Gameover(S.room.gameState); ensureSaveImageButton(); }
 };
 
 window.restart2 = () => {
