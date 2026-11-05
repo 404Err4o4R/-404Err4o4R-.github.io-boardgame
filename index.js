@@ -1347,6 +1347,8 @@ export class GameRoom extends DurableObject {
       case "g2:done": return this.onG2SpeakDone(session.playerId);
       case "g2:judge": return this.onG2Judge(session.playerId,msg.targetId);
       case "g2:next": return this.onG2Next(session.playerId);
+      case "game:restart": return this.onGameRestart(session.playerId);
+      case "game:lobby": return this.onGameLobby(session.playerId);
       case "g2:restart": return this.onG2Restart(session.playerId);
       case "g3:submit": return this.onG3Submit(session.playerId,msg.text);
       case "g3:rating-start": return this.onG3RatingStart(session.playerId);
@@ -1591,6 +1593,52 @@ if (notReady.length > 0) {
     else if(this.room.game==="game8") await this.startGame8();
     else if(this.room.game==="game9") await this.startGame9();
     else await this.startGame2();
+  }
+
+  // 所有遊戲通用：結算畫面房主可以「再來一場」（同一設定即刻再開）或者「返回房間」（返等候室改設定）。
+  isGameOverPhase(){
+    const ph=this.room.gameState?.phase;
+    return ph==="gameover" || ph==="final";
+  }
+
+  resetForNewMatch(){
+    for(const p of this.room.players){ p.score=0; p.ready=false; }
+    this.room.g1History=[];
+    this.room.chatArchive=[];
+    this.room.gameState=null;
+  }
+
+  async onGameRestart(playerId){
+    if(playerId!==this.room.hostId) return;
+    if(!this.isGameOverPhase()) return;
+    const connected=this.room.players.filter(p=>p.connected);
+    const minRequired = this.room.game==="game4" ? MIN_PLAYERS_GAME4 : MIN_PLAYERS;
+    if(connected.length<minRequired){
+      return this.errorPlayer(playerId,`最少要 ${minRequired} 位在線玩家先可以再玩。`);
+    }
+    if(this.room.game==="game6" && this.room.g6Mode==="meet" && connected.length>G6_MEET_MAX_PLAYERS){
+      return this.errorPlayer(playerId,"相遇模式只可以 2–4 人玩，請返回房間轉模式。");
+    }
+    this.resetForNewMatch();
+    const gm=this.room.game;
+    if(gm==="game1") await this.startGame1();
+    else if(gm==="game3") await this.startGame3();
+    else if(gm==="game4") await this.startGame4();
+    else if(gm==="game5") await this.startGame5();
+    else if(gm==="game6") await this.startGame6();
+    else if(gm==="game7") await this.startGame7();
+    else if(gm==="game8") await this.startGame8();
+    else if(gm==="game9") await this.startGame9();
+    else await this.startGame2();
+  }
+
+  async onGameLobby(playerId){
+    if(playerId!==this.room.hostId) return;
+    if(!this.isGameOverPhase()) return;
+    this.resetForNewMatch();
+    await this.ctx.storage.deleteAlarm?.();
+    await this.save();
+    await this.broadcastRoom();
   }
 
   pickGame1Question(){

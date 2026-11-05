@@ -1752,3 +1752,7 @@ html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;
 .kicked-card .kicked-icon{width:64px;height:64px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .player .player-more{order:2;margin-left:0}
 .player .ready-label,.player .not-ready-label{margin-left:auto}
+
+.match-end-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
+.match-end-bar .btn{flex:1;min-width:140px}
+.match-end-bar .notice{width:100%;text-align:center}

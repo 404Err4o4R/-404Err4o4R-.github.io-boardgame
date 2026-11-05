@@ -2106,7 +2106,57 @@ function renderGame() {
   } else {
     renderGame2(game);
   }
+  renderMatchEndBar(game);
 }
+
+// 所有遊戲結算畫面：房主「再來一場」；有多個模式嘅遊戲另外有「返回房間」改模式。
+// 原本已經有自己再玩掣嘅遊戲（2、6、7、8、9）唔再重複加「再來一場」。
+const MATCH_HAS_OWN_RESTART = ["game2", "game6", "game7", "game8", "game9"];
+const MATCH_MULTI_MODE = ["game2", "game5", "game6", "game8"];
+
+function renderMatchEndBar(game) {
+  const panel = $("#gamePanel");
+  if (!panel) return;
+  const over = game && (game.phase === "gameover" || game.phase === "final");
+  const old = $("#matchEndBar");
+  if (!over) { old?.remove(); return; }
+  if (old) return;
+
+  const gm = S.room.game;
+  const isHost = S.room.hostId === S.playerId;
+  const needRestart = !MATCH_HAS_OWN_RESTART.includes(gm);
+  const needLobby = MATCH_MULTI_MODE.includes(gm);
+  if (!needRestart && !needLobby) return;
+
+  let inner = "";
+  if (isHost) {
+    inner = `
+      ${needRestart ? `<button type="button" class="btn btn-yellow" onclick="matchRestart()">${lz("再來一場", "再來一場")}</button>` : ""}
+      ${needLobby ? `<button type="button" class="btn btn-outline" onclick="matchLobby()">${lz("返回房間（轉模式）", "返回房間（切換模式）")}</button>` : ""}
+    `;
+  } else if (needRestart) {
+    inner = `<p class="notice">${lz("等房主決定再來一場定返回房間", "等待房主決定再來一場或返回房間")}</p>`;
+  }
+  if (!inner.trim()) return;
+
+  const bar = document.createElement("div");
+  bar.id = "matchEndBar";
+  bar.className = "match-end-bar";
+  bar.innerHTML = inner;
+  panel.appendChild(bar);
+}
+
+window.matchRestart = async () => {
+  const ok = await askConfirm(lz("用同一個設定再來一場？", "使用相同設定再來一場？"));
+  if (!ok) return;
+  send({ type: "game:restart" });
+};
+
+window.matchLobby = async () => {
+  const ok = await askConfirm(lz("返回房間？可以轉模式同改設定，大家要重新撳準備。", "返回房間？可以切換模式與更改設定，大家需要重新按準備。"));
+  if (!ok) return;
+  send({ type: "game:lobby" });
+};
 
 function startTimer(element, endsAt) {
   clearInterval(S.timer);
