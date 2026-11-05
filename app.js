@@ -3705,7 +3705,7 @@ function renderGame4Voting(game) {
   // 如果自己已經投咗，就唔重畫成個畫面（避免其他人陸續投票觸發嘅
   // state 廣播打斷咗你嘅畫面），淨係update「已投」人數。
   const renderKey = `g4-voting-${game.round}`;
-  if (S.g4RenderKey === renderKey && game.myVote) {
+  if (S.g4RenderKey === renderKey && game.myVote && S.g4RenderedVoted) {
     const counter = $("#g4VotedCount");
     if (counter) counter.textContent = `已投：${game.votedCount} / ${game.totalToVote}`;
     return;
@@ -3714,6 +3714,7 @@ function renderGame4Voting(game) {
 
   const players = S.room.players || [];
   const voted = !!game.myVote;
+  S.g4RenderedVoted = voted;
 
   const avatarButtons = players.map((p) => {
     const { svg, bg } = g4AvatarSvg(p.seat);
