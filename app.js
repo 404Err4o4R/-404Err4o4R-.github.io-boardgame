@@ -3790,7 +3790,14 @@ window.g4Vote = async (target, label) => {
     return;
   }
 
-  const ok = await askConfirm(`確定要投「${label}」？投咗就唔可以再改。`);
+  const special = {
+    everyone: "揀「大家都有可能」即係唔投俾任何一個人，呢票會另外計，唔會幫任何人加票。",
+    abstain: "揀「棄權」即係呢題你唔投票，結果唔會計你呢票。",
+  };
+  const ok = await askConfirm(
+    `確定要投「${label}」？投咗就唔可以再改。`,
+    special[target] ? { sub: special[target] } : {}
+  );
   if (!ok) return;
 
   S.g4Voting = true;
@@ -3806,6 +3813,9 @@ function renderGame4Reveal(game) {
   const r = game.results || {};
   const tally = r.tally || [];
   const maxCount = Math.max(1, ...tally.map((t) => t.count), r.everyoneCount || 0);
+  // 最多票嘅選項（包括「大家都有可能」，同票就一齊）用黃色，其餘灰色
+  const topCount = Math.max(0, ...tally.map((t) => t.count), r.everyoneCount || 0);
+  const barColor = (count) => (count > 0 && count === topCount ? "var(--yellow)" : "#b8bcc8");
 
   function voterLine(names) {
     if (!names || !names.length) return "";
@@ -3819,7 +3829,7 @@ function renderGame4Reveal(game) {
       <div class="g4-bar-row">
         <div class="g4-bar-label">${isWinner ? "★ " : ""}${esc(t.nickname)}</div>
         <div class="g4-bar-track">
-          <div class="g4-bar-fill" style="width:${(t.count / maxCount) * 100}%;background:${isWinner ? "var(--yellow)" : "var(--game-accent)"}"></div>
+          <div class="g4-bar-fill" style="width:${(t.count / maxCount) * 100}%;background:${barColor(t.count)}"></div>
         </div>
         <div class="g4-bar-count">${t.count}</div>
       </div>
@@ -3831,9 +3841,9 @@ function renderGame4Reveal(game) {
   const everyoneRow = r.everyoneCount ? `
     <div class="g4-bar-row-wrap">
       <div class="g4-bar-row">
-        <div class="g4-bar-label">大家都有可能</div>
+        <div class="g4-bar-label">${r.everyoneCount === topCount ? "★ " : ""}大家都有可能</div>
         <div class="g4-bar-track">
-          <div class="g4-bar-fill" style="width:${(r.everyoneCount / maxCount) * 100}%;background:#aaa"></div>
+          <div class="g4-bar-fill" style="width:${(r.everyoneCount / maxCount) * 100}%;background:${barColor(r.everyoneCount)}"></div>
         </div>
         <div class="g4-bar-count">${r.everyoneCount}</div>
       </div>
