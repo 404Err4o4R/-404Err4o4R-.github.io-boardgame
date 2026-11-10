@@ -5139,7 +5139,8 @@ const G7_TEXT = {
     },
     yourCard: "你嘅技能卡",
     use: "使用",
-    cardUsed: "呢個回合張卡已經用咗",
+    cardUsed: "今個炸彈張卡已經用咗",
+    noSkills: "2 人局不設技能卡",
     cardWait: "輪到你先用得",
     viaAssign: (by) => `${by} 指定咗你！`,
     viaSkip: (by) => `${by} 跳過咗，輪到你`,
@@ -5209,7 +5210,8 @@ const G7_TEXT = {
     },
     yourCard: "你的技能卡",
     use: "使用",
-    cardUsed: "本回合的卡已經用掉",
+    cardUsed: "這顆炸彈的卡已經用掉",
+    noSkills: "2 人局不設技能卡",
     cardWait: "輪到你才能使用",
     viaAssign: (by) => `${by} 指定了你！`,
     viaSkip: (by) => `${by} 跳過了，輪到你`,
@@ -5336,7 +5338,7 @@ function g7CardHtml(game, isMyTurn) {
   const t = g7T();
   const card = game.myCard;
   if (!card) {
-    return `<div class="g7-card g7-card-empty"><span>${esc(t.cardUsed)}</span></div>`;
+    return `<div class="g7-card g7-card-empty"><span>${esc(game.skillsOn === false ? t.noSkills : t.cardUsed)}</span></div>`;
   }
   return `
     <div class="g7-card">
@@ -5496,7 +5498,6 @@ function g7BurstSvg() {
       <polygon class="g7-burst-outer" points="${pts(130, 130, 118, 64, 16)}" fill="#F2D965" stroke="#1f2740" stroke-width="4" stroke-linejoin="round"></polygon>
       <polygon class="g7-burst-mid" points="${pts(130, 130, 92, 52, 14)}" fill="#F7577A" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></polygon>
       <polygon class="g7-burst-inner" points="${pts(130, 130, 66, 40, 12)}" fill="#FFD3DD" stroke="#1f2740" stroke-width="3" stroke-linejoin="round"></polygon>
-      <text x="130" y="145" text-anchor="middle" textLength="128" lengthAdjust="spacingAndGlyphs" class="g7-burst-text">BOOM</text>
     </svg>
   `;
 }

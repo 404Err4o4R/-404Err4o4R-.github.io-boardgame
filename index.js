@@ -1048,6 +1048,7 @@ results:g.results||null
       via:g.via||null,
       history:(g.history||[]).slice(-G7_HISTORY_MAX),
       myCard:viewerId ? (g.cards?.[viewerId]||null) : null,
+      skillsOn:room.g7Skills!==false,
       bomb:showBomb ? (g.bomb ?? null) : null,
       lastBoom:g.phase==="boom" ? (g.lastBoom||null) : null,
       roundWinnerId:g.roundWinnerId||null,
@@ -4021,6 +4022,8 @@ async onG1Next(playerId){
   async startGame7(){
     for(const p of this.room.players) p.score=0;
     this.room.g7Winners=[]; // 每個回合嘅贏家：[{round, id}]
+    // 開局人數 3 人或以上先有技能卡；2 人局成局都冇。
+    this.room.g7Skills=this.room.players.filter(p=>p.connected).length>=3;
     await this.beginRoundGame7(1);
   }
 
@@ -4034,7 +4037,6 @@ async onG1Next(playerId){
     }
     this.room.deadChat=[]; // 新回合全部人復活，淘汰區清空
     const cards={};
-    for(const id of alive) cards[id]=G7_CARDS[Math.floor(Math.random()*G7_CARDS.length)];
     this.room.gameState={
       game:"game7",
       phase:"turn",
@@ -4066,6 +4068,11 @@ async onG1Next(playerId){
     g.history=[];
     g.lastBoom=null;
     g.nextStartId=null;
+    // 每個新炸彈重新派技能卡（只派俾未出局嘅人）
+    g.cards={};
+    if(this.room.g7Skills){
+      for(const id of g.alive) g.cards[id]=G7_CARDS[Math.floor(Math.random()*G7_CARDS.length)];
+    }
     this.setTurnGame7(startId,null);
     await this.commitGame7();
   }
@@ -4134,7 +4141,8 @@ async onG1Next(playerId){
     if(!g || g.game!=="game7" || g.phase!=="turn") return;
     if(g.currentId!==playerId) return this.errorPlayer(playerId,"未輪到你。");
     const card=g.cards?.[playerId];
-    if(!card) return this.errorPlayer(playerId,"你呢個回合已經冇技能卡。");
+    if(!this.room.g7Skills) return this.errorPlayer(playerId,"2 人局不設技能卡。");
+    if(!card) return this.errorPlayer(playerId,"你呢個炸彈已經冇技能卡。");
 
     let next;
     if(card==="assign"){
