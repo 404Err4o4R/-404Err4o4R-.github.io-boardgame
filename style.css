@@ -1756,3 +1756,7 @@ html.g8-noscroll,html.g8-noscroll body{overflow:hidden;overscroll-behavior:none;
 .match-end-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
 .match-end-bar .btn{flex:1;min-width:140px}
 .match-end-bar .notice{width:100%;text-align:center}
+/* 相遇模式：顯示精簡圖，長按存到嘅係疊喺上面嘅透明長圖 */
+.g6-meet-stack{position:relative;width:100%;max-width:420px}
+.g6-meet-stack .g6-meet-picture{max-width:none}
+.g6-meet-save{position:absolute;inset:0;width:100%;height:100%;opacity:.01;object-fit:fill;-webkit-touch-callout:default;user-select:auto}

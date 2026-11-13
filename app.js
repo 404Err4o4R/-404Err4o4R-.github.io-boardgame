@@ -8050,7 +8050,8 @@ function g6FitText(ctx, text, maxW, size, weight, family) {
   return s;
 }
 
-async function g6MeetImage(game) {
+// opts.full：畫齊全部次數嘅長圖（儲存用）；唔係就只畫最後 8 次（網頁展示用）。
+async function g6MeetImage(game, opts = {}) {
   const r = game.meetResult || {};
   const players = game.meetPlayers || [];
   const history = game.history || [];
@@ -8058,7 +8059,7 @@ async function g6MeetImage(game) {
   const finalRow = r.met ? history[history.length - 1] : null;
   const earlier = r.met ? history.slice(0, -1) : history;
   const maxEarlier = r.met ? G6_MEET_ROWS - 1 : G6_MEET_ROWS;
-  const shown = earlier.slice(-maxEarlier);
+  const shown = opts.full ? earlier : earlier.slice(-maxEarlier);
   const hiddenCount = earlier.length - shown.length;
 
   try {
@@ -8080,7 +8081,8 @@ async function g6MeetImage(game) {
   const mergedNote = r.met && (r.mergedIds || []).length;
   H += (mergedNote ? 26 : 0) + 18 + 34;
 
-  const scale = 3;
+  // 長圖要控制像素：手機瀏覽器 canvas 大約上限 1600 萬像素、單邊 32000 像素。
+  const scale = Math.max(1, Math.min(3, Math.sqrt(15000000 / (W * H)), 30000 / H));
   const canvas = document.createElement("canvas");
   canvas.width = W * scale;
   canvas.height = H * scale;
@@ -8258,13 +8260,26 @@ function renderGame6Meet(game) {
     </div>
   `;
 
-  g6MeetImage(game).then((url) => {
+  const totalRows = (game.history || []).length;
+  const needsLong = totalRows > G6_MEET_ROWS;
+  Promise.all([g6MeetImage(game), needsLong ? g6MeetImage(game, { full: true }) : null]).then(([url, fullUrl]) => {
     const box = $("#gamePanel .g6-meet-img");
     if (!box || S.g6Key !== key) return;
-    box.innerHTML = `<img class="g6-meet-picture" src="${url}" alt="${esc(g6MeetTitle(game))}">`;
+    const saveUrl = fullUrl || url;
+    // 網頁顯示精簡版；上面疊一張透明嘅長圖，長按儲存到嘅係齊晒全部次數嘅長圖。
+    box.innerHTML = fullUrl
+      ? `<div class="g6-meet-stack">
+          <img class="g6-meet-picture" src="${url}" alt="" aria-hidden="true">
+          <img class="g6-meet-save" src="${fullUrl}" alt="${esc(g6MeetTitle(game))}">
+        </div>`
+      : `<img class="g6-meet-picture" src="${url}" alt="${esc(g6MeetTitle(game))}">`;
+    const hint = $("#gamePanel .g6-meet-hint");
+    if (hint && fullUrl) {
+      hint.textContent = lz(`手機長按張圖儲存：會存到齊晒 ${totalRows} 次嘅長圖`, `手機長按圖片儲存：會存到包含全部 ${totalRows} 次的長圖`);
+    }
     const dl = $("#gamePanel .g6-meet-dl");
     if (dl) {
-      dl.href = url;
+      dl.href = saveUrl;
       dl.download = `sync-meet-${S.room?.code || ""}.png`;
       dl.classList.remove("hidden");
     }
