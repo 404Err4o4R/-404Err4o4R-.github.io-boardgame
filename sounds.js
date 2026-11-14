@@ -105,14 +105,14 @@
     },
 
     /* ---------- 故事接龍 ---------- */
-    // 機械鍵盤：幾下唔規則嘅「噠噠」，最後一下係較重嘅 Enter
+    // 機械鍵盤：三下「噠」，最後一下係較重嘅 Enter
     g5_type: () => {
-      [0, 0.07, 0.15, 0.2, 0.29, 0.36].forEach((at, i) => {
+      [0, 0.14, 0.26].forEach((at, i) => {
         noise(0.03, { filter: "bandpass", freq: 2500 + Math.random() * 1500, q: 2, vol: 0.22, at });
         tone(160 + Math.random() * 60, 0.03, { type: "square", vol: 0.05, at });
       });
-      noise(0.05, { filter: "bandpass", freq: 1500, q: 1.5, vol: 0.3, at: 0.48 });
-      tone(120, 0.06, { type: "square", vol: 0.08, at: 0.48 });
+      noise(0.05, { filter: "bandpass", freq: 1500, q: 1.5, vol: 0.3, at: 0.42 });
+      tone(120, 0.06, { type: "square", vol: 0.08, at: 0.42 });
     },
 
     /* ---------- Sync 唔 Sync ---------- */
