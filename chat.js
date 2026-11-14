@@ -568,6 +568,7 @@
       const open = currentOpen();
       // 未讀：唔喺呢個頁籤，或者聊天室收埋咗（系統訊息唔計）
       if (msg.kind !== "sys" && (!showing || !open)) {
+        if (msg.playerId !== C.playerId) window.SFX?.play("chat");
         C.unread[ch] += 1;
         render();
         if (!open) {

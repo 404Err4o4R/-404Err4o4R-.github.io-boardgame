@@ -1110,6 +1110,24 @@ bindChips("#g9TimeBox", ".g9-time-chip", (chip) => { S.g9GuessSeconds = Number(c
 $("#createBtn")?.addEventListener("click", createRoom);
 $("#joinBtn")?.addEventListener("click", joinRoom);
 $("#closeGame")?.addEventListener("click", leaveRoom);
+
+// 音效開關（預設開；記住上次揀咩）
+function renderSfxToggle() {
+  const btn = $("#sfxToggle");
+  if (!btn || !window.SFX) return;
+  const on = !SFX.isMuted();
+  btn.textContent = on ? "🔊" : "🔇";
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+  btn.setAttribute("aria-label", on ? lz("音效：開", "音效：開") : lz("音效：熄", "音效：關"));
+  btn.classList.toggle("off", !on);
+}
+$("#sfxToggle")?.addEventListener("click", () => {
+  if (!window.SFX) return;
+  SFX.setMuted(!SFX.isMuted());
+  renderSfxToggle();
+  if (!SFX.isMuted()) SFX.play("submit");
+});
+renderSfxToggle();
 $("#joinCode")?.addEventListener("input", () => {
   const input = $("#joinCode");
   const button = $("#joinBtn");
@@ -1373,6 +1391,7 @@ function handleServerMessage(message) {
 
   if (message.type === "error") {
     flash(message.message);
+    window.SFX?.play("error");
     return;
   }
 
@@ -1412,7 +1431,9 @@ function handleServerMessage(message) {
     S.g1SelectedPair = undefined;
   }
 
+  const prevRoom = S.room;
   S.room = message.room;
+  window.SFX?.onState(prevRoom, message.room, S.playerId);
   window.RoomChat?.onState(message.room);
   (message.room.roomChatDead || []).forEach((m) => window.RoomChat?.onMessage(m));
 
@@ -1582,6 +1603,7 @@ function send(message) {
 
   try {
     S.socket.send(JSON.stringify(message));
+    window.SFX?.onSend(message);
   } catch (error) {
     flash(error.message || "操作失敗。");
   }
@@ -2158,6 +2180,8 @@ window.matchLobby = async () => {
   send({ type: "game:lobby" });
 };
 
+const SFX_QUIET_PHASES = ["chat", "reveal", "result", "boom", "roundover", "gameover", "final"];
+
 function startTimer(element, endsAt) {
   clearInterval(S.timer);
 
@@ -2187,6 +2211,8 @@ function startTimer(element, endsAt) {
       Math.max(0, endsAt - Date.now());
 
     num.textContent = String(Math.ceil(remaining / 1000));
+    // 倒數音效：淨係玩家要做嘢嘅階段先滴答（揭曉／結果畫面嘅自動倒數唔響）
+    if (!SFX_QUIET_PHASES.includes(S.room?.gameState?.phase)) window.SFX?.onTimer(endsAt, remaining);
     bar.setAttribute("stroke-dashoffset", String(C * (1 - Math.min(1, remaining / total))));
     element.setAttribute("aria-label", lz(`剩低 ${Math.ceil(remaining / 1000)} 秒`, `剩餘 ${Math.ceil(remaining / 1000)} 秒`));
   };
@@ -7782,6 +7808,7 @@ function renderGame9Guess(game) {
 
 function g9SetVal(turnNo, v) {
   v = Math.max(0, Math.min(100, Math.round(v)));
+  if (Math.floor(v / 5) !== Math.floor((S.g9Vals[turnNo] ?? v) / 5)) window.SFX?.play("g9_dial");
   S.g9Vals[turnNo] = v;
   const [x, y] = g9Pt(v, 132);
   $("#g9Needle")?.setAttribute("x2", x);

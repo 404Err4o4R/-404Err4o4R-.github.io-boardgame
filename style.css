@@ -233,6 +233,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue)}
 .extra h3{font-family:"Fredoka";font-size:25px;margin:14px 0 8px}.extra p{margin:0;color:#69718a;line-height:1.65;font-size:14px}
 .game-shell{position:fixed;inset:0;overflow:auto;background:var(--pure);z-index:80}
 .game-topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:16px 4vw;background:rgba(254,254,242,.9);backdrop-filter:blur(16px);border-bottom:1px solid rgba(146,159,193,.18)}
+.sfx-toggle{margin-right:8px;font-size:18px}.sfx-toggle.off{opacity:.55}
 .icon-btn{width:42px;height:42px;border:0;border-radius:13px;background:#fff;box-shadow:var(--shadow);font-size:20px}.top-spacer{flex:1}
 .peer-status{font-size:11px;font-weight:900;padding:8px 10px;border-radius:999px;background:#f0f2f6}.peer-status.online{background:#dff6e7;color:#1f6f3a}
 .game-content{max-width:1100px;margin:0 auto;padding:24px}.panel{background:#fff;border-radius:28px;box-shadow:var(--shadow);padding:24px;margin-bottom:18px}
