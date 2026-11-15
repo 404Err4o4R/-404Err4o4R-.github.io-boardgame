@@ -14,6 +14,7 @@
   };
 
   /* ---------- 每隻遊戲：封面底色、字色、蓋印色、封面元素（由 ROOM_COVERS 抽出嚟） ---------- */
+  const rn = () => 1 + Math.floor(Math.random() * 100); // 數字炸彈嘅數字牌：每次隨機 1–100
   const S3 = `stroke="${INK}" stroke-width="3" stroke-linejoin="round"`;
   const THEMES = {
     game1: { bg: "#F2D965", ink: INK, stamp: "#68779f", motifs: [
@@ -45,20 +46,19 @@
       ["78 66 128 118", `<path d="M82 92a22 22 0 0 1 22-22h76a22 22 0 0 1 22 22v44a22 22 0 0 1-22 22h-2l6 22-26-22h-54a22 22 0 0 1-22-22z" fill="${PURE}" ${S3}/>`],
       ["122 38 48 48", `<circle cx="146" cy="62" r="21" fill="#F2D965" ${S3}/><path d="M136 62l7 7 12-13" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`]
     ] },
-    game7: { bg: "#F7577A", ink: PURE, stamp: "#7A1030", motifs: [
+    game7: { bg: "#F7577A", ink: PURE, stamp: "#7A1030", scale: 1.4, spread: 1.7, motifs: [
       ["34 0 152 194", `<circle cx="110" cy="118" r="72" fill="${INK}"/><path d="M62 96 A52 52 0 0 1 92 64" fill="none" stroke="${PURE}" stroke-width="8" stroke-linecap="round" opacity=".35"/><rect x="90" y="34" width="40" height="20" rx="6" fill="${PURE}" ${S3}/><path d="M110 34 C108 8 140 -2 160 8" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><text x="110" y="146" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="76" fill="#FFD3DD">?</text>`],
       ["130 -50 96 96", `<polygon points="178.0,-48.0 184.2,-25.2 201.0,-41.8 195.0,-19.0 217.8,-25.0 201.2,-8.2 224.0,-2.0 201.2,4.2 217.8,21.0 195.0,15.0 201.0,37.8 184.2,21.2 178.0,44.0 171.8,21.2 155.0,37.8 161.0,15.0 138.2,21.0 154.8,4.2 132.0,-2.0 154.8,-8.2 138.2,-25.0 161.0,-19.0 155.0,-41.8 171.8,-25.2" fill="#F2D965" ${S3}/><polygon points="186.7,-28.6 186.2,-13.3 200.7,-18.5 191.3,-6.3 206.0,-2.0 191.3,2.3 200.7,14.5 186.2,9.3 186.7,24.6 178.0,12.0 169.3,24.6 169.8,9.3 155.3,14.5 164.7,2.3 150.0,-2.0 164.7,-6.3 155.3,-18.5 169.8,-13.3 169.3,-28.6 178.0,-16.0" fill="${PURE}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`],
-      ["-20 104 66 66", `<g transform="rotate(-10 12 137)"><rect x="-14" y="120" width="52" height="34" rx="10" fill="${PURE}" ${S3}/><text x="12" y="144" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="20" fill="${INK}">25</text></g>`],
-      ["180 88 66 66", `<g transform="rotate(8 212 121)"><rect x="186" y="104" width="52" height="34" rx="10" fill="#F2D965" ${S3}/><text x="212" y="128" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="20" fill="${INK}">52</text></g>`]
+      ["-20 104 66 66", () => `<g transform="rotate(-10 12 137)"><rect x="-14" y="120" width="52" height="34" rx="10" fill="${PURE}" ${S3}/><text x="12" y="144" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="20" fill="${INK}">${rn()}</text></g>`],
+      ["180 88 66 66", () => `<g transform="rotate(8 212 121)"><rect x="186" y="104" width="52" height="34" rx="10" fill="#F2D965" ${S3}/><text x="212" y="128" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="20" fill="${INK}">${rn()}</text></g>`]
     ] },
     game8: { bg: "#22408C", ink: PURE, stamp: "#22408C", motifs: [
       ["24 84 136 86", `<path d="M28 142h128l-16 24H44z" fill="${PURE}" ${S3}/><path d="M56 142v-20h46l14 20" fill="#C9D6F2" ${S3}/><path d="M78 122V88" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/><path d="M78 88l22 9-22 8" fill="#F2D965" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M102 131h22" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><rect x="64" y="128" width="8" height="8" rx="2" fill="${INK}"/><rect x="84" y="128" width="8" height="8" rx="2" fill="${INK}"/>`],
       ["110 104 72 64", `<polygon points="146,108 152,124 168,116 160,131 178,134 160,140 168,156 152,148 146,164 140,148 124,156 132,140 114,134 132,131 124,116 140,124" fill="#FF7A59" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><polygon points="146,122 149,131 157,128 152,135 160,138 152,141 156,148 149,145 146,153 143,145 136,148 140,141 132,138 140,135 135,128 143,131" fill="#F2D965"/>`],
       ["134 36 84 84", `<circle cx="176" cy="78" r="26" fill="none" stroke="#F2D965" stroke-width="5"/><circle cx="176" cy="78" r="9" fill="#F2D965" stroke="${INK}" stroke-width="2.5"/><path d="M176 40v18M176 98v18M138 78h18M196 78h18" stroke="#F2D965" stroke-width="5" stroke-linecap="round"/>`]
     ] },
-    game9: { bg: "#5FA8C6", ink: INK, stamp: "#1F6F94", motifs: [
-      ["8 30 244 126", `<path d="M14 150 A116 116 0 0 1 246 150 Z" fill="${PURE}" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/><path d="M130 150 L178.4 44.6 A116 116 0 0 1 192.7 52.4 Z" fill="#F5B82E"/><path d="M130 150 L192.7 52.4 A116 116 0 0 1 205.8 62.3 Z" fill="#F26A3D"/><path d="M130 150 L205.8 62.3 A116 116 0 0 1 217.7 73.5 Z" fill="#5FA8C6"/><path d="M130 150 L217.7 73.5 A116 116 0 0 1 228.1 86.2 Z" fill="#F26A3D"/><path d="M130 150 L228.1 86.2 A116 116 0 0 1 236.8 100.1 Z" fill="#F5B82E"/><path d="M130 150 L64 68" stroke="#E0284A" stroke-width="10" stroke-linecap="round"/><circle cx="130" cy="150" r="20" fill="#E0284A" stroke="${INK}" stroke-width="5"/>`],
-      ["52 58 102 118", `<path d="M130 150 L64 68" stroke="#E0284A" stroke-width="10" stroke-linecap="round"/><circle cx="130" cy="150" r="20" fill="#E0284A" stroke="${INK}" stroke-width="5"/><circle cx="130" cy="150" r="7" fill="${PURE}" opacity=".6"/>`],
+    game9: { bg: "#5FA8C6", ink: INK, stamp: "#1F6F94", maxBig: 3, motifs: [
+      ["8 30 244 126", `<path d="M14 150 A116 116 0 0 1 246 150 Z" fill="${PURE}" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/><path d="M130 150 L178.4 44.6 A116 116 0 0 1 192.7 52.4 Z" fill="#F5B82E"/><path d="M130 150 L192.7 52.4 A116 116 0 0 1 205.8 62.3 Z" fill="#F26A3D"/><path d="M130 150 L205.8 62.3 A116 116 0 0 1 217.7 73.5 Z" fill="#5FA8C6"/><path d="M130 150 L217.7 73.5 A116 116 0 0 1 228.1 86.2 Z" fill="#F26A3D"/><path d="M130 150 L228.1 86.2 A116 116 0 0 1 236.8 100.1 Z" fill="#F5B82E"/><path d="M28 150 A102 102 0 0 1 232 150" fill="none" stroke="#929fc1" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round"/><path d="M130 150 L64 68" stroke="#E0284A" stroke-width="10" stroke-linecap="round"/><circle cx="130" cy="150" r="20" fill="#E0284A" stroke="${INK}" stroke-width="5"/><circle cx="130" cy="150" r="7" fill="${PURE}" opacity=".6"/>`],
       ["0 0 44 44", `<path d="M22 4l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#F5B82E" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`]
     ] }
   };
@@ -162,29 +162,41 @@
     const th = theme(game);
     const W = window.innerWidth, H = window.innerHeight;
     const base = Math.min(W, H);
-    const lo = Math.max(30, base * 0.07), hi = Math.max(64, base * 0.19);
+    const sc = th.scale || 1, sp = th.spread || 1, maxBig = th.maxBig ?? Infinity;
+    const lo = Math.max(30, base * 0.07) * sc, hi = Math.max(64, base * 0.19) * sc;
+    let bigs = 0;
     const r = seeded(parseInt(String(game).replace(/\D/g, ""), 10) * 131 + 17 || 7);
     let k = 0;
     const put = (x, y, z) => {
-      const [vb, svg] = th.motifs[k % th.motifs.length];
+      const [vb, art] = th.motifs[k % th.motifs.length];
+      const svg = typeof art === "function" ? art() : art;
       const e = document.createElement("div");
       e.className = "tr-mo";
       const rot = Math.round(r() * 70 - 35);
-      e.style.cssText = `left:${x - z / 2}px;top:${y - z / 2}px;width:${z}px;height:${z}px;transform:rotate(${rot}deg)`;
+      // 闊身圖案（例如成個轉盤）按比例拉闊，唔會縮到好細
+      const [, , vw, vh] = vb.split(" ").map(Number);
+      const ar = Math.sqrt(vw / vh || 1);
+      const w = z * ar, h = z / ar;
+      e.style.cssText = `left:${x - w / 2}px;top:${y - h / 2}px;width:${w}px;height:${h}px;transform:rotate(${rot}deg)`;
       e.innerHTML = `<div style="animation-delay:${(k * 0.03).toFixed(2)}s"><svg viewBox="${vb}" preserveAspectRatio="xMidYMid meet" style="animation-delay:${((k % 6) * 0.3).toFixed(1)}s">${svg}</svg></div>`;
       ov.appendChild(e);
       k++;
     };
-    const size = () => lo + r() * (hi - lo);
+    // 大圖案有上限（maxBig）：超過就改用細尺寸
+    const size = () => {
+      let z = lo + r() * (hi - lo);
+      if (z > hi * 0.75) { if (bigs >= maxBig) z = lo + r() * (hi * 0.55 - lo); else bigs++; }
+      return z;
+    };
     const edge = base * 0.06;
     let x = r() * 20;
-    while (x < W + hi / 2) { const z = size(); put(x, edge + r() * edge - (z > hi * 0.75 ? z * 0.2 : 0), z); x += z * 0.75 + 14 + r() * 40; }
+    while (x < W + hi / 2) { const z = size(); put(x, edge + r() * edge - (z > hi * 0.75 ? z * 0.2 : 0), z); x += (z * 0.75 + 14 + r() * 40) * sp; }
     x = r() * 40;
-    while (x < W + hi / 2) { const z = size(); put(x, H - edge - r() * edge + (z > hi * 0.75 ? z * 0.2 : 0), z); x += z * 0.75 + 14 + r() * 40; }
+    while (x < W + hi / 2) { const z = size(); put(x, H - edge - r() * edge + (z > hi * 0.75 ? z * 0.2 : 0), z); x += (z * 0.75 + 14 + r() * 40) * sp; }
     let y = hi * 1.1;
-    while (y < H - hi * 1.1) { const z = size() * 0.85; put(edge * 0.6 + r() * edge, y, z); y += z + 18 + r() * 34; }
+    while (y < H - hi * 1.1) { const z = size() * 0.85; put(edge * 0.6 + r() * edge, y, z); y += (z + 18 + r() * 34) * sp; }
     y = hi * 1.3;
-    while (y < H - hi * 1.1) { const z = size() * 0.85; put(W - edge * 0.6 - r() * edge, y, z); y += z + 18 + r() * 34; }
+    while (y < H - hi * 1.1) { const z = size() * 0.85; put(W - edge * 0.6 - r() * edge, y, z); y += (z + 18 + r() * 34) * sp; }
   }
 
   /* ---------- 開場 ---------- */
