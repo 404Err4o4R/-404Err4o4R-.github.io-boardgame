@@ -85,6 +85,16 @@
       chord([523, 659, 784], 0.12, 0.25, { type: "square", vol: 0.1 });
       chord([1047, 1319, 1568], 0, 0.9, { type: "triangle", vol: 0.12, at: 0.4 });
     },
+    // 結束過場：「冠軍係…」越打越急嘅鼓聲（約 1.5 秒），揭曉一刻打鑔
+    drumroll: () => {
+      let at = 0, gap = 0.13;
+      while (at < 1.5) {
+        noise(0.07, { filter: "bandpass", freq: 220, q: 1.4, vol: 0.12 + at * 0.12, at });
+        at += gap;
+        gap = Math.max(0.035, gap * 0.86);
+      }
+    },
+    cymbal: () => { noise(0.9, { filter: "highpass", freq: 5000, freqTo: 2500, vol: 0.18 }); tone(110, 0.35, { vol: 0.35, to: 55 }); },
     chat: () => tone(1200, 0.08, { type: "sine", vol: 0.15, to: 1600 }),
     error: () => tone(200, 0.2, { type: "sawtooth", vol: 0.1 }),
 
@@ -275,7 +285,8 @@
     // 開始（包括再來一場）
     if (pg.phase === "waiting" || (ended(pg.phase) && !ended(g.phase))) return P("start");
     // 結算
-    if (ended(g.phase)) { if (!ended(pg.phase)) P("win"); return; }
+    // 有結束過場動畫時，勝利音效由 transition.js 喺揭曉冠軍嗰下先播
+    if (ended(g.phase)) { if (!ended(pg.phase) && !window.Transition?.enabled()) P("win"); return; }
 
     try { RULES[room.game]?.(pg, g, me); } catch (e) {}
   };

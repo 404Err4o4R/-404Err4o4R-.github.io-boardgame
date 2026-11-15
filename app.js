@@ -1463,6 +1463,7 @@ function handleServerMessage(message) {
   const prevRoom = S.room;
   S.room = message.room;
   window.SFX?.onState(prevRoom, message.room, S.playerId);
+  window.Transition?.onState(prevRoom, message.room, S.playerId);
   window.RoomChat?.onState(message.room);
   (message.room.roomChatDead || []).forEach((m) => window.RoomChat?.onMessage(m));
 
