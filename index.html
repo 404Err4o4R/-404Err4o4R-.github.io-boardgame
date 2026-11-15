@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=42">
+  <link rel="stylesheet" href="./style.css?v=43">
 </head>
 
 <body>
@@ -36,6 +36,8 @@
     <button class="nav-cta" data-scroll="#room">
       PLAY
     </button>
+
+    <button type="button" class="pill-btn icon-only bgm-toggle" aria-pressed="true" aria-label="背景音樂">🎵</button>
 
     <div class="nav-pop">
       <button type="button" id="regionBtn" class="pill-btn" aria-haspopup="true" aria-expanded="false" aria-label="選擇地區">
@@ -1136,6 +1138,13 @@
     <div class="top-spacer"></div>
 
     <button
+      class="icon-btn sfx-toggle bgm-toggle"
+      type="button"
+      aria-label="背景音樂"
+      aria-pressed="true"
+    >🎵</button>
+
+    <button
       id="sfxToggle"
       class="icon-btn sfx-toggle"
       type="button"
@@ -1176,8 +1185,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script src="./sounds.js?v=2" defer></script>
+<script src="./bgm.js?v=1" defer></script>
 <script src="./chat.js?v=7" defer></script>
-<script src="./app.js?v=62" defer></script>
+<script src="./app.js?v=63" defer></script>
 
 </body>
 </html>

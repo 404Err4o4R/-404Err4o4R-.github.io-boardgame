@@ -1128,6 +1128,35 @@ $("#sfxToggle")?.addEventListener("click", () => {
   if (!SFX.isMuted()) SFX.play("submit");
 });
 renderSfxToggle();
+
+// 背景音樂：首頁同等候室播 Pixel Lounge；開咗局就停（各遊戲 BGM 之後再加）
+function updateBgm() {
+  if (!window.BGM) return;
+  const g = S.room?.gameState;
+  const inLobby = !S.room || !g || g.phase === "waiting";
+  if (inLobby) BGM.play("pixel");
+  else BGM.stop();
+}
+
+function renderBgmToggles() {
+  if (!window.BGM) return;
+  const on = !BGM.isMuted();
+  document.querySelectorAll(".bgm-toggle").forEach((btn) => {
+    btn.classList.toggle("off", !on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute("aria-label", on ? "背景音樂：開" : "背景音樂：關");
+  });
+}
+document.querySelectorAll(".bgm-toggle").forEach((btn) =>
+  btn.addEventListener("click", () => {
+    if (!window.BGM) return;
+    BGM.setMuted(!BGM.isMuted());
+    renderBgmToggles();
+    updateBgm();
+  })
+);
+renderBgmToggles();
+updateBgm();
 $("#joinCode")?.addEventListener("input", () => {
   const input = $("#joinCode");
   const button = $("#joinBtn");
@@ -1564,6 +1593,7 @@ function leaveRoom() {
 
   $("#gameShell")?.classList.add("hidden");
   $("#landing")?.classList.remove("hidden");
+  updateBgm();
 
   window.scrollTo(0, 0);
 }
@@ -2083,6 +2113,8 @@ window.g4EndEarly = async () => {
 function renderGame() {
   const game =
     S.room?.gameState;
+
+  updateBgm();
 
   if (S.room?.game !== "game8" || !game || game.phase === "waiting") {
     $("#gamePanel")?.classList.remove("g8-hot");
