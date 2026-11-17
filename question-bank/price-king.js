@@ -1,0 +1,74 @@
+// Price King 估價王 題庫（香港限定）
+// 題目用書面語；title 係主題目（儘量簡短），sub 係題目下面嘅細字副標。
+// price 一律以港元整數儲存（萬、億位照數字寫）。year 係揭曉時顯示嘅參考年份。
+// source 記錄出處，方便日後價錢過時再核對。
+// 第一批 1–22、第二批 23–45、第三批 46–55 已審。
+// category 會印喺題目卡嘅分類印仔上面。
+export const PRICE_KING_ITEMS = [
+  { id: 1,  category: "交通",     title: "的士起錶",           sub: "市區紅的",          price: 29,       year: 2026, source: "運輸署：2024-07-14 起市區的士首 2 公里 $29（moneyhk101.com/taxi-fee）" },
+  { id: 2,  category: "人工",     title: "最低工資做 10 個鐘", sub: "2026 年",           price: 431,      year: 2026, source: "勞工處：2026-05-01 起法定最低工資每小時 $43.1" },
+  { id: 3,  category: "罰款",     title: "港鐵入閘後飲食",     sub: "最高罰款",          price: 2000,     year: 2026, source: "《香港鐵路附例》第 27(b) 條、附表 2" },
+  { id: 4,  category: "罰款",     title: "無票坐頭等車廂",     sub: "東鐵附加費",        price: 1000,     year: 2026, source: "港鐵頭等車廂附加費（unwire.hk 2025-08-26）" },
+  { id: 5,  category: "罰款",     title: "亂拋垃圾",           sub: "定額罰款",          price: 3000,     year: 2026, source: "《定額罰款（公眾地方潔淨及阻礙）條例》（clic.org.hk）" },
+  { id: 6,  category: "罰款",     title: "店鋪阻街",           sub: "定額罰款",          price: 6000,     year: 2026, source: "《定額罰款（公眾地方潔淨及阻礙）條例》（clic.org.hk）" },
+  { id: 7,  category: "罰款",     title: "衝紅燈",             sub: "定額罰款",          price: 900,      year: 2026, source: "運輸及物流局新聞稿 2025-12-29（$600 → $900）" },
+  { id: 8,  category: "交通",     title: "咪錶泊車一個鐘",     sub: "私家車",            price: 16,       year: 2026, source: "2025-09-28 起每 15 分鐘 $4，每小時最高 $16" },
+  { id: 9,  category: "政府收費", title: "特區護照",           sub: "成人 · 48 頁",      price: 520,      year: 2026, source: "入境處：2025-09-08 起 48 頁護照 $520" },
+  { id: 10, category: "政府收費", title: "平日註冊結婚",       sub: "婚姻登記處",        price: 715,      year: 2026, source: "入境處婚姻登記收費：辦公時間舉行婚禮 $715（bowtie.com.hk）" },
+  { id: 11, category: "政府收費", title: "星期日註冊結婚",     sub: "婚姻登記處",        price: 1935,     year: 2026, source: "入境處婚姻登記收費：非辦公時間舉行婚禮 $1,935（bowtie.com.hk）" },
+  { id: 12, category: "交通",     title: "紅隧繁忙時段",       sub: "私家車",            price: 40,       year: 2026, source: "三隧分時段收費「644」方案" },
+  { id: 13, category: "交通",     title: "西隧繁忙時段",       sub: "私家車",            price: 60,       year: 2026, source: "三隧分時段收費「644」方案" },
+  { id: 14, category: "離地價",   title: "車牌「H」",          sub: "2026 年拍賣",       price: 20000000, year: 2026, source: "運輸署馬年新春車牌拍賣 2026-03-01（hk01.com）" },
+  { id: 15, category: "離地價",   title: "車牌「30」",         sub: "2026 年拍賣",       price: 4550000,  year: 2026, source: "運輸署馬年新春車牌拍賣 2026-03-01（hk01.com）" },
+  { id: 16, category: "離地價",   title: "維園年宵熟食檔",     sub: "最高投標價",        price: 230000,   year: 2025, source: "食環署年宵攤位拍賣 2025-10-27（TVB News）" },
+  { id: 17, category: "懷舊",     title: "地鐵最低票價",       sub: "1979 年",           price: 1,        year: 1979, source: "ourchinastory.com：1979 年地鐵通車" },
+  { id: 18, category: "懷舊",     title: "東隧隧道費",         sub: "1989 年 · 私家車",  price: 10,       year: 1989, source: "ourchinastory.com：東隧 1989 年啟用" },
+  { id: 19, category: "懷舊",     title: "紅隧隧道費",         sub: "1972 年 · 的士",    price: 5,        year: 1972, source: "SCMP：taxis paid $5 in 1972" },
+  { id: 20, category: "政府收費", title: "回鄉證快證",         sub: "成人",              price: 670,      year: 2026, source: "香港中旅證件業務部收費（stheadline.com）" },
+  { id: 21, category: "政府收費", title: "離婚入紙",           sub: "法庭存檔費",        price: 630,      year: 2026, source: "社區法網 clic.org.hk：家事法庭存檔費 $630" },
+  { id: 22, category: "政府收費", title: "有爭議離婚排期",     sub: "法庭費用",          price: 1045,     year: 2026, source: "社區法網 clic.org.hk：抗辯案件表 $1,045" },
+  // 第二批
+  { id: 23, category: "日常",     title: "膠袋",               sub: "一個",              price: 1,          year: 2026, source: "環境及生態局：2022-12-31 起每個膠袋最少 $1（news.gov.hk）" },
+  { id: 24, category: "交通",     title: "山頂纜車來回",       sub: "成人 · 平日",       price: 88,         year: 2026, source: "thebettervacation.com 山頂纜車 2026 票價（非官方）" },
+  { id: 25, category: "交通",     title: "叮叮月票",           sub: "成人",              price: 260,        year: 2026, source: "電車月票 $260（moneyhk101.com/tram-fare）" },
+  { id: 26, category: "玩樂",     title: "迪士尼一日門票",     sub: "成人 · 最平日子",   price: 669,        year: 2026, source: "迪士尼正價成人門票 $669 起（moneyhero.com.hk）" },
+  { id: 27, category: "醫療",     title: "睇急症",             sub: "公立醫院",          price: 400,        year: 2026, source: "公營醫療收費改革 2026-01-01 起（hk01.com）" },
+  { id: 28, category: "醫療",     title: "普通科門診",         sub: "公立醫院",          price: 150,        year: 2026, source: "公營醫療收費改革 2026-01-01 起（bowtie.com.hk）" },
+  { id: 29, category: "醫療",     title: "專科門診",           sub: "公立醫院",          price: 250,        year: 2026, source: "公營醫療收費改革 2026-01-01 起（hk01.com）" },
+  { id: 30, category: "醫療",     title: "照磁力共振",         sub: "公立醫院 · 非緊急", price: 500,        year: 2026, source: "公營醫療收費改革 2026-01-01 起（hk01.com）" },
+  { id: 31, category: "懷舊",     title: "首個最低工資時薪",   sub: "2011 年",           price: 28,         year: 2011, source: "勞工處：2011-05-01 首個法定最低工資每小時 $28" },
+  { id: 32, category: "政府收費", title: "補領身份證",         sub: "遺失",              price: 370,        year: 2026, source: "補領身份證 $370（uptogo.com.tw 轉述入境處，非官方）" },
+  { id: 33, category: "政府收費", title: "正式車牌",           sub: "10 年",             price: 900,        year: 2026, source: "gov.hk 續領正式駕駛執照：60 歲或以下 $900／10 年" },
+  { id: 34, category: "政府收費", title: "考車牌",             sub: "駕駛考試費",        price: 510,        year: 2026, source: "運輸署 TD341（2/2026）駕駛測驗費用 $510" },
+  { id: 35, category: "玩樂",     title: "故宮門票",           sub: "成人 · 標準票",     price: 60,         year: 2026, source: "香港故宮文化博物館：2023-09-27 起成人標準門票 $60" },
+  { id: 36, category: "政府收費", title: "商業登記證",         sub: "一年",              price: 2200,       year: 2026, source: "2026-04-01 起一年證 $2,200（stheadline.com）" },
+  { id: 37, category: "交通",     title: "私家車牌照費",       sub: "一年 · 1500cc 以下", price: 5074,      year: 2026, source: "運輸署 TD341（2/2026）汽油私家車不超過 1,500c.c. $5,074" },
+  { id: 38, category: "離地價",   title: "紅隧建造費",         sub: "1972 年",           price: 320000000,  year: 1972, source: "ourchinastory.com：紅隧耗資 3.2 億元興建" },
+  { id: 39, category: "離地價",   title: "西隧建造費",         sub: "1997 年",           price: 7000000000, year: 1997, source: "ourchinastory.com：花了 70 億建造的西隧" },
+  { id: 40, category: "離地價",   title: "香港故宮建造費",     sub: "馬會捐贈",          price: 3500000000, year: 2022, source: "hk01.com：馬會慈善信託基金捐贈 35 億元興建" },
+  { id: 41, category: "離地價",   title: "車牌「R」",          sub: "2023 年拍賣",       price: 25500000,   year: 2023, source: "hk01.com：2023-02-12 新春車牌拍賣「R」2,550 萬元成交" },
+  { id: 42, category: "政府收費", title: "多次回港證",         sub: "成人",              price: 210,        year: 2026, source: "入境處：2025-09-08 起多次回港證 $210（hk01.com）" },
+  { id: 43, category: "政府收費", title: "結婚入紙",           sub: "擬結婚通知書",      price: 305,        year: 2026, source: "入境處婚姻登記收費：遞交擬結婚通知書 $305（bowtie.com.hk）" },
+  { id: 44, category: "政府收費", title: "回鄉證",             sub: "成人 · 一般申請",   price: 390,        year: 2026, source: "香港中旅證件業務部收費（stheadline.com）" },
+  { id: 45, category: "交通",     title: "香港仔隧道",         sub: "私家車",            price: 8,          year: 2026, source: "2025-09-21 起香港仔隧道 $8（stheadline.com）" },
+  // 第三批
+  { id: 46, category: "飲食",     title: "兩餸飯",             sub: "一盒 · 參考價",     price: 40,         year: 2026, source: "Yahoo 財經：以一份兩餸飯約 40 元計" },
+  { id: 47, category: "飲食",     title: "三餸飯",             sub: "高質連鎖店",        price: 53,         year: 2026, source: "世界日報轉述文匯網：權發小廚三餸飯 $53" },
+  { id: 48, category: "飲食",     title: "清蒸石斑飯",         sub: "兩餸飯店",          price: 78,         year: 2026, source: "世界日報轉述文匯網：權發小廚清蒸石斑飯 $78" },
+  { id: 49, category: "街市",     title: "兩餸一湯食材",       sub: "灣仔街市 · 平均",   price: 86,         year: 2025, source: "星島「兩餸一湯指數」2025：灣仔平均 $86.1" },
+  { id: 50, category: "街市",     title: "兩餸一湯食材",       sub: "深水埗街市 · 平均", price: 63,         year: 2025, source: "星島「兩餸一湯指數」2025：深水埗平均 $62.8" },
+  { id: 51, category: "街市",     title: "菜心一斤",           sub: "南區街市 · 平均",   price: 14,         year: 2025, source: "星島「兩餸一湯指數」2025：南區菜心年均每斤 $14.3" },
+  { id: 52, category: "離地價",   title: "茶記宴席",           sub: "粉嶺屋邨茶餐廳",    price: 14888,      year: 2026, source: "stheadline.com 2026-03-29：粉嶺茶餐廳 $14,888 尊貴盛宴" },
+  { id: 53, category: "離地價",   title: "兩餸飯舖月租",       sub: "銅鑼灣",            price: 220000,     year: 2026, source: "dimsumdaily.hk 2026-08-26：銅鑼灣分店月租高達 $220,000" },
+  { id: 54, category: "離地價",   title: "兩餸飯舖月租",       sub: "旺角",              price: 160000,     year: 2026, source: "Yahoo 財經：權發小廚旺角西洋菜南街月租約 16 萬元" },
+  { id: 55, category: "飲食",     title: "最平雞髀飯",         sub: "觀塘茶記特價",      price: 8,          year: 2026, source: "stheadline.com 2026-06-04：觀塘茶記 $8 鹵水雞髀飯" }
+];
+
+// 「夠唔夠錢」購物組合：itemIds 指向上面 PRICE_KING_ITEMS 嘅 id，價錢以題目為準。
+// 玩家揀幾件都得，總數最接近 budget 而又唔超過就贏。
+export const PRICE_KING_CARTS = [
+  { id: 1, title: "交通",     budget: 100,  itemIds: [1, 8, 12, 13, 45, 24] },
+  { id: 2, title: "證件手續", budget: 1000, itemIds: [9, 10, 43, 21, 42, 44] },
+  { id: 3, title: "睇醫生",   budget: 1000, itemIds: [27, 28, 29, 30, 32, 36] },
+  { id: 4, title: "罰款",     budget: 5000, itemIds: [5, 3, 4, 7, 6, 22] }
+];
