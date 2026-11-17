@@ -9,6 +9,7 @@ import {
   GAME9_SPECTRA
 } from "./question-bank/loader.js";
 import { G6_S2T_PAIRS } from "./question-bank/g6-chars.js";
+import { PRICE_KING_ITEMS, PRICE_KING_CARTS } from "./question-bank/price-king.js";
 
 const MAX_PLAYERS = 6;
 const MIN_PLAYERS = 2;
@@ -159,10 +160,286 @@ function shuffle(a) {
   }
   return x;
 }
+/* ---------- Price King 估價王（game10） ---------- */
+const G10_TYPES = ["guess","nobust","pick","sort","cart"];
+const G10_COUNT_OPTIONS = [10,15,20];
+const G10_COUNT_DEFAULT = 15;
+const G10_MAX_PLAYERS = 8;
+const G10_PACE = {
+  fast: { guess:15000, nobust:15000, pick:8000,  sort:20000, cart:30000 },
+  std:  { guess:20000, nobust:20000, pick:10000, sort:30000, cart:45000 },
+  slow: { guess:30000, nobust:30000, pick:15000, sort:45000, cart:60000 }
+};
+const G10_FIRST_INTRO_MS = 5200;  // 第一題：開場動畫 + 回合轉場
+const G10_ROUND_INTRO_MS = 3200;  // 新回合：題型轉場卡
+const G10_INTRO_MS = 1300;        // 同一回合下一題：短暫顯示「第 N 題」
+const G10_REVEAL_MS = 5000;       // 揭曉：5 秒自動下一題
+const G10_RESUME_MS = 3000;       // 暫停後繼續：3 秒後下一題
+const G10_SORT_SIZE = 4;
+const G10_MAX_PRICE = 99999999999;
+
+function clampG10Count(v){ const n=Number(v); return G10_COUNT_OPTIONS.includes(n)?n:G10_COUNT_DEFAULT; }
+function clampG10Types(v){
+  const list=[...new Set((Array.isArray(v)?v:[]).filter(x=>G10_TYPES.includes(x)))];
+  return list.length?G10_TYPES.filter(x=>list.includes(x)):[...G10_TYPES];
+}
+function clampG10Pace(v){ return v==="fast"||v==="slow"?v:"std"; }
+
+const g10Item = (it) => ({ id:it.id, title:it.title, sub:it.sub||"", category:it.category });
+const g10Full = (it) => ({ id:it.id, title:it.title, sub:it.sub||"", category:it.category, price:it.price, year:it.year, source:it.source||"" });
+
+// 題型平均分佈：每種題型一個回合（次序隨機），題數除唔盡嘅多出嚟嗰幾題分畀頭幾個回合。
+function game10TypeSequence(count,types){
+  const order=shuffle(types);
+  const base=Math.floor(count/order.length), extra=count%order.length;
+  const seq=[];
+  order.forEach((type,i)=>{
+    const n=base+(i<extra?1:0);
+    for(let k=0;k<n;k++) seq.push({type,round:i+1,roundSize:n,roundPos:k+1});
+  });
+  return seq;
+}
+
+function buildGame10Questions(count,types){
+  const used=new Set();
+  const usedCarts=new Set();
+  const free=()=>PRICE_KING_ITEMS.filter(x=>!used.has(x.id));
+  const take=(list)=>{ list.forEach(x=>used.add(x.id)); return list; };
+  const pickOne=()=>{
+    let pool=free(); if(!pool.length){ used.clear(); pool=[...PRICE_KING_ITEMS]; }
+    return take([shuffle(pool)[0]])[0];
+  };
+  const ratioOk=(a,b,lo,hi)=>{ const r=Math.max(a.price,b.price)/Math.min(a.price,b.price); return r>=lo && r<=hi; };
+  const pickPair=()=>{
+    let pool=shuffle(free()); if(pool.length<2){ used.clear(); pool=shuffle(PRICE_KING_ITEMS); }
+    // 優先同類、價錢唔會差太遠（1.15–4 倍）；揾唔到就放寬
+    for(const [same,lo,hi] of [[true,1.15,4],[false,1.15,4],[true,1.05,10],[false,1.02,50]]){
+      for(const a of pool){
+        const b=pool.find(x=>x.id!==a.id && x.price!==a.price && (!same || x.category===a.category) && ratioOk(a,x,lo,hi));
+        if(b) return take([a,b]);
+      }
+    }
+    const a=pool[0]; const b=pool.find(x=>x.id!==a.id && x.price!==a.price) || pool[1];
+    return take([a,b]);
+  };
+  const sortOk=(set)=>{
+    if(new Set(set.map(x=>x.title)).size!==set.length) return false; // 同名題目（例如唔同年份嘅月票）唔好擺埋一齊排
+    const ps=[...set].map(x=>x.price).sort((a,b)=>a-b);
+    for(let i=1;i<ps.length;i++) if(ps[i]/ps[i-1]<1.1) return false;
+    return true;
+  };
+  const pickSort=()=>{
+    let pool=free(); if(pool.length<G10_SORT_SIZE){ used.clear(); pool=[...PRICE_KING_ITEMS]; }
+    const cats=shuffle([...new Set(pool.map(x=>x.category))]);
+    for(const c of cats){
+      const inCat=pool.filter(x=>x.category===c);
+      if(inCat.length<G10_SORT_SIZE) continue;
+      for(let k=0;k<40;k++){
+        const set=shuffle(inCat).slice(0,G10_SORT_SIZE);
+        if(sortOk(set)) return take(set);
+      }
+    }
+    for(let k=0;k<300;k++){
+      const set=shuffle(pool).slice(0,G10_SORT_SIZE);
+      if(sortOk(set)) return take(set);
+    }
+    const byPrice=new Map(); for(const x of shuffle(pool)) if(!byPrice.has(x.price)) byPrice.set(x.price,x);
+    return take([...byPrice.values()].slice(0,G10_SORT_SIZE));
+  };
+  const pickCart=()=>{
+    let pool=PRICE_KING_CARTS.filter(c=>!usedCarts.has(c.id));
+    if(!pool.length){ usedCarts.clear(); pool=[...PRICE_KING_CARTS]; }
+    const cart=shuffle(pool)[0];
+    usedCarts.add(cart.id);
+    const items=shuffle(cart.itemIds.map(id=>PRICE_KING_ITEMS.find(x=>x.id===id)).filter(Boolean));
+    items.forEach(x=>used.add(x.id));
+    return {cart,items};
+  };
+
+  // 購物車用嘅貨品，其他題目盡量唔再出
+  const seq=game10TypeSequence(count,types);
+  const carts=seq.filter(t=>t.type==="cart").map(()=>pickCart());
+  let ci=0;
+  return seq.map((sq,i)=>{
+    const head={no:i+1,type:sq.type,round:sq.round,roundSize:sq.roundSize,roundPos:sq.roundPos};
+    if(sq.type==="cart"){
+      const {cart,items}=carts[ci++];
+      return {...head,title:cart.title,budget:cart.budget,items};
+    }
+    if(sq.type==="pick") return {...head,items:shuffle(pickPair())};
+    if(sq.type==="sort") return {...head,items:shuffle(pickSort())};
+    return {...head,items:[pickOne()]};
+  });
+}
+
+function cleanGame10Answer(q,value){
+  if(q.type==="guess" || q.type==="nobust"){
+    const n=Math.round(Number(value));
+    if(!Number.isFinite(n) || n<0 || n>G10_MAX_PRICE) return null;
+    return n;
+  }
+  if(q.type==="pick"){
+    const n=Number(value);
+    return n===0 || n===1 ? n : null;
+  }
+  if(q.type==="sort"){
+    if(!Array.isArray(value) || value.length!==q.items.length) return null;
+    const v=value.map(Number);
+    const ok=v.every(n=>Number.isInteger(n) && n>=0 && n<q.items.length) && new Set(v).size===v.length;
+    return ok ? v : null;
+  }
+  if(q.type==="cart"){
+    if(!Array.isArray(value)) return null;
+    const v=[...new Set(value.map(Number))];
+    if(!v.every(n=>Number.isInteger(n) && n>=0 && n<q.items.length)) return null;
+    return v.sort((a,b)=>a-b);
+  }
+  return null;
+}
+
+// 估價／唔准爆：同真實價錢差幾多 %
+function g10PctPoints(pct){
+  if(pct<=2) return 100;
+  if(pct<=5) return 90;
+  if(pct<=10) return 75;
+  if(pct<=20) return 50;
+  if(pct<=35) return 25;
+  if(pct<=50) return 10;
+  return 0;
+}
+
+// 夠唔夠錢：最接近預算（唔超）嘅組合
+function g10BestCart(items,budget){
+  let best={total:0,picks:[]};
+  const n=items.length;
+  for(let m=1;m<(1<<n);m++){
+    let t=0; const picks=[];
+    for(let i=0;i<n;i++) if(m&(1<<i)){ t+=items[i].price; picks.push(i); }
+    if(t<=budget && t>best.total) best={total:t,picks};
+  }
+  return best;
+}
+
+function scoreGame10(q,answers,startedAt,answerMs){
+  const ids=Object.keys(answers);
+  const rows=[];
+  const giveBonus=(list,key)=>{
+    if(!list.length) return;
+    const min=Math.min(...list.map(r=>r[key]));
+    list.filter(r=>r[key]===min).forEach(r=>{ r.bonus=20; });
+  };
+  if(q.type==="guess" || q.type==="nobust"){
+    const price=q.items[0].price;
+    for(const id of ids){
+      const value=answers[id].v;
+      const diff=Math.abs(value-price);
+      const pct=price>0 ? Math.round(diff/price*1000)/10 : (value===0?0:100);
+      const bust=q.type==="nobust" && value>price;
+      rows.push({id,value,diff,pct,bust,points:bust?0:g10PctPoints(pct),bonus:0});
+    }
+    giveBonus(rows.filter(r=>!r.bust),"diff");
+    rows.sort((a,b)=>(a.bust-b.bust) || (a.diff-b.diff));
+    return {type:q.type,items:q.items.map(g10Full),price,rows};
+  }
+  if(q.type==="pick"){
+    const correct=q.items[0].price>q.items[1].price ? 0 : 1;
+    for(const id of ids){
+      const {v,t}=answers[id];
+      const left=Math.max(0,Math.min(answerMs,startedAt+answerMs-t));
+      const ok=v===correct;
+      rows.push({id,choice:v,correct:ok,ms:Math.max(0,t-startedAt),points:ok?Math.round(50+50*left/answerMs):0,bonus:0});
+    }
+    rows.sort((a,b)=>(b.points-a.points) || (a.ms-b.ms));
+    return {type:q.type,items:q.items.map(g10Full),correct,rows};
+  }
+  if(q.type==="sort"){
+    const order=q.items.map((x,i)=>i).sort((a,b)=>q.items[a].price-q.items[b].price);
+    for(const id of ids){
+      const v=answers[id].v;
+      const hits=v.filter((x,i)=>x===order[i]).length;
+      rows.push({id,order:v,hits,points:hits*20+(hits===order.length?20:0),bonus:0});
+    }
+    rows.sort((a,b)=>b.points-a.points);
+    return {type:q.type,items:q.items.map(g10Full),order,rows};
+  }
+  // cart
+  const best=g10BestCart(q.items,q.budget);
+  for(const id of ids){
+    const picks=answers[id].v;
+    const total=picks.reduce((a,i)=>a+q.items[i].price,0);
+    const over=total>q.budget;
+    const diff=q.budget-total;
+    rows.push({id,picks,total,over,diff,points:over?0:Math.max(0,Math.round(100-diff/q.budget*200)),bonus:0});
+  }
+  giveBonus(rows.filter(r=>!r.over && r.total>0),"diff");
+  rows.sort((a,b)=>(a.over-b.over) || (a.over ? a.total-b.total : a.diff-b.diff));
+  return {type:q.type,title:q.title,budget:q.budget,items:q.items.map(g10Full),best,rows};
+}
+
+// 結算稱號：師奶之王（最高分）、精打細算（唔准爆從未爆過）、離地（最多估高）、活喺 90 年代（最多估低）
+function game10Titles(players,stats,questions){
+  const s=(id)=>stats[id]||{over:0,under:0,bust:0,nobust:0,nobustPts:0,close:0};
+  const topBy=(list,fn)=>{
+    const vals=list.map(p=>fn(p)).filter(v=>v>0);
+    if(!vals.length) return [];
+    const max=Math.max(...vals);
+    return list.filter(p=>fn(p)===max).map(p=>p.id);
+  };
+  const out=[];
+  out.push({key:"king",ids:topBy(players,p=>p.score||0)});
+  if(questions.some(q=>q.type==="nobust")){
+    const clean=players.filter(p=>s(p.id).nobust>0 && s(p.id).bust===0);
+    out.push({key:"thrifty",ids:topBy(clean,p=>s(p.id).nobustPts+1)});
+  }
+  if(questions.some(q=>q.type==="guess" || q.type==="nobust")){
+    out.push({key:"rich",ids:topBy(players,p=>s(p.id).over)});
+    out.push({key:"retro",ids:topBy(players,p=>s(p.id).under)});
+  }
+  return out;
+}
+
+function publicGame10(room,g,viewerId){
+  const q=(g.questions||[])[g.qIndex];
+  const showQ=q && (g.phase==="answer" || g.phase==="reveal");
+  const base={
+    phase:g.phase,
+    qIndex:g.qIndex||0,
+    total:g.total||0,
+    pace:g.pace||"std",
+    type:q?.type||null,
+    round:q?.round||0,
+    rounds:(g.questions||[]).reduce((m,x)=>Math.max(m,x.round||0),0),
+    roundSize:q?.roundSize||0,
+    roundPos:q?.roundPos||0,
+    roundMs:q ? (g.paceMs?.[q.type]||null) : null,
+    endsAt:g.endsAt||null,
+    answerMs:g.answerMs||null,
+    paused:!!g.paused,
+    question:showQ ? {
+      no:q.no, type:q.type, title:q.title||null, budget:q.budget||null,
+      items:q.items.map(g10Item)
+    } : null,
+    answerIds:g.answerIds||[],
+    lockedIds:Object.keys(g.answers||{}),
+    myAnswer:viewerId && g.answers && viewerId in g.answers ? g.answers[viewerId].v : null,
+    result:g.phase==="reveal" ? (g.result||null) : null,
+    endedEarly:!!g.endedEarly
+  };
+  if(g.phase==="gameover"){
+    const stats=room.g10Stats||{};
+    base.ranking=[...room.players]
+      .sort((a,b)=>(b.score||0)-(a.score||0))
+      .map(p=>({id:p.id,nickname:p.nickname,score:p.score||0,over:stats[p.id]?.over||0,under:stats[p.id]?.under||0,bust:stats[p.id]?.bust||0,close:stats[p.id]?.close||0}));
+    base.titles=g.titles||[];
+    base.played=(g.questions||[]).slice(0,(g.qIndex||0)+1).length;
+  }
+  return base;
+}
+
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7" || v==="game8" || v==="game9"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7" || v==="game8" || v==="game9" || v==="game10"; }
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
@@ -434,6 +711,9 @@ export default {
                 body.g9GuessSeconds ? body.g9GuessSeconds*1000 : null,
               g9Rounds:
                 body.g9Rounds || null,
+              g10Count: body.g10Count || null,
+              g10Types: Array.isArray(body.g10Types) ? body.g10Types : null,
+              g10Pace: body.g10Pace || null,
               roomTtl: ROOM_TTL
             })
           }
@@ -550,6 +830,13 @@ function publicRoom(room, viewerId=null) {
       rounds: room.g8Rounds||3,
       mode: room.g8Mode||null,
       brawl: room.g8Brawl||"sync"
+    } : null,
+    g10Settings: room.game==="game10" ? {
+      count: room.g10Count||G10_COUNT_DEFAULT,
+      types: room.g10Types||[...G10_TYPES],
+      pace: room.g10Pace||"std",
+      paceMs: G10_PACE[room.g10Pace]||G10_PACE.std,
+      maxPlayers: G10_MAX_PLAYERS
     } : null,
     g9Settings: room.game==="game9" ? {
       guessMs: room.g9GuessMs||G9_GUESS_MS_DEFAULT,
@@ -986,6 +1273,8 @@ results:g.results||null
     return base8;
   }
 
+  if(room.game==="game10") return publicGame10(room,g,viewerId);
+
   if(room.game==="game9") {
     const lang=room.language==="zh" ? "zh" : "yue";
     const sp=g.spectrum;
@@ -1119,7 +1408,9 @@ const CHAT_RULES = {
   game7: { deadIds: g7DeadIds },
   game8: { teams: g8Teams },
   // 心中有數：出題人知道目標位置，出提示同估嘅時候佢唔可以講嘢；其他人照傾
-  game9: { lockPlayers: g9LockedIds, announceRounds:false }
+  game9: { lockPlayers: g9LockedIds, announceRounds:false },
+  // 估價王：作答期間鎖聊天，費事有人爆答案
+  game10: { lockPhases:["answer"], announceRounds:false }
 };
 
 // Battleship 隊伍模式：海軍／海盜
@@ -1233,7 +1524,7 @@ export class GameRoom extends DurableObject {
         filters:this.normalizeFilters(body.game,body.filters||[]),
         rounds:clampRounds(body.rounds),
         writeMs:clampWriteMs(body.writeMs),
-        language:body.language==="zh"?"zh":"yue",
+        language:body.game==="game10" ? "yue" : (body.language==="zh"?"zh":"yue"),
         g4Rounds:clampG4Rounds(body.g4Rounds),
         g4Anonymous:body.g4Anonymous!==false,
         g5Mode:body.g5Mode==="char"?"char":"sentence",
@@ -1255,6 +1546,9 @@ export class GameRoom extends DurableObject {
         g8Brawl:"sync",
         g9GuessMs:clampG9GuessMs(body.g9GuessMs),
         g9Rounds:clampG9Rounds(body.g9Rounds),
+        g10Count:clampG10Count(body.g10Count),
+        g10Types:clampG10Types(body.g10Types),
+        g10Pace:clampG10Pace(body.g10Pace),
         hostId:null,
         players:[],
         gameState:null,
@@ -1304,7 +1598,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
-    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7" || game==="game8" || game==="game9") return [];
+    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7" || game==="game8" || game==="game9" || game==="game10") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -1390,6 +1684,10 @@ export class GameRoom extends DurableObject {
       case "g9:guess": return this.onG9Guess(session.playerId,msg.value);
       case "g9:end": return this.onG9End(session.playerId);
       case "g9:restart": return this.onG9Restart(session.playerId);
+      case "g10:answer": return this.onG10Answer(session.playerId,msg.value);
+      case "g10:pause": return this.onG10Pause(session.playerId);
+      case "g10:next": return this.onG10Next(session.playerId);
+      case "g10:end": return this.onG10End(session.playerId);
       case "chat:send": return this.onRoomChat(session.playerId,msg.text,msg.channel);
       case "chat:mute": return this.onRoomChatMute(session.playerId,msg.targetId,msg.muted);
       case "kick": return this.onKick(session.playerId,msg.targetId);
@@ -1446,7 +1744,8 @@ export class GameRoom extends DurableObject {
     if(clientId && (this.room.kicked||[]).includes(clientId)){
       return this.safeSend(ws,{type:"error",code:"kicked",message:this.room.language==="zh"?"你已被移出此房間，無法再加入。":"你已被移出呢間房，唔可以再入。"});
     }
-    if(this.room.players.length>=MAX_PLAYERS) return this.safeSend(ws,{type:"error",message:"房間已滿，最多6人。"});
+    const roomMax=this.room.game==="game10" ? G10_MAX_PLAYERS : MAX_PLAYERS;
+    if(this.room.players.length>=roomMax) return this.safeSend(ws,{type:"error",message:`房間已滿，最多${roomMax}人。`});
     if(this.room.game==="game6" && this.room.g6Mode==="meet" && this.room.players.length>=G6_MEET_MAX_PLAYERS){
       return this.safeSend(ws,{type:"error",message:this.room.language==="zh"?"相遇模式最多 4 人，房間已滿。":"相遇模式最多 4 人，房間已滿。"});
     }
@@ -1543,6 +1842,7 @@ async onReady(playerId, ready){
       if(await this.g7AfterDisconnect()) return;
       if(await this.g8AfterDisconnect()) return;
       if(await this.g9AfterDisconnect()) return;
+      if(await this.g10AfterDisconnect()) return;
     }
 
     await this.save();
@@ -1566,8 +1866,9 @@ async onReady(playerId, ready){
     if(this.room.game==="game6" && this.room.g6Mode==="meet" && connected.length>G6_MEET_MAX_PLAYERS){
       return this.errorPlayer(playerId,"相遇模式只可以 2–4 人玩。");
     }
-    if(connected.length<minRequired || connected.length>MAX_PLAYERS){
-      return this.errorPlayer(playerId,`需要${minRequired}-6位已連線玩家。`);
+    const maxAllowed = this.room.game==="game10" ? G10_MAX_PLAYERS : MAX_PLAYERS;
+    if(connected.length<minRequired || connected.length>maxAllowed){
+      return this.errorPlayer(playerId,`需要${minRequired}-${maxAllowed}位已連線玩家。`);
     }
     const notReady =
   connected.filter(
@@ -1593,6 +1894,7 @@ if (notReady.length > 0) {
     else if(this.room.game==="game7") await this.startGame7();
     else if(this.room.game==="game8") await this.startGame8();
     else if(this.room.game==="game9") await this.startGame9();
+    else if(this.room.game==="game10") await this.startGame10();
     else await this.startGame2();
   }
 
@@ -1630,6 +1932,7 @@ if (notReady.length > 0) {
     else if(gm==="game7") await this.startGame7();
     else if(gm==="game8") await this.startGame8();
     else if(gm==="game9") await this.startGame9();
+    else if(gm==="game10") await this.startGame10();
     else await this.startGame2();
   }
 
@@ -4541,6 +4844,169 @@ async onG1Next(playerId){
     await this.startGame9();
   }
 
+  /* =========================
+     Price King 估價王（game10）
+     流程：intro（題型卡）→ answer（全部人同時作答）→ reveal（揭曉，5 秒自動下一題，房主可以暫停）→ … → gameover
+     題型：guess 估價／nobust 唔准爆／pick 邊個貴啲／sort 排排坐／cart 夠唔夠錢
+  ========================= */
+
+  async startGame10(){
+    for(const p of this.room.players) p.score=0;
+    this.room.g10Stats={};
+    const count=this.room.g10Count||G10_COUNT_DEFAULT;
+    const types=(this.room.g10Types&&this.room.g10Types.length)?this.room.g10Types:[...G10_TYPES];
+    const pace=G10_PACE[this.room.g10Pace]||G10_PACE.std;
+    const questions=buildGame10Questions(count,types);
+    this.room.gameState={
+      game:"game10",
+      phase:"intro",
+      qIndex:0,
+      total:questions.length,
+      pace:this.room.g10Pace||"std",
+      paceMs:pace,
+      questions,
+      answers:{},
+      paused:false,
+      endsAt:Date.now()+G10_FIRST_INTRO_MS
+    };
+    await this.commitGame10();
+  }
+
+  async commitGame10(){
+    const g=this.room.gameState;
+    await this.save();
+    if(g?.endsAt) await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async beginAnswerGame10(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game10" || g.phase!=="intro") return;
+    const q=g.questions[g.qIndex];
+    g.phase="answer";
+    g.answers={};
+    g.answerMs=g.paceMs[q.type]||20000;
+    g.startedAt=Date.now();
+    g.endsAt=g.startedAt+g.answerMs;
+    // 開題嗰陣喺線嘅人先需要作答；之後斷線嘅唔使等
+    g.answerIds=this.room.players.filter(p=>p.connected).map(p=>p.id);
+    await this.commitGame10();
+  }
+
+  allAnsweredGame10(){
+    const g=this.room.gameState;
+    const need=this.room.players.filter(p=>p.connected && (g.answerIds||[]).includes(p.id));
+    return need.length>0 && need.every(p=>p.id in (g.answers||{}));
+  }
+
+  async onG10Answer(playerId,value){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game10" || g.phase!=="answer") return;
+    if(!(g.answerIds||[]).includes(playerId)) return;
+    if(playerId in g.answers) return;
+    const q=g.questions[g.qIndex];
+    const v=cleanGame10Answer(q,value);
+    if(v===null) return this.errorPlayer(playerId,this.room.language==="zh"?"答案格式不正確。":"答案格式唔啱。");
+    g.answers[playerId]={v,t:Date.now()};
+    if(this.allAnsweredGame10()) return this.revealGame10();
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async revealGame10(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game10" || g.phase!=="answer") return;
+    const q=g.questions[g.qIndex];
+    const stats=this.room.g10Stats||(this.room.g10Stats={});
+    const st=(id)=>stats[id]||(stats[id]={over:0,under:0,bust:0,nobust:0,nobustPts:0,close:0});
+    const result=scoreGame10(q,g.answers||{},g.startedAt,g.answerMs);
+    for(const r of result.rows){
+      const p=this.room.players.find(x=>x.id===r.id);
+      if(p) p.score=(p.score||0)+r.points+(r.bonus||0);
+      const s=st(r.id);
+      if(q.type==="guess" || q.type==="nobust"){
+        if(r.value>q.items[0].price) s.over+=1;
+        else if(r.value<q.items[0].price) s.under+=1;
+        if(r.pct<=10) s.close+=1;
+      }
+      if(q.type==="nobust"){ s.nobust+=1; if(r.bust) s.bust+=1; s.nobustPts+=r.points+(r.bonus||0); }
+    }
+    result.missing=(g.answerIds||[]).filter(id=>!(id in (g.answers||{})));
+    g.result=result;
+    g.phase="reveal";
+    g.paused=false;
+    g.endsAt=Date.now()+G10_REVEAL_MS;
+    await this.commitGame10();
+  }
+
+  async nextGame10(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game10" || g.phase!=="reveal") return;
+    if(g.qIndex+1>=g.total) return this.finishGame10(false);
+    g.qIndex+=1;
+    g.phase="intro";
+    g.answers={};
+    g.result=null;
+    g.paused=false;
+    const nq=g.questions[g.qIndex];
+    g.endsAt=Date.now()+(nq.roundPos===1 ? G10_ROUND_INTRO_MS : G10_INTRO_MS);
+    await this.commitGame10();
+  }
+
+  // 房主：揭曉畫面暫停／繼續
+  async onG10Pause(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game10" || g.phase!=="reveal") return;
+    if(g.paused){
+      g.paused=false;
+      g.endsAt=Date.now()+G10_RESUME_MS;
+    } else {
+      g.paused=true;
+      g.endsAt=null;
+      await this.ctx.storage.deleteAlarm?.();
+    }
+    await this.commitGame10();
+  }
+
+  // 房主：揭曉畫面即刻下一題
+  async onG10Next(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game10" || g.phase!=="reveal") return;
+    await this.nextGame10();
+  }
+
+  async finishGame10(endedEarly){
+    const g=this.room.gameState && this.room.gameState.game==="game10"
+      ? this.room.gameState
+      : {game:"game10",qIndex:0,total:0,questions:[]};
+    g.phase="gameover";
+    g.endsAt=null;
+    g.paused=false;
+    g.endedEarly=!!endedEarly;
+    g.titles=game10Titles(this.room.players,this.room.g10Stats||{},g.questions||[]);
+    this.room.gameState=g;
+    await this.ctx.storage.deleteAlarm?.();
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async g10AfterDisconnect(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game10" || g.phase!=="answer") return false;
+    if(!this.allAnsweredGame10()) return false;
+    await this.revealGame10();
+    return true;
+  }
+
+  async onG10End(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game10" || g.phase==="gameover") return;
+    await this.finishGame10(true);
+  }
+
   /* ---------- 全房聊天室 ---------- */
 
   chatHistoryFor(viewerId){
@@ -4757,6 +5223,7 @@ async onG1Next(playerId){
     if(await this.g7AfterDisconnect()) return;
     if(await this.g8AfterDisconnect()) return;
     if(await this.g9AfterDisconnect()) return;
+    if(await this.g10AfterDisconnect()) return;
 
     await this.save();
     await this.broadcastRoom();
@@ -4871,6 +5338,12 @@ async onG1Next(playerId){
     if(g?.game==="game7" && g.phase==="boom" && g.endsAt && Date.now()+50>=g.endsAt){
       await this.afterBoomGame7();
       return;
+    }
+
+    if(g?.game==="game10" && g.endsAt && !g.paused && Date.now()+50>=g.endsAt){
+      if(g.phase==="intro") { await this.beginAnswerGame10(); return; }
+      if(g.phase==="answer") { await this.revealGame10(); return; }
+      if(g.phase==="reveal") { await this.nextGame10(); return; }
     }
 
     if(g?.game==="game9" && g.endsAt && Date.now()+50>=g.endsAt){

@@ -172,14 +172,16 @@ function renderCategories() {
   $("#g7Section")?.classList.toggle("hidden", S.selectedGame !== "game7");
   $("#g8Section")?.classList.toggle("hidden", S.selectedGame !== "game8");
   $("#g9Section")?.classList.toggle("hidden", S.selectedGame !== "game9");
+  $("#g10Section")?.classList.toggle("hidden", S.selectedGame !== "game10");
   $("#g1Section")?.classList.toggle("hidden", S.selectedGame !== "game1");
   $("#g2Section")?.classList.toggle("hidden", S.selectedGame !== "game2");
 
-  if (S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9") {
+  if (S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9" || S.selectedGame === "game10") {
     if (S.selectedGame === "game9") renderG9Preview();
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.add("hidden");
-    if (langSection) langSection.classList.remove("hidden");
+    // 估價王淨係得廣東話，冇語言選項
+    if (langSection) langSection.classList.toggle("hidden", S.selectedGame === "game10");
     if (g4Section) g4Section.classList.add("hidden");
     if (g5Section) g5Section.classList.add("hidden");
     return;
@@ -513,7 +515,36 @@ const ROOM_COVERS = {
       <div class="gc-label eyebrow">HINT · DIAL · GUESS</div>
       <div class="gc-label bottom">Mind Dial 心中有數</div>
     </div>
+  `,
+  game10: `
+    <div class="game-cover cover-g10">
+      <div class="gc-icon">
+        <svg viewBox="0 0 260 220" aria-hidden="true">
+          <defs>
+            <pattern id="g10rwb" width="42" height="42" patternUnits="userSpaceOnUse">
+              <rect width="42" height="42" fill="#FFFFFF"/>
+              <rect x="0" width="14" height="42" fill="#B5303A"/>
+              <rect x="21" width="14" height="42" fill="#1A47A0"/>
+              <rect y="18" width="42" height="4" fill="#FFFFFF" opacity=".85"/>
+            </pattern>
+          </defs>
+          <path d="M84 74 C84 34 156 34 156 74" fill="none" stroke="#1f2740" stroke-width="9" stroke-linecap="round"/>
+          <path d="M84 74 C84 34 156 34 156 74" fill="none" stroke="#B5303A" stroke-width="4" stroke-linecap="round"/>
+          <path d="M44 72 H196 L210 196 H30 Z" fill="url(#g10rwb)" stroke="#1f2740" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M156 70 L196 118" stroke="#1f2740" stroke-width="3" stroke-linecap="round"/>
+          <g transform="rotate(14 214 150)">
+            <path d="M182 112 H236 V178 H182 L170 145 Z" fill="#FEFEF2" stroke="#1f2740" stroke-width="5" stroke-linejoin="round"/>
+            <circle cx="184" cy="145" r="5" fill="#F6F2EA" stroke="#1f2740" stroke-width="3"/>
+            <text x="212" y="160" text-anchor="middle" font-family="Noto Serif HK, serif" font-weight="900" font-size="40" fill="#B5303A">$?</text>
+          </g>
+        </svg>
+      </div>
+      <div class="gc-stripe" aria-hidden="true"></div>
+      <div class="gc-label eyebrow">GUESS · BID · WIN</div>
+      <div class="gc-label bottom">Price King 估價王</div>
+    </div>
   `
+
 };
 
 const GAME_ACCENTS = {
@@ -525,7 +556,8 @@ const GAME_ACCENTS = {
   game6: "#3C5A1E",
   game7: "#7A1030",
   game8: "#22408C",
-  game9: "#1F6F94"
+  game9: "#1F6F94",
+  game10: "#B5303A"
 };
 
 const GAME_NAMES = {
@@ -537,7 +569,8 @@ const GAME_NAMES = {
   game6: "Sync 唔 Sync",
   game7: "Number Bomb 數字炸彈",
   game8: "Battleship 海戰棋",
-  game9: "Mind Dial 心中有數"
+  game9: "Mind Dial 心中有數",
+  game10: "Price King 估價王"
 };
 
 function renderRoomVisual() {
@@ -573,8 +606,15 @@ const COVER_TILE_LABELS = {
   game6: { full: "Sync 唔 Sync", short: "Sync 唔 Sync", bg: "#1f2740", fg: "#B9DD5B" },
   game7: { full: "Number Bomb 數字炸彈", short: "數字炸彈", bg: "#1f2740", fg: "#FFD3DD" },
   game8: { full: "Battleship 海戰棋", short: "海戰棋", bg: "#F2D965", fg: "#1f2740" },
-  game9: { full: "Mind Dial 心中有數", short: "心中有數", bg: "#1f2740", fg: "#F5B82E" }
+  game9: { full: "Mind Dial 心中有數", short: "心中有數", bg: "#1f2740", fg: "#F5B82E" },
+  game10: { full: "Price King 估價王", short: "估價王", bg: "#1f2740", fg: "#FEFEF2" }
 };
+// 只喺指定地區大廳顯示嘅遊戲（用房號入房唔受限制）
+const REGION_ONLY_GAMES = { game10: ["hk"] };
+function gamesForRegion() {
+  const region = S.region || "hk";
+  return Object.keys(ROOM_COVERS).filter((g) => !REGION_ONLY_GAMES[g] || REGION_ONLY_GAMES[g].includes(region));
+}
 const COVER_GRID_COLUMNS = 3;
 
 function selectGameFromCover(game) {
@@ -596,7 +636,7 @@ function selectGameFromCover(game) {
 
 function renderCoverGrid() {
   const grid = $("#coverGrid");
-  const games = Object.keys(ROOM_COVERS);
+  const games = gamesForRegion();
 
   document.querySelectorAll("[data-game-count]").forEach((el) => {
     el.textContent = String(games.length);
@@ -792,6 +832,9 @@ function applyRegion(region) {
   });
   applyFormLanguage();
   updateLangHint();
+  renderCoverGrid();
+  renderRoomVisual();
+  g10ApplyRegion();
 }
 
 function setPopOpen(button, menu, open) {
@@ -1206,7 +1249,7 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: (S.selectedGame === "game1" || S.selectedGame === "game2" || S.selectedGame === "game3" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9") ? (S.selectedLanguage || "yue") : null,
+        language: (S.selectedGame === "game1" || S.selectedGame === "game2" || S.selectedGame === "game3" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9") ? (S.selectedLanguage || "yue") : S.selectedGame === "game10" ? "yue" : null,
         g1VoteSeconds: S.selectedGame === "game1" ? S.g1VoteSeconds : null,
         g1Rounds: S.selectedGame === "game1" ? S.g1Rounds : null,
         g2SpeakSeconds: S.selectedGame === "game2" ? S.g2SpeakSeconds : null,
@@ -1222,6 +1265,9 @@ async function createRoom() {
         g8Rounds: S.selectedGame === "game8" ? S.g8Rounds : null,
         g9GuessSeconds: S.selectedGame === "game9" ? S.g9GuessSeconds : null,
         g9Rounds: S.selectedGame === "game9" ? S.g9Rounds : null,
+        g10Count: S.selectedGame === "game10" ? S.g10Count : null,
+        g10Types: S.selectedGame === "game10" ? S.g10Types : null,
+        g10Pace: S.selectedGame === "game10" ? S.g10Pace : null,
         g4Rounds: S.selectedGame === "game4" ? (S.selectedG4Rounds || 20) : null,
         g4Anonymous: S.selectedGame === "game4" ? (S.selectedG4Anonymous !== false) : null,
         g5Mode: S.selectedGame === "game5" ? (S.selectedG5Mode || "sentence") : null,
@@ -1731,6 +1777,8 @@ function renderRoom() {
           </p>${g8LobbyHtml(room)}`
         : room.game === "game9" && room.g9Settings
         ? g9LobbyHtml(room)
+        : room.game === "game10" && room.g10Settings
+        ? g10LobbyHtml(room)
         : ""
     }
 
@@ -1974,6 +2022,8 @@ function renderScoreboard(room) {
           const g9 = room.game === "game9" && room.gameState && room.gameState.phase !== "gameover" ? room.gameState : null;
           const g9Psy = !!(g9 && g9.psychicId === p.id);
           const g9Locked = !!(g9 && g9.phase === "guess" && (g9.lockedIds || []).includes(p.id));
+          const g10 = room.game === "game10" && room.gameState && room.gameState.phase === "answer" ? room.gameState : null;
+          const g10Locked = !!(g10 && (g10.lockedIds || []).includes(p.id));
 
           return `
             <div class="sb-row ${isMe ? "me" : ""} ${g7Out || g8Out ? "g7-out" : ""} ${g7Turn || g8Turn || g9Psy ? "g7-turn" : ""}" style="opacity:${p.connected ? (g7Out || g8Out ? ".55" : "1") : ".5"}">
@@ -1993,6 +2043,7 @@ function renderScoreboard(room) {
                 ${g8Turn ? `<span class="sb-tag">${esc(g8T().shooterTag)}</span>` : ""}
                 ${g9Psy ? `<span class="sb-tag">${esc(g9T().tagPsy)}</span>` : ""}
                 ${g9Locked ? `<span class="sb-tag">${esc(g9T().tagLocked)}</span>` : ""}
+                ${g10Locked ? `<span class="sb-tag">${esc(G10_TYPE_META[g10.type]?.verb || "已作答")}</span>` : ""}
               </span>
               <b class="sb-score">${p.score || 0}</b>
             </div>
@@ -2023,6 +2074,20 @@ function renderScoreboard(room) {
             class="btn btn-outline"
             style="margin-top:8px;font-size:13px;padding:10px"
             onclick="g8EndEarly()"
+          >
+            提前結算
+          </button>`
+        : ""
+    }
+
+    ${
+      S.room?.game === "game10" &&
+      room.hostId === S.playerId &&
+      room.gameState?.phase !== "gameover"
+        ? `<button
+            class="btn btn-outline"
+            style="margin-top:8px;font-size:13px;padding:10px"
+            onclick="g10EndEarly()"
           >
             提前結算
           </button>`
@@ -2158,6 +2223,8 @@ function renderGame() {
     renderGame8(game);
   } else if (S.room.game === "game9") {
     renderGame9(game);
+  } else if (S.room.game === "game10") {
+    renderGame10(game);
   } else {
     renderGame2(game);
   }
@@ -2166,7 +2233,7 @@ function renderGame() {
 
 // 所有遊戲結算畫面：房主「再來一場」；有多個模式嘅遊戲另外有「返回房間」改模式。
 // 原本已經有自己再玩掣嘅遊戲（2、6、7、8、9）唔再重複加「再來一場」。
-const MATCH_HAS_OWN_RESTART = ["game2", "game6", "game7", "game8", "game9"];
+const MATCH_HAS_OWN_RESTART = ["game2", "game6", "game7", "game8", "game9", "game10"];
 const MATCH_MULTI_MODE = ["game2", "game5", "game6", "game8"];
 
 function renderMatchEndBar(game) {
@@ -2213,7 +2280,7 @@ window.matchLobby = async () => {
   send({ type: "game:lobby" });
 };
 
-const SFX_QUIET_PHASES = ["chat", "reveal", "result", "boom", "roundover", "gameover", "final"];
+const SFX_QUIET_PHASES = ["intro", "chat", "reveal", "result", "boom", "roundover", "gameover", "final"];
 
 function startTimer(element, endsAt) {
   clearInterval(S.timer);
@@ -8348,3 +8415,1067 @@ function renderGame6Meet(game) {
     if (box) box.innerHTML = `<div class="g6-meet-loading">${esc(lz("生成唔到圖片", "無法產生圖片"))}</div>`;
   });
 }
+
+
+/* =========================
+   Price King 估價王（game10）
+   香港限定、淨係廣東話。流程：intro（回合轉場／第 N 題）→ answer → reveal（5 秒自動下一題）→ gameover
+========================= */
+
+const G10_TYPE_META = {
+  guess:  { name: "估價",     hint: "估得越近分越高",         desc: ["估吓呢樣嘢幾錢", "越接近真實價錢，分越高"], verb: "落價" },
+  nobust: { name: "唔准爆",   hint: "估高過真價就冇分",       desc: ["估價，但唔可以估高過真價", "估高咗就冇分"], verb: "落價" },
+  pick:   { name: "邊個貴啲", hint: "答得越快越多分",         desc: ["兩樣嘢，揀邊樣貴啲", "答得越快，分越高"], verb: "已揀" },
+  sort:   { name: "排排坐",   hint: "拖住嚟排",               desc: ["四件嘢由平到貴排好佢", "排啱越多個位，分越高"], verb: "已交" },
+  cart:   { name: "夠唔夠錢", hint: "總數最接近又唔超過就贏", desc: ["喺預算之內揀貨", "總數越接近預算分越高，超出就冇分"], verb: "已埋單" }
+};
+const G10_TYPE_ORDER = ["guess", "nobust", "pick", "sort", "cart"];
+const G10_PACE_SEC = {
+  fast: { guess: 15, nobust: 15, pick: 8, sort: 20, cart: 30 },
+  std: { guess: 20, nobust: 20, pick: 10, sort: 30, cart: 45 },
+  slow: { guess: 30, nobust: 30, pick: 15, sort: 45, cart: 60 }
+};
+const G10_PACE_NAME = { fast: "快", std: "標準", slow: "慢" };
+const G10_ROUND_WORDS = ["一", "二", "三", "四", "五", "六"];
+const G10_TITLE_META = {
+  king: { name: "師奶之王", sub: "總分最高" },
+  thrifty: { name: "精打細算", sub: "唔准爆一次都冇爆" },
+  rich: { name: "離地", sub: "成日估貴咗" },
+  retro: { name: "活喺 90 年代", sub: "成日估平咗" }
+};
+
+const g10Money = (n) => "$" + Math.round(Number(n) || 0).toLocaleString("en-US");
+const g10Nick = (id) => {
+  if (id === S.playerId) return "你";
+  return S.room?.players?.find((p) => p.id === id)?.nickname || "玩家";
+};
+// 大數目加中文單位提示：$1,200,000 → 120 萬
+// 價格尺用嘅短格式：$4,830,000 → $483萬
+function g10Short(n) {
+  n = Math.round(Number(n) || 0);
+  if (n >= 100000000) return `$${+(n / 100000000).toFixed(n >= 1000000000 ? 0 : 1)}億`;
+  if (n >= 100000) return `$${+(n / 10000).toPrecision(3)}萬`;
+  return "$" + n.toLocaleString("en-US");
+}
+function g10Wan(n) {
+  n = Number(n) || 0;
+  if (n >= 100000000) return `${+(n / 100000000).toFixed(2)} 億`;
+  if (n >= 10000) return `${+(n / 10000).toFixed(n >= 1000000 ? 0 : 1)} 萬`;
+  return "";
+}
+
+// 送出答案：防止連撳；伺服器拒絕時 2.5 秒後可以再試
+function g10Send(value) {
+  if (S.g10Sending) return false;
+  S.g10Sending = true;
+  clearTimeout(S.g10SendTimer);
+  S.g10SendTimer = setTimeout(() => { S.g10Sending = false; }, 2500);
+  send({ type: "g10:answer", value });
+  return true;
+}
+
+/* ---------- 開房設定 ---------- */
+S.g10Count = 15;
+S.g10Types = [...G10_TYPE_ORDER];
+S.g10Pace = "std";
+
+function g10EstimateMin(count, types, pace) {
+  const sec = G10_PACE_SEC[pace] || G10_PACE_SEC.std;
+  const list = types.length ? types : G10_TYPE_ORDER;
+  const avg = list.reduce((a, t) => a + sec[t], 0) / list.length;
+  // 作答時間通常唔會用盡；加埋揭曉 5 秒、題與題之間約 1.5 秒、每回合轉場約 3 秒
+  const total = count * (avg * 0.8 + 6.5) + list.length * 3 + 5;
+  return Math.max(1, Math.round(total / 60));
+}
+
+function renderG10Settings() {
+  document.querySelectorAll("#g10TypeBox .g10-type-chip").forEach((chip) => {
+    chip.classList.toggle("active", S.g10Types.includes(chip.dataset.type));
+  });
+  const sec = G10_PACE_SEC[S.g10Pace] || G10_PACE_SEC.std;
+  const grid = $("#g10PaceGrid");
+  if (grid) {
+    const rows = [
+      { types: ["guess", "nobust"], label: "估價 / 唔准爆", s: sec.guess },
+      { types: ["pick"], label: "邊個貴啲", s: sec.pick },
+      { types: ["sort"], label: "排排坐", s: sec.sort },
+      { types: ["cart"], label: "夠唔夠錢", s: sec.cart }
+    ];
+    grid.innerHTML = rows.map((r) => `
+      <div class="g10-pace-cell ${r.types.some((t) => S.g10Types.includes(t)) ? "" : "off"}">
+        <b>${r.s} 秒</b><span>${esc(r.label)}</span>
+      </div>
+    `).join("");
+  }
+  const ex = $("#g10TypeNote");
+  if (ex) {
+    const off = G10_TYPE_ORDER.filter((t) => !S.g10Types.includes(t));
+    ex.textContent = off.length
+      ? `閂咗「${off.map((t) => G10_TYPE_META[t].name).join("」「")}」，其餘 ${S.g10Types.length} 種平均分 ${S.g10Count} 題。`
+      : `五種題型平均分 ${S.g10Count} 題，每種題型一個回合。`;
+  }
+  const box = $("#g10Preview");
+  if (box) {
+    box.innerHTML = `${S.g10Count} 題 · 大約 ${g10EstimateMin(S.g10Count, S.g10Types, S.g10Pace)} 分鐘<small>包括揭曉同轉場</small>`;
+  }
+}
+
+bindChips("#g10CountBox", ".g10-count-chip", (chip) => { S.g10Count = Number(chip.dataset.count) || 15; renderG10Settings(); });
+bindChips("#g10PaceBox", ".g10-pace-chip", (chip) => { S.g10Pace = chip.dataset.pace || "std"; renderG10Settings(); });
+$("#g10TypeBox")?.addEventListener("click", (event) => {
+  const chip = event.target.closest(".g10-type-chip");
+  if (!chip) return;
+  const t = chip.dataset.type;
+  if (S.g10Types.includes(t)) {
+    if (S.g10Types.length <= 1) { flash("最少要留一種題型"); return; }
+    S.g10Types = S.g10Types.filter((x) => x !== t);
+  } else {
+    S.g10Types = G10_TYPE_ORDER.filter((x) => x === t || S.g10Types.includes(x));
+  }
+  renderG10Settings();
+});
+renderG10Settings();
+
+// 香港限定：首頁地區揀「台灣」時，大廳唔顯示估價王（用房號入房照樣得）
+function g10ApplyRegion() {
+  const hide = S.region === "tw";
+  document.querySelectorAll("[data-region-only]").forEach((el) => {
+    el.classList.toggle("hidden", !el.dataset.regionOnly.split(",").includes(S.region || "hk"));
+  });
+  const opt = document.querySelector('#gameSelect option[value="game10"]');
+  if (opt) { opt.hidden = hide; opt.disabled = hide; }
+  if (hide && S.selectedGame === "game10") {
+    S.selectedGame = "game1";
+    const select = $("#gameSelect");
+    if (select) select.value = "game1";
+    if (typeof renderCategories === "function") renderCategories();
+    if (typeof renderRoomVisual === "function") renderRoomVisual();
+  }
+}
+
+function g10LobbyHtml(room) {
+  const st = room.g10Settings;
+  const n = room.players.filter((p) => p.connected).length;
+  const types = (st.types || G10_TYPE_ORDER).map((t) => G10_TYPE_META[t]?.name).filter(Boolean);
+  return `
+    <p class="notice" style="margin:10px 0 0">${st.count} 題 · 節奏${esc(G10_PACE_NAME[st.pace] || "標準")} · 香港限定</p>
+    <div class="g9-lobby">
+      <strong>${esc(types.join("、"))}</strong>
+      <small>${n} / ${st.maxPlayers || 8} 人 · 大約 ${g10EstimateMin(st.count, st.types || [], st.pace)} 分鐘</small>
+    </div>
+  `;
+}
+
+/* ---------- 遊戲畫面 ---------- */
+
+function g10Stripe() {
+  return `<div class="g10-stripe" aria-hidden="true"></div>`;
+}
+
+function g10Head(game, right) {
+  const meta = G10_TYPE_META[game.type] || {};
+  return `
+    ${g10Stripe()}
+    <div class="g10-top">
+      <div class="g10-brand"><span>PRICE KING</span><b>估價王</b></div>
+      ${right || ""}
+    </div>
+    <div class="g10-chips">
+      <span class="g10-qno">第 ${(game.qIndex || 0) + 1} / ${game.total || 0} 題</span>
+      ${meta.name ? `<span class="g10-type">${esc(meta.name)}</span>` : ""}
+      ${right && right.includes("g10-timer") && meta.hint ? `<span class="g10-hint">${esc(meta.hint)}</span>` : ""}
+    </div>
+  `;
+}
+
+function g10TimerHtml() {
+  return `<div class="g10-timer"><div id="g10Time" class="timer"></div><small>秒</small></div>`;
+}
+
+function g10ItemCard(item, opts = {}) {
+  return `
+    <div class="g10-menu ${opts.cls || ""}">
+      <div class="g10-menu-in">
+        <span class="g10-stamp">${esc(item.category || "")}</span>
+        <b class="g10-item-title">${esc(item.title)}</b>
+        ${item.sub ? `<span class="g10-item-sub">${esc(item.sub)}</span>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function g10LockLine(game) {
+  const meta = G10_TYPE_META[game.type] || {};
+  const n = (game.lockedIds || []).length;
+  const all = (game.answerIds || []).length;
+  return `<span id="g10LockCount">${esc(meta.verb || "已作答")} ${n} / ${all}</span>`;
+}
+
+function g10Foot(game) {
+  const ids = game.answerIds || [];
+  const locked = game.lockedIds || [];
+  return `
+    <div class="g10-foot">
+      <div class="g10-avatars" id="g10Avatars">
+        ${ids.map((id) => `<span class="${locked.includes(id) ? "on" : ""}" title="${esc(g10Nick(id))}">${esc(g10Nick(id).slice(0, 1))}</span>`).join("")}
+      </div>
+      ${g10LockLine(game)}
+    </div>
+  `;
+}
+
+function g10UpdateLocks(game) {
+  const el = $("#g10LockCount");
+  if (el) el.outerHTML = g10LockLine(game);
+  const av = $("#g10Avatars");
+  if (av) {
+    const locked = game.lockedIds || [];
+    const ids = game.answerIds || [];
+    [...av.children].forEach((span, i) => span.classList.toggle("on", locked.includes(ids[i])));
+  }
+}
+
+function renderGame10(game) {
+  const me = S.playerId;
+  const myLocked = game.myAnswer !== null && game.myAnswer !== undefined;
+  const key = JSON.stringify([
+    game.phase, game.qIndex, myLocked, game.paused,
+    game.phase === "gameover" ? (game.ranking || []).map((p) => p.id + ":" + p.score).join() : "",
+    game.phase === "reveal" ? game.endsAt : ""
+  ]);
+  if (S.g10Key === key && $("#gamePanel .g10-root")) {
+    if (game.phase === "answer") g10UpdateLocks(game);
+    return;
+  }
+  const qKey = `${S.room?.code}:${game.qIndex}:${game.phase === "answer" ? game.question?.items?.map((x) => x.id).join() : ""}`;
+  if (game.phase === "answer" && S.g10DraftKey !== qKey) {
+    S.g10DraftKey = qKey;
+    S.g10Input = "";
+    S.g10Order = (game.question?.items || []).map((_, i) => i);
+    S.g10Picks = [];
+    S.g10Sending = false;
+  }
+  S.g10Key = key;
+  clearInterval(S.g10Tick);
+
+  if (game.phase === "gameover") return renderGame10Gameover(game);
+  if (game.phase === "intro") return renderGame10Intro(game);
+  if (game.phase === "reveal") return renderGame10Reveal(game);
+  if (game.phase === "answer") {
+    const canAnswer = (game.answerIds || []).includes(me) && !myLocked;
+    if (!canAnswer) return renderGame10Waiting(game);
+    if (game.type === "guess" || game.type === "nobust") return renderGame10Guess(game);
+    if (game.type === "pick") return renderGame10Pick(game);
+    if (game.type === "sort") return renderGame10Sort(game);
+    if (game.type === "cart") return renderGame10Cart(game);
+  }
+}
+
+function g10Countdown(el, endsAt) {
+  if (!el || !endsAt) return;
+  const tick = () => {
+    const s = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+    el.textContent = String(s);
+  };
+  tick();
+  S.g10Tick = setInterval(tick, 200);
+}
+
+/* ---- 轉場 ---- */
+function renderGame10Intro(game) {
+  const meta = G10_TYPE_META[game.type] || {};
+  const firstOfRound = game.roundPos === 1;
+  if (!firstOfRound) {
+    $("#gamePanel").innerHTML = `
+      <div class="g10-root g10-intro g10-intro-short">
+        ${g10Stripe()}
+        <div class="g10-intro-body">
+          <span class="g10-intro-round">${esc(meta.name || "")} · ${game.roundPos} / ${game.roundSize}</span>
+          <div class="g10-menu g10-intro-card"><div class="g10-menu-in">
+            <b class="g10-intro-name">第 ${(game.qIndex || 0) + 1} 題</b>
+            <span class="g10-intro-desc">準備…</span>
+          </div></div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  const rounds = game.rounds || 1;
+  const boxes = game.type === "sort" ? `
+    <div class="g10-intro-boxes" aria-hidden="true">${[1, 2, 3, 4].map((n) => `<span class="${n === 4 ? "on" : ""}">${n}</span>`).join("")}</div>` : "";
+  $("#gamePanel").innerHTML = `
+    <div class="g10-root g10-intro">
+      ${g10Stripe()}
+      <div class="g10-intro-body">
+        <div class="g10-intro-bars" aria-label="第 ${game.round} 回合，共 ${rounds} 回合">
+          ${Array.from({ length: rounds }, (_, i) => `<span class="${i + 1 < game.round ? "done" : i + 1 === game.round ? "now" : ""}"></span>`).join("")}
+        </div>
+        <span class="g10-intro-round">第${G10_ROUND_WORDS[game.round - 1] || game.round}回合</span>
+        <div class="g10-menu g10-intro-card"><div class="g10-menu-in">
+          ${boxes}
+          <b class="g10-intro-name">${esc(meta.name || "")}</b>
+          <span class="g10-intro-desc">${(meta.desc || []).map(esc).join("<br>")}</span>
+          <span class="g10-intro-meta">本回合 ${game.roundSize} 題 · 每題 ${Math.round((game.roundMs || 0) / 1000)} 秒</span>
+        </div></div>
+        <div class="g10-intro-count"><b id="g10IntroCount"></b><small>準備開始</small></div>
+      </div>
+      <div class="g10-stripe g10-stripe-bottom" aria-hidden="true"></div>
+    </div>
+  `;
+  g10Countdown($("#g10IntroCount"), game.endsAt);
+}
+
+/* ---- 估價／唔准爆：自製鍵盤 ---- */
+function g10InputHtml() {
+  const v = S.g10Input || "";
+  const n = Number(v || 0);
+  return `
+    <span class="g10-dollar">$</span>
+    <span class="g10-val ${v ? "" : "empty"}">${v ? n.toLocaleString("en-US") : "0"}</span>
+    <span class="g10-caret" aria-hidden="true"></span>
+    ${g10Wan(n) ? `<small class="g10-wan">${esc(g10Wan(n))}</small>` : ""}
+  `;
+}
+
+function renderGame10Guess(game) {
+  const q = game.question;
+  const item = q.items[0];
+  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "萬", "0", "del"];
+  $("#gamePanel").innerHTML = `
+    <div class="g10-root">
+      ${g10Head(game, g10TimerHtml())}
+      ${g10ItemCard(item)}
+      <div class="g10-input-row">
+        <span>你估</span>
+        <div class="g10-input" id="g10Input" aria-live="polite">${g10InputHtml()}</div>
+      </div>
+      <div class="g10-keypad">
+        ${keys.map((k) => k === "del"
+          ? `<button type="button" class="alt" aria-label="刪除" onclick="g10Key('del')"><svg width="26" height="20" viewBox="0 0 26 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2 H24 V18 H8 L1 10 Z"></path><path d="M12 6 L19 14 M19 6 L12 14"></path></svg></button>`
+          : `<button type="button" class="${k === "萬" ? "alt wan" : ""}" onclick="g10Key('${k}')">${k}</button>`).join("")}
+      </div>
+      <button type="button" class="g10-cta" id="g10Submit" onclick="g10SubmitGuess()">落價</button>
+      ${g10Foot(game)}
+    </div>
+  `;
+  startTimer($("#g10Time"), game.endsAt);
+}
+
+window.g10Key = (k) => {
+  let v = S.g10Input || "";
+  if (k === "del") v = v.slice(0, -1);
+  else if (k === "萬") { if (v && v.length <= 7) v += "0000"; }
+  else if (/^\d$/.test(k)) {
+    if (v === "0") v = "";
+    if (v.length < 11) v += k;
+  }
+  S.g10Input = v;
+  const box = $("#g10Input");
+  if (box) box.innerHTML = g10InputHtml();
+};
+
+window.g10SubmitGuess = () => {
+  const v = S.g10Input || "";
+  if (!v) { flash("未入價錢"); return; }
+  g10Send(Number(v));
+};
+
+// 電腦鍵盤都可以入價
+document.addEventListener("keydown", (event) => {
+  if (S.room?.game !== "game10" || !$("#g10Input")) return;
+  if (event.target?.closest?.("input, textarea")) return;
+  if (/^\d$/.test(event.key)) { window.g10Key(event.key); event.preventDefault(); }
+  else if (event.key === "Backspace") { window.g10Key("del"); event.preventDefault(); }
+  else if (event.key === "Enter") { window.g10SubmitGuess(); event.preventDefault(); }
+});
+
+/* ---- 邊個貴啲 ---- */
+function renderGame10Pick(game) {
+  const [a, b] = game.question.items;
+  const card = (item, i) => `
+    <button type="button" class="g10-pick" onclick="g10Pick(${i})">
+      <span class="g10-pick-tag">${i ? "B" : "A"}</span>
+      <span class="g10-pick-text">
+        <b>${esc(item.title)}</b>
+        ${item.sub ? `<small>${esc(item.sub)}</small>` : ""}
+      </span>
+      <span class="g10-pick-cat">${esc(item.category || "")}</span>
+    </button>
+  `;
+  const left = Math.max(0, (game.endsAt || 0) - Date.now());
+  const frac = game.answerMs ? Math.min(1, left / game.answerMs) : 1;
+  $("#gamePanel").innerHTML = `
+    <div class="g10-root">
+      ${g10Head(game, g10TimerHtml())}
+      <h3 class="g10-ask">邊個貴啲？</h3>
+      <div class="g10-picks">
+        ${card(a, 0)}
+        <span class="g10-or">定係</span>
+        ${card(b, 1)}
+      </div>
+      <div class="g10-speed">
+        <div><span>答啱即刻得 100 分</span><span>最後一秒 50 分</span></div>
+        <div class="g10-bar"><i id="g10SpeedBar" style="width:${(50 + 50 * frac).toFixed(1)}%"></i></div>
+      </div>
+      ${g10Foot(game)}
+    </div>
+  `;
+  startTimer($("#g10Time"), game.endsAt);
+  const bar = $("#g10SpeedBar");
+  if (bar && left > 0) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      bar.style.transition = `width ${left}ms linear`;
+      bar.style.width = "50%";
+    }));
+  }
+}
+
+window.g10Pick = (i) => {
+  if (!g10Send(i)) return;
+  document.querySelectorAll(".g10-pick").forEach((el, k) => el.classList.toggle("chosen", k === i));
+};
+
+/* ---- 排排坐 ---- */
+function g10SortListHtml(items) {
+  return S.g10Order.map((idx, pos) => {
+    const item = items[idx];
+    return `
+      <div class="g10-sort-card" data-idx="${idx}">
+        <span class="g10-sort-no">${pos + 1}</span>
+        <span class="g10-sort-text"><b>${esc(item.title)}</b>${item.sub ? `<small>${esc(item.sub)}</small>` : ""}</span>
+        <span class="g10-sort-btns">
+          <button type="button" aria-label="向上" onclick="g10Move(${pos},-1)" ${pos === 0 ? "disabled" : ""}>▲</button>
+          <button type="button" aria-label="向下" onclick="g10Move(${pos},1)" ${pos === S.g10Order.length - 1 ? "disabled" : ""}>▼</button>
+        </span>
+        <svg class="g10-grip" width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="4" r="2"/><circle cx="13" cy="4" r="2"/><circle cx="5" cy="11" r="2"/><circle cx="13" cy="11" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="13" cy="18" r="2"/></g></svg>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderGame10Sort(game) {
+  const items = game.question.items;
+  $("#gamePanel").innerHTML = `
+    <div class="g10-root">
+      ${g10Head(game, g10TimerHtml())}
+      <div class="g10-sort">
+        <div class="g10-sort-axis" aria-hidden="true"><b>最平</b><i></i><b class="hi">最貴</b></div>
+        <div class="g10-sort-list" id="g10SortList">${g10SortListHtml(items)}</div>
+      </div>
+      <p class="g10-note">每排啱一個位 +20 分，四個全啱額外 +20。</p>
+      <button type="button" class="g10-cta" onclick="g10SubmitSort()">排好喇</button>
+      ${g10Foot(game)}
+    </div>
+  `;
+  startTimer($("#g10Time"), game.endsAt);
+  g10BindSortDrag(items);
+}
+
+function g10RedrawSort() {
+  const list = $("#g10SortList");
+  const items = S.room?.gameState?.question?.items;
+  if (!list || !items) return;
+  list.innerHTML = g10SortListHtml(items);
+  g10BindSortDrag(items);
+}
+
+window.g10Move = (pos, dir) => {
+  const to = pos + dir;
+  if (to < 0 || to >= S.g10Order.length) return;
+  const o = S.g10Order;
+  [o[pos], o[to]] = [o[to], o[pos]];
+  g10RedrawSort();
+};
+
+// 拖拉排序：撳住卡片上下拖，放手時插入新位置
+function g10BindSortDrag() {
+  const list = $("#g10SortList");
+  if (!list) return;
+  list.querySelectorAll(".g10-sort-card").forEach((card) => {
+    card.addEventListener("pointerdown", (event) => {
+      if (event.target.closest("button")) return;
+      const cards = [...list.querySelectorAll(".g10-sort-card")];
+      const from = cards.indexOf(card);
+      const rects = cards.map((c) => c.getBoundingClientRect());
+      const slot = rects.length > 1 ? rects[1].top - rects[0].top : rects[0].height + 10;
+      const startY = event.clientY;
+      let to = from;
+      card.setPointerCapture(event.pointerId);
+      card.classList.add("dragging");
+      const move = (e) => {
+        const dy = e.clientY - startY;
+        card.style.transform = `translateY(${dy}px) rotate(-2deg)`;
+        to = Math.max(0, Math.min(cards.length - 1, from + Math.round(dy / slot)));
+        cards.forEach((c, i) => {
+          if (c === card) return;
+          let shift = 0;
+          if (from < to && i > from && i <= to) shift = -slot;
+          if (from > to && i < from && i >= to) shift = slot;
+          c.style.transform = shift ? `translateY(${shift}px)` : "";
+        });
+      };
+      const up = () => {
+        card.removeEventListener("pointermove", move);
+        card.removeEventListener("pointerup", up);
+        card.removeEventListener("pointercancel", up);
+        if (to !== from) {
+          const [x] = S.g10Order.splice(from, 1);
+          S.g10Order.splice(to, 0, x);
+        }
+        g10RedrawSort();
+      };
+      card.addEventListener("pointermove", move);
+      card.addEventListener("pointerup", up);
+      card.addEventListener("pointercancel", up);
+    });
+  });
+}
+
+window.g10SubmitSort = () => {
+  g10Send([...S.g10Order]);
+};
+
+/* ---- 夠唔夠錢 ---- */
+function g10BagHtml() {
+  const n = (S.g10Picks || []).length;
+  return `
+    <div class="g10-bag-icon" aria-hidden="true"><i></i><b></b></div>
+    <div class="g10-bag-text"><b>膠袋入面 ${n} 件</b><small>埋單先知總數幾多</small></div>
+  `;
+}
+
+function renderGame10Cart(game) {
+  const q = game.question;
+  $("#gamePanel").innerHTML = `
+    <div class="g10-root">
+      ${g10Head(game, g10TimerHtml())}
+      <div class="g10-menu g10-budget"><div class="g10-menu-in">
+        <div><small>${esc(q.title || "")}預算</small><b>${g10Money(q.budget)}</b></div>
+        <span>揀幾多件都得<br>總數最接近又唔超過就贏</span>
+      </div></div>
+      <div class="g10-cart-grid">
+        ${q.items.map((item, i) => `
+          <button type="button" class="g10-cart-item ${S.g10Picks.includes(i) ? "on" : ""}" aria-pressed="${S.g10Picks.includes(i)}" onclick="g10Toggle(${i})">
+            <span class="g10-check" aria-hidden="true">✓</span>
+            <b>${esc(item.title)}</b>
+            ${item.sub ? `<small>${esc(item.sub)}</small>` : ""}
+          </button>
+        `).join("")}
+      </div>
+      <div class="g10-bag" id="g10Bag">${g10BagHtml()}</div>
+      <button type="button" class="g10-cta" onclick="g10SubmitCart()">埋單</button>
+      ${g10Foot(game)}
+    </div>
+  `;
+  startTimer($("#g10Time"), game.endsAt);
+}
+
+window.g10Toggle = (i) => {
+  const set = S.g10Picks || (S.g10Picks = []);
+  const k = set.indexOf(i);
+  if (k >= 0) set.splice(k, 1); else set.push(i);
+  document.querySelectorAll(".g10-cart-item").forEach((el, j) => {
+    el.classList.toggle("on", set.includes(j));
+    el.setAttribute("aria-pressed", set.includes(j) ? "true" : "false");
+  });
+  const bag = $("#g10Bag");
+  if (bag) bag.innerHTML = g10BagHtml();
+};
+
+window.g10SubmitCart = () => {
+  g10Send([...(S.g10Picks || [])]);
+};
+
+/* ---- 等其他人 ---- */
+function g10MyAnswerText(game) {
+  const v = game.myAnswer;
+  const items = game.question?.items || [];
+  if (v === null || v === undefined) return "";
+  if (game.type === "guess" || game.type === "nobust") return g10Money(v);
+  if (game.type === "pick") return items[v]?.title || "";
+  if (game.type === "sort") return v.map((i) => items[i]?.title).join(" → ");
+  if (game.type === "cart") return v.length ? v.map((i) => items[i]?.title).join("、") : "乜都冇揀";
+  return "";
+}
+
+function renderGame10Waiting(game) {
+  const mine = game.myAnswer !== null && game.myAnswer !== undefined;
+  const q = game.question;
+  $("#gamePanel").innerHTML = `
+    <div class="g10-root">
+      ${g10Head(game, g10TimerHtml())}
+      ${q.type === "cart"
+        ? `<div class="g10-menu g10-budget"><div class="g10-menu-in"><div><small>${esc(q.title || "")}預算</small><b>${g10Money(q.budget)}</b></div><span>${q.items.length} 件貨</span></div></div>`
+        : q.items.length === 1 ? g10ItemCard(q.items[0]) : `<div class="g10-mini-list">${q.items.map((x) => `<span>${esc(x.title)}</span>`).join("")}</div>`}
+      <div class="g10-wait">
+        <b>${mine ? esc(G10_TYPE_META[game.type]?.verb || "已作答") : "呢題你睇住先"}</b>
+        ${mine ? `<span>${esc(g10MyAnswerText(game))}</span>` : ""}
+        <small>等緊其他人…</small>
+      </div>
+      ${g10Foot(game)}
+    </div>
+  `;
+  startTimer($("#g10Time"), game.endsAt);
+}
+
+/* ---- 揭曉 ---- */
+function g10RevealFoot(game) {
+  const isHost = S.room.hostId === S.playerId;
+  const last = (game.qIndex || 0) + 1 >= (game.total || 0);
+  const label = last ? "準備結算" : "下一題";
+  return `
+    <div class="g10-next">
+      <div class="g10-next-info">
+        <span id="g10NextText">${game.paused ? "房主暫停咗" : `${label} <b id="g10NextSec"></b> 秒後開始`}</span>
+        <div class="g10-bar red"><i id="g10NextBar" style="width:${game.paused ? 100 : 0}%"></i></div>
+      </div>
+      ${isHost ? `
+        <button type="button" class="g10-small" onclick="send({type:'g10:pause'})">${game.paused ? "繼續" : "暫停"}</button>
+        <button type="button" class="g10-small solid" onclick="send({type:'g10:next'})">${last ? "結算" : "下一題"}</button>
+      ` : ""}
+    </div>
+  `;
+}
+
+function g10StartRevealTimer(game) {
+  if (game.paused || !game.endsAt) return;
+  const total = Math.max(1000, game.endsAt - Date.now());
+  const sec = $("#g10NextSec"), bar = $("#g10NextBar");
+  const tick = () => {
+    const left = Math.max(0, game.endsAt - Date.now());
+    if (sec) sec.textContent = String(Math.ceil(left / 1000));
+    if (bar) bar.style.width = `${(100 * (1 - left / total)).toFixed(1)}%`;
+  };
+  tick();
+  S.g10Tick = setInterval(tick, 100);
+}
+
+function g10ScoreRows(game, rowsHtml) {
+  return `<div class="g10-rows">${rowsHtml}</div>`;
+}
+
+function g10Row({ id, text, pts, cls = "" }) {
+  const mine = id === S.playerId;
+  return `<div class="g10-row ${mine ? "me" : ""} ${cls}"><span>${text}</span><b>+${pts}</b></div>`;
+}
+
+function g10MissingRows(r) {
+  return (r.missing || []).map((id) => g10Row({ id, text: `${esc(g10Nick(id))} · 冇作答`, pts: 0, cls: "dim" })).join("");
+}
+
+function g10Ruler(r) {
+  const price = r.price;
+  const rows = r.rows || [];
+  const vals = rows.map((x) => x.value).concat(price);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (lo === hi) { lo = Math.max(0, lo * 0.5); hi = hi * 1.5 || 10; }
+  const useLog = lo > 0 && hi / lo > 8;
+  const f = (v) => useLog ? Math.log10(Math.max(v, lo)) : v;
+  const span = f(hi) - f(lo) || 1;
+  const pos = (v) => Math.max(0, Math.min(100, (100 * (f(v) - f(lo))) / span));
+  const pricePos = pos(price);
+  const bust = r.type === "nobust";
+  // 標籤避免重疊：同一邊太近就推到下一層
+  const placed = { up: [], down: [] };
+  const marks = rows.map((x) => {
+    const over = x.value > price;
+    const side = over ? "down" : "up";
+    const p = pos(x.value);
+    // 貼邊嘅標籤向內對齊，費事出界；按標籤闊度計佔用範圍，重疊就推上／落一層
+    const edge = p < 18 ? "edge-l" : p > 82 ? "edge-r" : "";
+    const w = 34;
+    const a = edge === "edge-l" ? p : edge === "edge-r" ? p - w : p - w / 2;
+    const ext = [a - 2, a + w + 2];
+    let lvl = 0;
+    while (lvl < 3 && placed[side].some((q) => q.lvl === lvl && q.ext[0] < ext[1] && ext[0] < q.ext[1])) lvl += 1;
+    placed[side].push({ ext, lvl });
+    return { ...x, over, side, p, lvl, edge };
+  });
+  return `
+    <div class="g10-ruler-box">
+      <div class="g10-ruler-head">
+        <b>全場估價</b>
+        <span><i class="dot"></i>估平咗<i class="sq"></i>${bust ? "爆咗" : "估貴咗"}</span>
+      </div>
+      <div class="g10-ruler">
+        <div class="g10-ruler-line"></div>
+        <div class="g10-ruler-fill" style="width:${pricePos}%"></div>
+        <div class="g10-ruler-price" style="left:${pricePos}%"><span>${g10Money(price)}</span></div>
+        <span class="g10-ruler-tick l" style="left:0">${g10Short(lo)}</span>
+        <span class="g10-ruler-tick r" style="left:100%">${g10Short(hi)}</span>
+        ${marks.map((m) => `
+          <div class="g10-mark ${m.side} lvl${m.lvl} ${m.edge} ${m.id === S.playerId ? "me" : ""} ${m.over ? "over" : ""}" style="left:${m.p}%">
+            <span>${esc(g10Nick(m.id).slice(0, 4))} ${g10Short(m.value)}${m.bust ? " · 爆" : ""}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderGame10Reveal(game) {
+  const r = game.result || {};
+  const q = game.question || {};
+  let body = "";
+
+  if (r.type === "guess" || r.type === "nobust") {
+    const item = r.items?.[0] || {};
+    const rows = (r.rows || []).map((x) => {
+      if (x.bust) return g10Row({ id: x.id, text: `${esc(g10Nick(x.id))} · ${g10Money(x.value)} · 爆咗`, pts: 0, cls: "bust" });
+      return g10Row({
+        id: x.id,
+        text: `${esc(g10Nick(x.id))} · ${g10Money(x.value)} · 差 ${x.pct}%${x.bonus ? " · 最近" : ""}`,
+        pts: x.points + (x.bonus || 0),
+        cls: x.id === S.playerId ? "solid" : ""
+      });
+    }).join("");
+    body = `
+      <div class="g10-menu g10-price"><div class="g10-menu-in">
+        <div>
+          <span class="g10-price-item">${esc(item.title || "")}</span>
+          <span class="g10-price-label">真實價錢</span>
+          <b class="g10-price-num ${String(item.price || 0).length > 7 ? "long" : String(item.price || 0).length > 5 ? "mid" : ""}" id="g10PriceNum" data-to="${item.price || 0}">${g10Money(item.price)}</b>
+          ${g10Wan(item.price) ? `<small class="g10-price-wan">${esc(g10Wan(item.price))}</small>` : ""}
+        </div>
+        ${item.year ? `<span class="g10-year">${item.year} 年<br>參考價</span>` : ""}
+      </div></div>
+      ${(r.rows || []).length ? g10Ruler(r) : ""}
+      ${g10ScoreRows(game, rows + g10MissingRows(r))}
+      ${item.source ? `<p class="g10-source">資料來源：${esc(item.source)}</p>` : ""}
+    `;
+  } else if (r.type === "pick") {
+    const mine = (r.rows || []).find((x) => x.id === S.playerId);
+    body = `
+      <h3 class="g10-ask">邊個貴啲？</h3>
+      <div class="g10-picks done">
+        ${r.items.map((item, i) => `
+          <div class="g10-pick ${i === r.correct ? "win" : "lose"} ${mine && mine.choice === i ? "chosen" : ""}">
+            <span class="g10-pick-tag">${i ? "B" : "A"}</span>
+            <span class="g10-pick-text"><b>${esc(item.title)}</b><small>${item.year} 年參考價</small></span>
+            <span class="g10-pick-price">${g10Money(item.price)}</span>
+            ${i === r.correct ? `<span class="g10-win-stamp">貴啲</span>` : ""}
+          </div>
+          ${i === 0 ? `<span class="g10-or">定係</span>` : ""}
+        `).join("")}
+      </div>
+      ${g10ScoreRows(game, (r.rows || []).map((x) => g10Row({
+        id: x.id,
+        text: `${esc(g10Nick(x.id))} · ${x.correct ? `答啱 · ${(x.ms / 1000).toFixed(1)} 秒` : "答錯"}`,
+        pts: x.points,
+        cls: x.correct ? (x.id === S.playerId ? "solid" : "") : "bust"
+      })).join("") + g10MissingRows(r))}
+    `;
+  } else if (r.type === "sort") {
+    const mine = (r.rows || []).find((x) => x.id === S.playerId);
+    body = `
+      <div class="g10-sort done">
+        <div class="g10-sort-axis" aria-hidden="true"><b>最平</b><i></i><b class="hi">最貴</b></div>
+        <div class="g10-sort-list">
+          ${r.order.map((idx, pos) => {
+            const item = r.items[idx];
+            const ok = mine ? mine.order[pos] === idx : null;
+            return `
+              <div class="g10-sort-card ${ok === true ? "ok" : ok === false ? "bad" : ""}">
+                <span class="g10-sort-no">${pos + 1}</span>
+                <span class="g10-sort-text"><b>${esc(item.title)}</b><small>${item.year} 年參考價${mine && ok === false ? ` · 你排咗「${esc(r.items[mine.order[pos]]?.title || "")}」` : ""}</small></span>
+                <span class="g10-sort-price">${g10Money(item.price)}</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+      ${g10ScoreRows(game, (r.rows || []).map((x) => g10Row({
+        id: x.id,
+        text: `${esc(g10Nick(x.id))} · 啱 ${x.hits} 個位${x.hits === r.order.length ? " · 全中" : ""}`,
+        pts: x.points,
+        cls: x.id === S.playerId ? "solid" : ""
+      })).join("") + g10MissingRows(r))}
+    `;
+  } else if (r.type === "cart") {
+    const mine = (r.rows || []).find((x) => x.id === S.playerId);
+    const best = r.best || { total: 0, picks: [] };
+    body = `
+      <div class="g10-menu g10-budget"><div class="g10-menu-in">
+        <div><small>${esc(r.title || "")}預算</small><b>${g10Money(r.budget)}</b></div>
+        <span>最佳組合<br><b class="g10-best">${g10Money(best.total)}</b></span>
+      </div></div>
+      <div class="g10-cart-grid done">
+        ${r.items.map((item, i) => `
+          <div class="g10-cart-item ${mine && mine.picks.includes(i) ? "on" : ""} ${best.picks.includes(i) ? "best" : ""}">
+            ${mine && mine.picks.includes(i) ? `<span class="g10-check" aria-hidden="true">✓</span>` : ""}
+            <b>${esc(item.title)}</b>
+            <span class="g10-cart-price">${g10Money(item.price)}</span>
+          </div>
+        `).join("")}
+      </div>
+      <p class="g10-note small">藍框係你揀嘅貨；虛線係最接近預算嘅組合。</p>
+      ${g10ScoreRows(game, (r.rows || []).map((x) => g10Row({
+        id: x.id,
+        text: x.over
+          ? `${esc(g10Nick(x.id))} · ${g10Money(x.total)} · 超出 ${g10Money(x.total - r.budget)}`
+          : `${esc(g10Nick(x.id))} · ${g10Money(x.total)} · 差 ${g10Money(x.diff)}${x.bonus ? " · 最近" : ""}`,
+        pts: x.points + (x.bonus || 0),
+        cls: x.over ? "bust" : x.id === S.playerId ? "solid" : ""
+      })).join("") + g10MissingRows(r))}
+    `;
+  }
+
+  $("#gamePanel").innerHTML = `
+    <div class="g10-root g10-reveal">
+      ${g10Head(game, `<span class="g10-reveal-badge">揭曉</span>`)}
+      ${body}
+      ${g10RevealFoot(game)}
+    </div>
+  `;
+  g10StartRevealTimer(game);
+  g10CountUp($("#g10PriceNum"));
+}
+
+// 真實價錢跳錶
+function g10CountUp(el) {
+  if (!el) return;
+  const to = Number(el.dataset.to) || 0;
+  let reduce = false;
+  try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+  if (reduce || to <= 0) return;
+  const start = performance.now(), dur = 900;
+  const step = (now) => {
+    if (!el.isConnected) return;
+    const k = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - k, 3);
+    el.textContent = g10Money(to * eased);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  el.textContent = "$0";
+  requestAnimationFrame(step);
+}
+
+/* ---- 最終結果：茶記單 ---- */
+function g10Winners(game) {
+  const ranking = game.ranking || [];
+  const top = ranking.length ? ranking[0].score : 0;
+  return top > 0 ? ranking.filter((p) => p.score === top) : [];
+}
+
+function g10TitleNames(game, t) {
+  const ids = t.ids || [];
+  return ids.map((id) => g10Nick(id)).join("、");
+}
+
+function renderGame10Gameover(game) {
+  clearInterval(S.timer);
+  const ranking = game.ranking || [];
+  const winners = g10Winners(game);
+  const isHost = S.room.hostId === S.playerId;
+  const rankOf = (score) => 1 + ranking.filter((p) => p.score > score).length;
+  const titles = (game.titles || []).filter((t) => (t.ids || []).length);
+  const played = game.played || game.total || 0;
+
+  $("#gamePanel").innerHTML = `
+    <div class="g10-root g10-result">
+      ${g10Stripe()}
+      <div class="g10-champ">
+        <span class="g10-champ-en">PRICE KING${game.endedEarly ? " · 提前結算" : ""}</span>
+        <span class="g10-champ-label">今晚嘅估價王</span>
+        <b class="g10-champ-name">${winners.length ? winners.map((p) => esc(g10Nick(p.id))).join("、") : "冇人"}</b>
+        ${winners.length ? `<span class="g10-champ-score">${winners[0].score.toLocaleString("en-US")} 分</span>` : ""}
+      </div>
+      <div class="g10-bill">
+        <div class="g10-bill-head"><b>茶記單 · 排名</b><span>枱號 ${ranking.length} 人 · ${played} 題</span></div>
+        ${ranking.map((p) => `
+          <div class="g10-bill-row ${p.id === S.playerId ? "me" : ""} ${rankOf(p.score) === 1 && p.score > 0 ? "first" : ""}">
+            <span><i>${rankOf(p.score)}</i>${esc(p.id === S.playerId ? "你" : p.nickname)}</span>
+            <b>${p.score.toLocaleString("en-US")}</b>
+          </div>
+        `).join("")}
+      </div>
+      ${titles.length ? `
+        <div class="g10-titles">
+          ${titles.map((t, i) => `
+            <div class="g10-title ${i === 0 ? "red" : ""}">
+              <b>${esc(G10_TITLE_META[t.key]?.name || "")}</b>
+              <small>${esc(G10_TITLE_META[t.key]?.sub || "")}</small>
+              <span>${esc(g10TitleNames(game, t))}</span>
+            </div>
+          `).join("")}
+        </div>` : ""}
+      <div class="g10-end-actions">
+        ${isHost
+          ? `<button type="button" class="g10-cta" onclick="matchRestart()">再來一場</button>`
+          : `<p class="g10-note">等房主決定再來一場定返回房間</p>`}
+        <div class="g10-end-row">
+          ${isHost
+            ? `<button type="button" class="g10-ghost" onclick="matchLobby()">返回房間</button>`
+            : `<button type="button" class="g10-ghost" onclick="leaveRoom()">離開房間</button>`}
+          <button type="button" class="g10-ghost" onclick="g10SaveImage()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path><path d="M4 19h16"></path></svg>
+            儲存圖片
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---- 結果圖（canvas 畫，手機長按儲存） ---- */
+async function g10ResultImage(game) {
+  const ranking = game.ranking || [];
+  const winners = g10Winners(game);
+  const titles = (game.titles || []).filter((t) => (t.ids || []).length);
+  try {
+    await Promise.all([
+      document.fonts?.load?.('900 40px "Noto Serif HK"', "估價王今晚嘅"),
+      document.fonts?.load?.('700 14px "Nunito"')
+    ]);
+  } catch {}
+
+  const W = 390, pad = 22;
+  const serif = '"Noto Serif HK", "Songti TC", serif';
+  const sans = '"Nunito", "PingFang HK", "Noto Sans HK", sans-serif';
+  const rowH = 32;
+  const titleRows = Math.ceil(titles.length / 2);
+  const H = 14 + 150 + 52 + ranking.length * rowH + 24 + titleRows * 74 + (titles.length ? 12 : 0) + 46;
+  const scale = 3;
+  const canvas = document.createElement("canvas");
+  canvas.width = W * scale; canvas.height = H * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+
+  const RED = "#B5303A", BLUE = "#1A47A0", INK = "#16336E", SUB = "#4A5A80";
+  // 米白格紋底
+  ctx.fillStyle = "#F6F2EA"; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "#E7E0D1"; ctx.lineWidth = 1;
+  for (let x = 21.5; x < W; x += 22) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 21.5; y < H; y += 22) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  // 紅白藍條紋
+  const stripe = (y, h) => {
+    for (let x = 0; x < W; x += 52) {
+      ctx.fillStyle = RED; ctx.fillRect(x, y, 20, h);
+      ctx.fillStyle = "#fff"; ctx.fillRect(x + 20, y, 6, h);
+      ctx.fillStyle = BLUE; ctx.fillRect(x + 26, y, 20, h);
+      ctx.fillStyle = "#fff"; ctx.fillRect(x + 46, y, 6, h);
+    }
+  };
+  stripe(0, 14);
+
+  let y = 14 + 28;
+  ctx.textAlign = "center";
+  ctx.fillStyle = BLUE; ctx.font = `800 11px ${sans}`;
+  ctx.fillText("P R I C E   K I N G", W / 2, y);
+  y += 24;
+  ctx.fillStyle = RED; ctx.font = `900 18px ${serif}`;
+  ctx.fillText("今晚嘅估價王", W / 2, y);
+  y += 46;
+  ctx.fillStyle = INK;
+  const champ = winners.length ? winners.map((p) => p.nickname).join("、") : "冇人";
+  let size = 40;
+  ctx.font = `900 ${size}px ${serif}`;
+  while (ctx.measureText(champ).width > W - pad * 2 && size > 18) { size -= 2; ctx.font = `900 ${size}px ${serif}`; }
+  ctx.fillText(champ, W / 2, y);
+  y += 14;
+  if (winners.length) {
+    const s = `${winners[0].score.toLocaleString("en-US")} 分`;
+    ctx.font = `900 15px ${serif}`;
+    const w = ctx.measureText(s).width + 28;
+    ctx.fillStyle = RED;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(W / 2 - w / 2, y, w, 26, 6) : ctx.rect(W / 2 - w / 2, y, w, 26); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.fillText(s, W / 2, y + 18);
+  }
+  y = 14 + 150;
+
+  // 茶記單
+  const bx = 30, bw = W - 60, bh = 40 + ranking.length * rowH;
+  ctx.save();
+  ctx.translate(W / 2, y + bh / 2); ctx.rotate(-1.5 * Math.PI / 180); ctx.translate(-W / 2, -(y + bh / 2));
+  ctx.fillStyle = "#fff"; ctx.fillRect(bx, y, bw, bh);
+  ctx.strokeStyle = "#B9C6E4"; ctx.lineWidth = 1; ctx.strokeRect(bx + 0.5, y + 0.5, bw - 1, bh - 1);
+  ctx.textAlign = "left"; ctx.fillStyle = BLUE; ctx.font = `900 15px ${serif}`;
+  ctx.fillText("茶記單 · 排名", bx + 14, y + 24);
+  ctx.textAlign = "right"; ctx.fillStyle = SUB; ctx.font = `700 11px ${sans}`;
+  ctx.fillText(`枱號 ${ranking.length} 人 · ${game.played || game.total || 0} 題`, bx + bw - 14, y + 24);
+  ctx.fillStyle = BLUE; ctx.fillRect(bx + 14, y + 32, bw - 28, 2);
+  let ry = y + 34;
+  ranking.forEach((p, i) => {
+    const rank = 1 + ranking.filter((x) => x.score > p.score).length;
+    const first = rank === 1 && p.score > 0;
+    ctx.textAlign = "left";
+    ctx.fillStyle = first ? RED : BLUE; ctx.font = `800 14px ${sans}`;
+    ctx.fillText(String(rank), bx + 14, ry + 21);
+    ctx.fillStyle = INK; ctx.font = `700 15px ${sans}`;
+    let name = p.nickname;
+    while (ctx.measureText(name).width > bw - 130 && name.length > 1) name = name.slice(0, -1);
+    ctx.fillText(name === p.nickname ? name : name + "…", bx + 38, ry + 21);
+    ctx.textAlign = "right"; ctx.fillStyle = first ? RED : INK; ctx.font = `900 15px ${serif}`;
+    ctx.fillText(p.score.toLocaleString("en-US"), bx + bw - 14, ry + 21);
+    if (i < ranking.length - 1) { ctx.fillStyle = "#D6E0F3"; ctx.fillRect(bx + 14, ry + rowH - 1, bw - 28, 1); }
+    ry += rowH;
+  });
+  ctx.restore();
+  y += bh + 24;
+
+  // 稱號
+  const tw = (W - pad * 2 - 8) / 2;
+  titles.forEach((t, i) => {
+    const tx = pad + (i % 2) * (tw + 8);
+    const ty = y + Math.floor(i / 2) * 74;
+    const meta = G10_TITLE_META[t.key] || {};
+    ctx.fillStyle = "#fff"; ctx.fillRect(tx, ty, tw, 64);
+    ctx.strokeStyle = i === 0 ? RED : BLUE; ctx.lineWidth = 2; ctx.strokeRect(tx + 1, ty + 1, tw - 2, 62);
+    ctx.textAlign = "left";
+    ctx.fillStyle = i === 0 ? RED : BLUE; ctx.font = `900 15px ${serif}`;
+    ctx.fillText(meta.name || "", tx + 10, ty + 22);
+    ctx.fillStyle = SUB; ctx.font = `700 10px ${sans}`;
+    ctx.fillText(meta.sub || "", tx + 10, ty + 37);
+    ctx.fillStyle = INK; ctx.font = `800 13px ${sans}`;
+    let names = (t.ids || []).map((id) => ranking.find((p) => p.id === id)?.nickname || "").join("、");
+    while (ctx.measureText(names).width > tw - 20 && names.length > 1) names = names.slice(0, -2) + "…";
+    ctx.fillText(names, tx + 10, ty + 55);
+  });
+  y += titleRows * 74 + (titles.length ? 12 : 0);
+
+  const d = new Date();
+  const date = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+  ctx.fillStyle = SUB; ctx.font = `700 11px ${sans}`;
+  ctx.textAlign = "left"; ctx.fillText("Price King 估價王", pad, y + 6);
+  ctx.textAlign = "right"; ctx.fillText(date, W - pad, y + 6);
+  stripe(H - 14, 14);
+  return canvas.toDataURL("image/png");
+}
+
+window.g10SaveImage = async () => {
+  const game = S.room?.gameState;
+  if (!game || game.phase !== "gameover") return;
+  const overlay = document.createElement("div");
+  overlay.className = "confirm-overlay g10-img-overlay";
+  overlay.innerHTML = `
+    <div class="confirm-card g10-img-card">
+      <div class="g10-img-box"><p class="g10-note">生成緊結果圖……</p></div>
+      <p class="g10-note">手機長按張圖就可以儲存</p>
+      <div class="g10-end-row">
+        <a class="g10-ghost hidden" id="g10ImgDl" download="price-king.png">下載圖片</a>
+        <button type="button" class="g10-ghost" data-close>關閉</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener("click", (e) => { if (e.target === overlay || e.target.closest("[data-close]")) overlay.remove(); });
+  document.body.appendChild(overlay);
+  try {
+    const url = await g10ResultImage(game);
+    overlay.querySelector(".g10-img-box").innerHTML = `<img src="${url}" alt="估價王結果">`;
+    const dl = overlay.querySelector("#g10ImgDl");
+    dl.href = url;
+    dl.download = `price-king-${S.room?.code || ""}.png`;
+    dl.classList.remove("hidden");
+  } catch (e) {
+    overlay.querySelector(".g10-img-box").innerHTML = `<p class="g10-note">生成唔到圖片</p>`;
+  }
+};
+
+window.g10EndEarly = async () => {
+  const ok = await askConfirm("提前結算？會用目前分數排名。");
+  if (!ok) return;
+  send({ type: "g10:end" });
+};
+
+// 已載入完：套用地區設定（台灣地區隱藏估價王）
+g10ApplyRegion();

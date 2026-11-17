@@ -157,7 +157,13 @@
     /* ---------- 心中有數 ---------- */
     g9_dial: () => tone(2400, 0.015, { type: "square", vol: 0.05 }),
     g9_lock: () => { tone(300, 0.06, { type: "square", vol: 0.15 }); tone(600, 0.1, { type: "triangle", vol: 0.15, at: 0.05 }); },
-    g9_bullseye: () => { tone(1568, 0.6, { vol: 0.25 }); tone(2093, 0.6, { vol: 0.15, at: 0.1 }); noise(0.1, { filter: "highpass", freq: 4000, vol: 0.1 }); }
+    g9_bullseye: () => { tone(1568, 0.6, { vol: 0.25 }); tone(2093, 0.6, { vol: 0.15, at: 0.1 }); noise(0.1, { filter: "highpass", freq: 4000, vol: 0.1 }); },
+
+    /* ---------- 估價王 ---------- */
+    // 收銀機「叮」：揭曉真實價錢
+    g10_ching: () => { noise(0.06, { filter: "highpass", freq: 3000, vol: 0.12 }); tone(2637, 0.5, { vol: 0.2, at: 0.05 }); tone(3520, 0.4, { vol: 0.1, at: 0.08 }); },
+    // 爆咗／超出預算
+    g10_bust: () => { tone(160, 0.35, { type: "sawtooth", vol: 0.12 }); tone(120, 0.35, { type: "sawtooth", vol: 0.1, at: 0.05 }); }
   };
 
   const last = {};
@@ -261,6 +267,15 @@
       const myTurn = (x) => x.phase === "turn" && (x.shooter === me || (!x.shooter && x.cur === x.myKey));
       if (myTurn(g) && (!myTurn(pg) || g.turnSeq !== pg.turnSeq)) P("turn", 700);
     },
+    game10(pg, g, me) {
+      if (g.phase === "intro" && (pg.phase !== "intro" || pg.qIndex !== g.qIndex) && g.roundPos === 1) return P("round");
+      if (g.phase === "reveal" && pg.phase !== "reveal") {
+        P("g10_ching");
+        const mine = (g.result?.rows || []).find((r) => r.id === me);
+        if (mine && (mine.bust || mine.over || mine.correct === false)) P("g10_bust", 500);
+        else if (mine && (mine.pct <= 2 || mine.hits === 4 || mine.diff === 0)) P("g9_bullseye", 500);
+      }
+    },
     game9(pg, g, me) {
       if (g.phase === "hint" && (pg.phase !== "hint" || pg.turnNo !== g.turnNo)) return P(g.psychicId === me ? "turn" : "round");
       if (g.phase === "guess" && pg.phase !== "guess") return P("round");
@@ -295,6 +310,7 @@
   const SEND = {
     "g7:card": "g7_card", "g8:fire": "g8_fire", "g8:place": "g8_place", "g8:random": "g8_place",
     "g9:guess": "g9_lock", "g9:hint": "submit",
+    "g10:answer": "submit",
     "g1:vote": "submit", "g3:submit": "submit", "g3:score": "submit", "g4:vote": "submit",
     "g5:submit": "submit", "g6:submit": "submit", "g6:vote": "submit", "g7:guess": "submit",
     "g2:pick": "submit", "g2:judge": "submit"

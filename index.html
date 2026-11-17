@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <link
-    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Baloo+2:wght@700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Baloo+2:wght@700;800&family=Noto+Serif+HK:wght@700;900&display=swap"
     rel="stylesheet"
   >
 
@@ -163,6 +163,10 @@
 
               <option value="game9">
                 Mind Dial 心中有數
+              </option>
+
+              <option value="game10">
+                Price King 估價王
               </option>
 
             </select>
@@ -497,6 +501,48 @@
             </div>
             <p class="notice" style="margin:6px 0 0" data-zh="出題人看到目標位置後給一個提示，其他人轉動指針猜位置，越近分數越高。大約每 5 題有 1 題空白題，出題人要自行設定光譜。2–6 人。">
               出題人睇到目標位置，俾一個提示，其他人轉指針估位置，越近分越高。大約每 5 題有 1 題空白題，出題人要自己出光譜。2–6 人。
+            </p>
+          </div>
+
+
+          <div
+            id="g10Section"
+            class="hidden"
+          >
+            <div class="label-row">
+              <span>題數</span>
+            </div>
+            <div id="g10CountBox" class="filter-box">
+              <button type="button" class="filter-chip g10-count-chip" data-count="10">10 題</button>
+              <button type="button" class="filter-chip g10-count-chip active" data-count="15">15 題</button>
+              <button type="button" class="filter-chip g10-count-chip" data-count="20">20 題</button>
+            </div>
+
+            <div class="label-row" style="margin-top:14px">
+              <span>題型</span>
+              <span class="g9-sub">可以揀多種 · 最少一種</span>
+            </div>
+            <div id="g10TypeBox" class="filter-box">
+              <button type="button" class="filter-chip g10-type-chip active" data-type="guess">估價</button>
+              <button type="button" class="filter-chip g10-type-chip active" data-type="nobust">唔准爆</button>
+              <button type="button" class="filter-chip g10-type-chip active" data-type="pick">邊個貴啲</button>
+              <button type="button" class="filter-chip g10-type-chip active" data-type="sort">排排坐</button>
+              <button type="button" class="filter-chip g10-type-chip active" data-type="cart">夠唔夠錢</button>
+            </div>
+            <p id="g10TypeNote" class="g9-sub" style="margin:6px 0 0"></p>
+
+            <div class="label-row" style="margin-top:14px">
+              <span>節奏</span>
+            </div>
+            <div id="g10PaceBox" class="filter-box">
+              <button type="button" class="filter-chip g10-pace-chip" data-pace="fast">快</button>
+              <button type="button" class="filter-chip g10-pace-chip active" data-pace="std">標準</button>
+              <button type="button" class="filter-chip g10-pace-chip" data-pace="slow">慢</button>
+            </div>
+            <div id="g10PaceGrid" class="g10-pace-grid"></div>
+            <div id="g10Preview" class="g9-preview g10-preview" aria-live="polite"></div>
+            <p class="notice" style="margin:6px 0 0">
+              全部人同時估價，越接近真實價錢分越高，幾種題型輪流出。2–8 人，香港限定。
             </p>
           </div>
 
@@ -1040,6 +1086,47 @@
         <button
           class="btn btn-dark"
           data-start="game9"
+        >
+          PLAY THIS GAME
+        </button>
+
+      </article>
+
+      <article class="game-card price-card" data-region-only="hk">
+
+        <div class="sticker">
+          10
+        </div>
+
+        <div class="game-icon">
+          <svg width="60" height="44" viewBox="0 0 60 44" aria-hidden="true">
+            <path d="M20 14 C20 4 36 4 36 14" fill="none" stroke="#1f2740" stroke-width="3" stroke-linecap="round"/>
+            <path d="M10 14 H46 L49 40 H7 Z" fill="#FEFEF2" stroke="#1f2740" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M15 15 V39 M27 15 V39" stroke="#B5303A" stroke-width="4"/>
+            <path d="M21 15 V39 M33 15 V39" stroke="#1A47A0" stroke-width="4"/>
+            <g transform="rotate(14 50 28)"><path d="M42 20 H58 V36 H42 L38 28 Z" fill="#FEFEF2" stroke="#1f2740" stroke-width="2" stroke-linejoin="round"/><text x="50" y="32" text-anchor="middle" font-family="Noto Serif HK, serif" font-weight="900" font-size="10" fill="#B5303A">$?</text></g>
+          </svg>
+        </div>
+
+        <h3>
+          Price<br>
+          King<br>
+          <span class="h3-sub">估價王</span>
+        </h3>
+
+        <p>
+          全部人同時估價，越接近真實價錢分越高；估價、唔准爆、邊個貴啲、排排坐、夠唔夠錢輪流出。
+        </p>
+
+        <div class="tag-row">
+          <span>GUESS</span>
+          <span>HK ONLY</span>
+          <span>2–8</span>
+        </div>
+
+        <button
+          class="btn btn-dark"
+          data-start="game10"
         >
           PLAY THIS GAME
         </button>
