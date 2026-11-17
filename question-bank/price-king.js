@@ -96,5 +96,7 @@ export const PRICE_KING_CARTS = [
   { id: 1, title: "交通",     budget: 100,  itemIds: [1, 8, 12, 13, 45, 24] },
   { id: 2, title: "證件手續", budget: 1000, itemIds: [9, 10, 43, 21, 42, 44] },
   { id: 3, title: "睇醫生",   budget: 1000, itemIds: [27, 28, 29, 30, 32, 36] },
-  { id: 4, title: "罰款",     budget: 5000, itemIds: [5, 3, 4, 7, 6, 22] }
+  { id: 4, title: "罰款",     budget: 5000, itemIds: [5, 3, 4, 7, 6, 22] },
+  { id: 5, title: "玩樂",     budget: 1000, itemIds: [26, 35, 24, 73, 74, 25] },
+  { id: 6, title: "懷舊",     budget: 20,   itemIds: [17, 19, 18, 79, 57, 76] }
 ];
