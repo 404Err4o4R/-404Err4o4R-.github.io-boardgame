@@ -2,7 +2,7 @@
 // 題目用書面語；title 係主題目（儘量簡短），sub 係題目下面嘅細字副標。
 // price 一律以港元整數儲存（萬、億位照數字寫）。year 係揭曉時顯示嘅參考年份。
 // source 記錄出處，方便日後價錢過時再核對。
-// 第一批 1–22、第二批 23–45、第三批 46–55 已審。
+// 第一批 1–22、第二批 23–45、第三批 46–55、第四批 56–80 已審。
 // category 會印喺題目卡嘅分類印仔上面。
 export const PRICE_KING_ITEMS = [
   { id: 1,  category: "交通",     title: "的士起錶",           sub: "市區紅的",          price: 29,       year: 2026, source: "運輸署：2024-07-14 起市區的士首 2 公里 $29（moneyhk101.com/taxi-fee）" },
@@ -61,7 +61,33 @@ export const PRICE_KING_ITEMS = [
   { id: 52, category: "離地價",   title: "茶記宴席",           sub: "粉嶺屋邨茶餐廳",    price: 14888,      year: 2026, source: "stheadline.com 2026-03-29：粉嶺茶餐廳 $14,888 尊貴盛宴" },
   { id: 53, category: "離地價",   title: "兩餸飯舖月租",       sub: "銅鑼灣",            price: 220000,     year: 2026, source: "dimsumdaily.hk 2026-08-26：銅鑼灣分店月租高達 $220,000" },
   { id: 54, category: "離地價",   title: "兩餸飯舖月租",       sub: "旺角",              price: 160000,     year: 2026, source: "Yahoo 財經：權發小廚旺角西洋菜南街月租約 16 萬元" },
-  { id: 55, category: "飲食",     title: "最平雞髀飯",         sub: "觀塘茶記特價",      price: 8,          year: 2026, source: "stheadline.com 2026-06-04：觀塘茶記 $8 鹵水雞髀飯" }
+  { id: 55, category: "飲食",     title: "最平雞髀飯",         sub: "觀塘茶記特價",      price: 8,          year: 2026, source: "stheadline.com 2026-06-04：觀塘茶記 $8 鹵水雞髀飯" },
+  // 第四批
+  { id: 56, category: "日常",     title: "六合彩一注",         sub: "而家",              price: 10,          year: 2026, source: "世界日報：六合彩最低投注額 10 港元" },
+  { id: 57, category: "懷舊",     title: "六合彩一注",         sub: "1976 年",           price: 2,           year: 1976, source: "ourchinastory.com：1976 年第 1 期六合彩，2 元一注" },
+  { id: 58, category: "懷舊",     title: "政府獎券一張",       sub: "1962 年 · 六合彩前身", price: 2,         year: 1962, source: "世界日報引述香港歷史檔案館：1962 年政府獎券 2 元一張" },
+  { id: 59, category: "懷舊",     title: "政府獎券頭獎",       sub: "1962 年 · 六合彩前身", price: 680000,    year: 1962, source: "世界日報引述香港歷史檔案館：頭獎獎金高達 68 萬多港元（約數）" },
+  { id: 60, category: "離地價",   title: "六合彩頭獎紀錄",     sub: "2025 年新春金多寶", price: 193762620,   year: 2025, source: "Mark Six（Wikipedia）：Highest jackpot HK$193,762,620" },
+  { id: 61, category: "離地價",   title: "六合彩頭獎",         sub: "2021 年",           price: 91240000,    year: 2021, source: "stheadline.com：2021-08-26 一注獨中 9,124 萬元" },
+  { id: 62, category: "離地價",   title: "六合彩食全餐",       sub: "買齊 49 個號碼",    price: 139838160,   year: 2026, source: "49 選 6 共 13,983,816 注 × $10（hk01.com：總投注額約 1.4 億元）" },
+  { id: 63, category: "樓市",     title: "豪宅車位",           sub: "山頂 · 2021 年",    price: 11888000,    year: 2021, source: "鉅亨網：Mount Nicholson 2021 年車位每個 1,188.8 萬（非香港來源）" },
+  { id: 64, category: "樓市",     title: "車位月租",           sub: "將軍澳日出康城",    price: 7300,        year: 2025, source: "stheadline.com 2025-12-18：日出康城車位月租 $7,300" },
+  { id: 65, category: "樓市",     title: "165 呎納米樓",       sub: "大角咀 · 2026 年拍賣", price: 2520000,   year: 2026, source: "hk01.com：大角咀尚璽 165 呎單位 252 萬元拍出" },
+  { id: 66, category: "樓市",     title: "同一單位買入價",     sub: "大角咀 · 2021 年",  price: 4830000,     year: 2021, source: "hk01.com：原業主 2021-11 以 483 萬元買入" },
+  { id: 67, category: "樓市",     title: "山頂豪宅呎價",       sub: "2017 年亞洲紀錄",   price: 132000,      year: 2017, source: "Bloomberg（edgeprop.sg）：Mount Nicholson 每呎 HK$132,000" },
+  { id: 68, category: "樓市",     title: "半山豪宅複式",       sub: "2017 年",           price: 522000000,   year: 2017, source: "Bloomberg：39 Conduit Road 複式約 HK$522 million" },
+  { id: 69, category: "樓市",     title: "山頂豪宅月租",       sub: "4,596 呎",          price: 850000,      year: 2026, source: "鉅亨網：Mount Nicholson 4,596 呎單位月租 85 萬（非香港來源）" },
+  { id: 70, category: "樓市",     title: "山頂地皮",           sub: "2010 年",           price: 10400000000, year: 2010, source: "鉅亨網：2010 年九龍倉及南豐以 104 億港元投得（非香港來源）" },
+  { id: 71, category: "運動",     title: "公眾泳池",           sub: "成人 · 平日",       price: 17,          year: 2024, source: "hk01.com：康文署公眾泳池一般收費平日 $17（2024 年報道）" },
+  { id: 72, category: "運動",     title: "公眾泳池",           sub: "成人 · 假日",       price: 19,          year: 2024, source: "hk01.com：康文署公眾泳池一般收費假日 $19（2024 年報道）" },
+  { id: 73, category: "運動",     title: "泳池月票",           sub: "成人",              price: 300,         year: 2024, source: "hk01.com：公眾游泳池月票 HK$300（2024 年報道）" },
+  { id: 74, category: "運動",     title: "健身室月票",         sub: "康文署",            price: 180,         year: 2026, source: "bowtie.com.hk：康文署健身室月票 180 元" },
+  { id: 75, category: "交通",     title: "康文署停車場夜泊",   sub: "8 個鐘 · 最平",     price: 16,          year: 2026, source: "stheadline.com 2026-08-20：康文署停車場夜泊 8 小時最平 $16" },
+  { id: 76, category: "懷舊",     title: "叮叮車費",           sub: "2011 年前",         price: 2,           year: 2011, source: "立法會參考資料摘要：2011-06-07 起成人車費由 $2.0 加至 $2.3" },
+  { id: 77, category: "懷舊",     title: "叮叮月票",           sub: "2011 年前",         price: 170,         year: 2011, source: "立法會參考資料摘要：月票由 $170 加至 $200" },
+  { id: 78, category: "懷舊",     title: "叮叮月票",           sub: "2018 年",           price: 200,         year: 2018, source: "立法會文件 2018：月票 200 元" },
+  { id: 79, category: "懷舊",     title: "東隧隧道費",         sub: "1998 年 · 私家車",  price: 15,          year: 1998, source: "ourchinastory.com：東隧 1998 年增至 $15" },
+  { id: 80, category: "懷舊",     title: "東隧隧道費",         sub: "2005 年 · 私家車",  price: 25,          year: 2005, source: "ourchinastory.com：東隧 2005 年由 $15 增至 $25" }
 ];
 
 // 「夠唔夠錢」購物組合：itemIds 指向上面 PRICE_KING_ITEMS 嘅 id，價錢以題目為準。
