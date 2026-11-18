@@ -65,6 +65,11 @@
       ["24 30 200 176", `<defs><pattern id="trRwb" width="42" height="42" patternUnits="userSpaceOnUse"><rect width="42" height="42" fill="#FFFFFF"/><rect width="14" height="42" fill="#B5303A"/><rect x="21" width="14" height="42" fill="#1A47A0"/></pattern></defs><path d="M84 74 C84 34 156 34 156 74" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round"/><path d="M44 72 H196 L210 196 H30 Z" fill="url(#trRwb)" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/>`],
       ["164 104 80 84", `<g transform="rotate(14 214 150)"><path d="M182 112 H236 V178 H182 L170 145 Z" fill="${PURE}" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/><circle cx="184" cy="145" r="5" fill="#F6F2EA" stroke="${INK}" stroke-width="3"/><text x="212" y="160" text-anchor="middle" font-family="Noto Serif HK, serif" font-weight="900" font-size="40" fill="#B5303A">$?</text></g>`],
       ["0 0 60 44", `<rect x="4" y="6" width="52" height="32" rx="4" fill="${PURE}" stroke="${INK}" stroke-width="3"/><text x="30" y="30" text-anchor="middle" font-family="Noto Serif HK, serif" font-weight="900" font-size="18" fill="#1A47A0">$$</text>`]
+    ] },
+    game11: { bg: "#1F5640", ink: PURE, stamp: "#7A2335", maxBig: 3, motifs: [
+      ["10 30 220 150", `<rect x="16" y="36" width="208" height="138" rx="8" fill="#EFE4CC" stroke="#B8913E" stroke-width="5"/><path d="M16 44 L120 120 L224 44" fill="none" stroke="#B8913E" stroke-width="5" stroke-linejoin="round"/><g transform="translate(120 120)"><circle r="30" fill="#7A2335"/><circle r="22" fill="none" stroke="#D4B46A" stroke-width="3"/><path d="M0 12 C-14 2 -12 -8 -5 -8 C-2 -8 0 -5 0 -3 C0 -5 2 -8 5 -8 C12 -8 14 2 0 12 Z" fill="#D4B46A"/></g>`],
+      ["0 0 80 56", `<polygon points="6,50 6,14 24,32 40,4 56,32 74,14 74,50" fill="#D4B46A" stroke="#6E4F1C" stroke-width="3" stroke-linejoin="round"/><circle cx="40" cy="38" r="6" fill="#7A2335"/>`],
+      ["0 0 60 60", `<circle cx="30" cy="30" r="24" fill="#7A2335"/><circle cx="30" cy="30" r="17" fill="none" stroke="#D4B46A" stroke-width="2.5"/><text x="30" y="38" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="700" font-size="22" fill="#EFE4CC">8</text>`]
     ] }
   };
   const FALLBACK = { bg: "#F2D965", ink: INK, stamp: INK, motifs: THEMES.game1.motifs };

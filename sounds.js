@@ -283,6 +283,12 @@
         const bull = (g.result?.guesses || []).some((r) => r.points === 4);
         return P(bull ? "g9_bullseye" : "reveal");
       }
+    },
+    game11(pg, g, me) {
+      // 出牌音效由 rl-ui.js 嘅動畫負責
+      if (g.phase === "roundover" && pg.phase !== "roundover") return P("reveal", 2300);
+      if (g.phase === "turn" && pg.phase !== "turn") P("round");
+      if (g.phase === "turn" && g.currentId === me && (pg.currentId !== me || pg.turnSeq !== g.turnSeq)) P("turn", 2300);
     }
   };
 
@@ -309,7 +315,7 @@
   // 自己送出動作：答案／投票提交成功、技能卡、開炮、放船、鎖定答案
   const SEND = {
     "g7:card": "g7_card", "g8:fire": "g8_fire", "g8:place": "g8_place", "g8:random": "g8_place",
-    "g9:guess": "g9_lock", "g9:hint": "submit",
+    "g9:guess": "g9_lock", "g9:hint": "submit", "g11:ready": "submit",
     "g10:answer": "submit",
     "g1:vote": "submit", "g3:submit": "submit", "g3:score": "submit", "g4:vote": "submit",
     "g5:submit": "submit", "g6:submit": "submit", "g6:vote": "submit", "g7:guess": "submit",

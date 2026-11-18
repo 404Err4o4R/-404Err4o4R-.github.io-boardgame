@@ -10,6 +10,10 @@ import {
 } from "./question-bank/loader.js";
 import { G6_S2T_PAIRS } from "./question-bank/g6-chars.js";
 import { PRICE_KING_ITEMS, PRICE_KING_CARTS } from "./question-bank/price-king.js";
+import {
+  RL_TURN_MS_OPTIONS, RL_MIN_PLAYERS, RL_MAX_PLAYERS, RL_PLAY_SHOW_MS, RL_OFFLINE_TURN_MS, RL_MATCH_END_MS,
+  rlNewMatch, rlNewRound, rlValidate, rlPlay, rlAutoMove, rlEndRound, rlNextStarter, rlRanking, rlTitles, rlViewEntry, rlTargets
+} from "./games/royal-letter.js";
 
 const MAX_PLAYERS = 6;
 const MIN_PLAYERS = 2;
@@ -439,7 +443,14 @@ function publicGame10(room,g,viewerId){
 function cleanName(v) {
   return String(v || "玩家").trim().slice(0,20) || "玩家";
 }
-function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7" || v==="game8" || v==="game9" || v==="game10"; }
+function validGame(v) { return v==="game1" || v==="game2" || v==="game3" || v==="game4" || v==="game5" || v==="game6" || v==="game7" || v==="game8" || v==="game9" || v==="game10" || v==="game11"; }
+// 各遊戲人數上下限（冇寫就用 MIN_PLAYERS／MAX_PLAYERS）
+function maxPlayersFor(game){ return game==="game10" ? G10_MAX_PLAYERS : game==="game11" ? RL_MAX_PLAYERS : MAX_PLAYERS; }
+function minPlayersFor(game){ return game==="game4" ? MIN_PLAYERS_GAME4 : game==="game11" ? RL_MIN_PLAYERS : MIN_PLAYERS; }
+function clampG11TurnMs(v) {
+  const n = Number(v);
+  return RL_TURN_MS_OPTIONS.includes(n) ? n : RL_TURN_MS_OPTIONS[0];
+}
 function clampRounds(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
@@ -714,6 +725,10 @@ export default {
               g10Count: body.g10Count || null,
               g10Types: Array.isArray(body.g10Types) ? body.g10Types : null,
               g10Pace: body.g10Pace || null,
+              g11TurnMs:
+                body.g11TurnSeconds ? body.g11TurnSeconds*1000 : null,
+              g11Assist:
+                body.g11Assist === true,
               roomTtl: ROOM_TTL
             })
           }
@@ -843,6 +858,12 @@ function publicRoom(room, viewerId=null) {
       hintMs: G9_HINT_MS,
       rounds: room.g9Rounds||G9_ROUND_DEFAULT
     } : null,
+    g11Settings: room.game==="game11" ? {
+      turnMs: room.g11TurnMs||RL_TURN_MS_OPTIONS[0],
+      assist: !!room.g11Assist,
+      minPlayers: RL_MIN_PLAYERS,
+      maxPlayers: RL_MAX_PLAYERS
+    } : null,
     g7Settings: room.game==="game7" ? {
       turnMs: room.g7TurnMs||G7_TURN_MS_OPTIONS[0],
       rounds: room.g7Rounds||5
@@ -867,6 +888,48 @@ function publicRoom(room, viewerId=null) {
       ? room.gameState.privateExplanation || null
       : null
   };
+}
+
+// ===== Game 10 · Royal Letter 宮廷密函：每個玩家只睇到自己手牌 =====
+function publicGameState11(room, g, viewerId){
+  const nick=(id)=>room.players.find(p=>p.id===id)?.nickname||"玩家";
+  const inRound=Array.isArray(g.players) && !!viewerId && g.players.includes(viewerId);
+  const base={
+    phase:g.phase,
+    round:g.round||0,
+    target:g.target,
+    turnMs:g.turnMs,
+    assist:!!room.g11Assist,
+    order:g.order||[],
+    players:g.players||[],
+    alive:g.alive||[],
+    protected:g.protected||[],
+    currentId:g.currentId||null,
+    turnSeq:g.turnSeq||0,
+    endsAt:g.endsAt||null,
+    deckCount:(g.deck||[]).length,
+    discards:g.discards||{},
+    tokens:g.tokens||{},
+    myHand:inRound ? [...(g.hands?.[viewerId]||[])] : [],
+    log:(g.log||[]).map(e=>rlViewEntry(e,viewerId)),
+    actionSeq:g.actionSeq||0,
+    roundWins:g.roundWins||[],
+    matchOver:!!g.matchOver,
+    endedEarly:!!g.endedEarly
+  };
+  if(g.phase==="turn" && viewerId && g.currentId===viewerId){
+    const hand=g.hands?.[viewerId]||[];
+    base.myTargets=Object.fromEntries([...new Set(hand)].map(c=>[c,rlTargets(g,viewerId,c)]));
+  }
+  if(g.phase==="roundover" || g.phase==="gameover"){
+    base.roundResult=g.roundResult||null;
+    base.ready=Object.keys(g.ready||{}).filter(id=>g.ready[id]);
+  }
+  if(g.phase==="gameover"){
+    base.ranking=rlRanking(g,nick);
+    base.titles=rlTitles(g);
+  }
+  return base;
 }
 
 function publicGameState(room, viewerId=null) {
@@ -1315,6 +1378,8 @@ results:g.results||null
     return base9;
   }
 
+  if(room.game==="game11") return publicGameState11(room, g, viewerId);
+
   if(room.game==="game7") {
     const alive=g.alive||[];
     const viewerAlive=!!(viewerId && alive.includes(viewerId));
@@ -1549,6 +1614,8 @@ export class GameRoom extends DurableObject {
         g10Count:clampG10Count(body.g10Count),
         g10Types:clampG10Types(body.g10Types),
         g10Pace:clampG10Pace(body.g10Pace),
+        g11TurnMs:clampG11TurnMs(body.g11TurnMs),
+        g11Assist:body.g11Assist===true,
         hostId:null,
         players:[],
         gameState:null,
@@ -1598,7 +1665,7 @@ export class GameRoom extends DurableObject {
   }
 
   normalizeFilters(game, filters){
-    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7" || game==="game8" || game==="game9" || game==="game10") return [];
+    if(game==="game3" || game==="game4" || game==="game5" || game==="game6" || game==="game7" || game==="game8" || game==="game9" || game==="game10" || game==="game11") return [];
     const allowed=new Set(game==="game1"?GAME1_CATEGORIES:GAME2_CATEGORIES);
     const selected=[...new Set((Array.isArray(filters)?filters:[]).filter(x=>allowed.has(x)))];
     return selected.length?selected:[...allowed];
@@ -1688,6 +1755,10 @@ export class GameRoom extends DurableObject {
       case "g10:pause": return this.onG10Pause(session.playerId);
       case "g10:next": return this.onG10Next(session.playerId);
       case "g10:end": return this.onG10End(session.playerId);
+      case "g11:play": return this.onG11Play(session.playerId,msg.card,msg.targetId,msg.guess);
+      case "g11:ready": return this.onG11Ready(session.playerId,msg.ready);
+      case "g11:nudge": return this.onG11Nudge(session.playerId,msg.targetId);
+      case "g11:end": return this.onG11End(session.playerId);
       case "chat:send": return this.onRoomChat(session.playerId,msg.text,msg.channel);
       case "chat:mute": return this.onRoomChatMute(session.playerId,msg.targetId,msg.muted);
       case "kick": return this.onKick(session.playerId,msg.targetId);
@@ -1744,8 +1815,7 @@ export class GameRoom extends DurableObject {
     if(clientId && (this.room.kicked||[]).includes(clientId)){
       return this.safeSend(ws,{type:"error",code:"kicked",message:this.room.language==="zh"?"你已被移出此房間，無法再加入。":"你已被移出呢間房，唔可以再入。"});
     }
-    const roomMax=this.room.game==="game10" ? G10_MAX_PLAYERS : MAX_PLAYERS;
-    if(this.room.players.length>=roomMax) return this.safeSend(ws,{type:"error",message:`房間已滿，最多${roomMax}人。`});
+    if(this.room.players.length>=maxPlayersFor(this.room.game)) return this.safeSend(ws,{type:"error",message:`房間已滿，最多${maxPlayersFor(this.room.game)}人。`});
     if(this.room.game==="game6" && this.room.g6Mode==="meet" && this.room.players.length>=G6_MEET_MAX_PLAYERS){
       return this.safeSend(ws,{type:"error",message:this.room.language==="zh"?"相遇模式最多 4 人，房間已滿。":"相遇模式最多 4 人，房間已滿。"});
     }
@@ -1843,6 +1913,7 @@ async onReady(playerId, ready){
       if(await this.g8AfterDisconnect()) return;
       if(await this.g9AfterDisconnect()) return;
       if(await this.g10AfterDisconnect()) return;
+      if(await this.g11AfterDisconnect()) return;
     }
 
     await this.save();
@@ -1862,11 +1933,11 @@ async onReady(playerId, ready){
   async onStart(playerId){
     if(playerId!==this.room.hostId) return this.errorPlayer(playerId,"只有房主可以開始。");
     const connected=this.room.players.filter(p=>p.connected);
-    const minRequired = this.room.game==="game4" ? MIN_PLAYERS_GAME4 : MIN_PLAYERS;
+    const minRequired = minPlayersFor(this.room.game);
+    const maxAllowed = maxPlayersFor(this.room.game);
     if(this.room.game==="game6" && this.room.g6Mode==="meet" && connected.length>G6_MEET_MAX_PLAYERS){
       return this.errorPlayer(playerId,"相遇模式只可以 2–4 人玩。");
     }
-    const maxAllowed = this.room.game==="game10" ? G10_MAX_PLAYERS : MAX_PLAYERS;
     if(connected.length<minRequired || connected.length>maxAllowed){
       return this.errorPlayer(playerId,`需要${minRequired}-${maxAllowed}位已連線玩家。`);
     }
@@ -1895,6 +1966,7 @@ if (notReady.length > 0) {
     else if(this.room.game==="game8") await this.startGame8();
     else if(this.room.game==="game9") await this.startGame9();
     else if(this.room.game==="game10") await this.startGame10();
+    else if(this.room.game==="game11") await this.startGame11();
     else await this.startGame2();
   }
 
@@ -1915,7 +1987,7 @@ if (notReady.length > 0) {
     if(playerId!==this.room.hostId) return;
     if(!this.isGameOverPhase()) return;
     const connected=this.room.players.filter(p=>p.connected);
-    const minRequired = this.room.game==="game4" ? MIN_PLAYERS_GAME4 : MIN_PLAYERS;
+    const minRequired = minPlayersFor(this.room.game);
     if(connected.length<minRequired){
       return this.errorPlayer(playerId,`最少要 ${minRequired} 位在線玩家先可以再玩。`);
     }
@@ -1933,6 +2005,7 @@ if (notReady.length > 0) {
     else if(gm==="game8") await this.startGame8();
     else if(gm==="game9") await this.startGame9();
     else if(gm==="game10") await this.startGame10();
+    else if(gm==="game11") await this.startGame11();
     else await this.startGame2();
   }
 
@@ -5009,6 +5082,153 @@ async onG1Next(playerId){
 
   /* ---------- 全房聊天室 ---------- */
 
+  /* =========================
+     Game 10 · Royal Letter 宮廷密函
+  ========================= */
+
+  async startGame11(){
+    const ids=this.room.players.filter(p=>p.connected).map(p=>p.id);
+    for(const p of this.room.players) p.score=0;
+    const g=rlNewMatch(ids,this.room.g11TurnMs||RL_TURN_MS_OPTIONS[0]);
+    this.room.gameState=g;
+    this.room.g11Nudge={};
+    // 第一局隨機揀人開始
+    const first=ids[Math.floor(Math.random()*ids.length)];
+    rlNewRound(g,ids,first);
+    // 開場動畫大約 2 秒，第一個人嘅計時之後先開始
+    this.armTurnGame11(2000);
+    await this.commitGame11();
+  }
+
+  syncScoresGame11(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11") return;
+    for(const p of this.room.players) p.score=g.tokens?.[p.id]||0;
+  }
+
+  // 設定輪到嘅人嘅限時：斷咗線就好快自動出牌
+  armTurnGame11(extraMs=RL_PLAY_SHOW_MS){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11") return;
+    if(g.phase==="turn" && g.currentId){
+      const p=this.room.players.find(x=>x.id===g.currentId);
+      g.endsAt=Date.now()+extraMs+(p?.connected ? g.turnMs : RL_OFFLINE_TURN_MS);
+    } else if(g.phase==="roundover"){
+      g.endsAt=g.matchOver ? Date.now()+RL_PLAY_SHOW_MS+RL_MATCH_END_MS : null;
+    } else {
+      g.endsAt=null;
+    }
+  }
+
+  async commitGame11(){
+    const g=this.room.gameState;
+    this.syncScoresGame11();
+    await this.save();
+    if(g?.endsAt) await this.ctx.storage.setAlarm(g.endsAt);
+    await this.broadcastRoom();
+  }
+
+  async onG11Play(playerId,card,targetId,guess){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11" || g.phase!=="turn") return;
+    const c=Number(card);
+    const err=rlValidate(g,playerId,c,targetId||null,guess);
+    if(err) return this.errorPlayer(playerId,err);
+    rlPlay(g,playerId,c,targetId||null,guess,false);
+    this.armTurnGame11();
+    await this.commitGame11();
+  }
+
+  async timeoutGame11(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11" || g.phase!=="turn" || !g.currentId) return;
+    const by=g.currentId;
+    const mv=rlAutoMove(g,by);
+    if(rlValidate(g,by,mv.card,mv.targetId,mv.guess)) return;
+    rlPlay(g,by,mv.card,mv.targetId,mv.guess,true);
+    this.armTurnGame11();
+    await this.commitGame11();
+  }
+
+  async onG11Ready(playerId,ready){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11" || g.phase!=="roundover" || g.matchOver) return;
+    if(!(g.order||[]).includes(playerId)) return;
+    g.ready={...(g.ready||{}),[playerId]:ready!==false};
+    if(!g.ready[playerId]) delete g.ready[playerId];
+    if(await this.maybeNextRoundGame11()) return;
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  // 全部在線玩家撳咗準備好就開下一局（唔會自動開始）
+  async maybeNextRoundGame11(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11" || g.phase!=="roundover" || g.matchOver) return false;
+    const connected=this.room.players.filter(p=>p.connected && (g.order||[]).includes(p.id)).map(p=>p.id);
+    if(!connected.length || !connected.every(id=>g.ready?.[id])) return false;
+    if(connected.length<2){ await this.finishGame11(true); return true; }
+    const start=rlNextStarter(g,connected);
+    rlNewRound(g,connected,start);
+    this.armTurnGame11(1200);
+    await this.commitGame11();
+    return true;
+  }
+
+  // 提醒未準備嘅人：每對玩家 8 秒內只可以提一次
+  async onG11Nudge(playerId,targetId){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11" || g.phase!=="roundover" || g.matchOver) return;
+    if(!targetId || targetId===playerId || g.ready?.[targetId]) return;
+    const from=this.room.players.find(x=>x.id===playerId);
+    const target=this.room.players.find(x=>x.id===targetId);
+    if(!from || !target?.connected) return;
+    this.g11NudgeAt=this.g11NudgeAt||new Map();
+    const key=playerId+">"+targetId;
+    const now=Date.now();
+    if(now-(this.g11NudgeAt.get(key)||0)<8000) return this.sendToPlayer(playerId,{type:"g11:nudge-wait"});
+    this.g11NudgeAt.set(key,now);
+    const waiting=this.room.players.filter(p=>p.connected && (g.order||[]).includes(p.id) && !g.ready?.[p.id]).map(p=>p.nickname);
+    const readyCount=this.room.players.filter(p=>p.connected && g.ready?.[p.id]).length;
+    this.sendToPlayer(targetId,{type:"g11:nudged",from:from.nickname,waiting,readyCount});
+    this.sendToPlayer(playerId,{type:"g11:nudge-sent",to:target.nickname});
+  }
+
+  async finishGame11(endedEarly){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11") return;
+    g.phase="gameover";
+    g.endsAt=null;
+    g.currentId=null;
+    g.endedEarly=!!endedEarly;
+    this.syncScoresGame11();
+    await this.save();
+    await this.broadcastRoom();
+  }
+
+  async g11AfterDisconnect(){
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11") return false;
+    if(g.phase==="turn"){
+      const p=this.room.players.find(x=>x.id===g.currentId);
+      if(!p || p.connected) return false;
+      const soon=Date.now()+RL_OFFLINE_TURN_MS;
+      if(g.endsAt && g.endsAt<=soon) return false;
+      g.endsAt=soon;
+      await this.commitGame11();
+      return true;
+    }
+    if(g.phase==="roundover") return this.maybeNextRoundGame11();
+    return false;
+  }
+
+  async onG11End(playerId){
+    if(playerId!==this.room.hostId) return;
+    const g=this.room.gameState;
+    if(!g || g.game!=="game11" || g.phase==="gameover") return;
+    await this.finishGame11(true);
+  }
+
   chatHistoryFor(viewerId){
     const all=(this.room.roomChat||[]);
     const dead=viewerId && chatDeadIds(this.room).includes(viewerId) ? (this.room.deadChat||[]) : [];
@@ -5224,6 +5444,7 @@ async onG1Next(playerId){
     if(await this.g8AfterDisconnect()) return;
     if(await this.g9AfterDisconnect()) return;
     if(await this.g10AfterDisconnect()) return;
+    if(await this.g11AfterDisconnect()) return;
 
     await this.save();
     await this.broadcastRoom();
@@ -5344,6 +5565,10 @@ async onG1Next(playerId){
       if(g.phase==="intro") { await this.beginAnswerGame10(); return; }
       if(g.phase==="answer") { await this.revealGame10(); return; }
       if(g.phase==="reveal") { await this.nextGame10(); return; }
+    }
+    if(g?.game==="game11" && g.endsAt && Date.now()+50>=g.endsAt){
+      if(g.phase==="turn") { await this.timeoutGame11(); return; }
+      if(g.phase==="roundover" && g.matchOver) { await this.finishGame11(false); return; }
     }
 
     if(g?.game==="game9" && g.endsAt && Date.now()+50>=g.endsAt){

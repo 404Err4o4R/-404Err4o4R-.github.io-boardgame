@@ -173,15 +173,16 @@ function renderCategories() {
   $("#g8Section")?.classList.toggle("hidden", S.selectedGame !== "game8");
   $("#g9Section")?.classList.toggle("hidden", S.selectedGame !== "game9");
   $("#g10Section")?.classList.toggle("hidden", S.selectedGame !== "game10");
+  $("#g11Section")?.classList.toggle("hidden", S.selectedGame !== "game11");
   $("#g1Section")?.classList.toggle("hidden", S.selectedGame !== "game1");
   $("#g2Section")?.classList.toggle("hidden", S.selectedGame !== "game2");
 
-  if (S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9" || S.selectedGame === "game10") {
+  if (S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9" || S.selectedGame === "game10" || S.selectedGame === "game11") {
     if (S.selectedGame === "game9") renderG9Preview();
     if (catSection) catSection.style.display = "none";
     if (roundsSection) roundsSection.classList.add("hidden");
-    // 估價王淨係得廣東話，冇語言選項
-    if (langSection) langSection.classList.toggle("hidden", S.selectedGame === "game10");
+    // 估價王、宮廷密函淨係得廣東話，冇語言選項
+    if (langSection) langSection.classList.toggle("hidden", S.selectedGame === "game10" || S.selectedGame === "game11");
     if (g4Section) g4Section.classList.add("hidden");
     if (g5Section) g5Section.classList.add("hidden");
     return;
@@ -543,6 +544,13 @@ const ROOM_COVERS = {
       <div class="gc-label eyebrow">GUESS · BID · WIN</div>
       <div class="gc-label bottom">Price King 估價王</div>
     </div>
+  `,
+  game11: `
+    <div class="game-cover cover-g11">
+      <img class="gc-art" src="./assets/royal-letter/back.jpg" alt="" loading="lazy">
+      <div class="gc-label eyebrow">DRAW · BLUFF · DEDUCE</div>
+      <div class="gc-label bottom">Royal Letter 宮廷密函</div>
+    </div>
   `
 
 };
@@ -557,7 +565,8 @@ const GAME_ACCENTS = {
   game7: "#7A1030",
   game8: "#22408C",
   game9: "#1F6F94",
-  game10: "#B5303A"
+  game10: "#B5303A",
+  game11: "#1F5640"
 };
 
 const GAME_NAMES = {
@@ -570,7 +579,8 @@ const GAME_NAMES = {
   game7: "Number Bomb 數字炸彈",
   game8: "Battleship 海戰棋",
   game9: "Mind Dial 心中有數",
-  game10: "Price King 估價王"
+  game10: "Price King 估價王",
+  game11: "Royal Letter 宮廷密函"
 };
 
 function renderRoomVisual() {
@@ -607,10 +617,11 @@ const COVER_TILE_LABELS = {
   game7: { full: "Number Bomb 數字炸彈", short: "數字炸彈", bg: "#1f2740", fg: "#FFD3DD" },
   game8: { full: "Battleship 海戰棋", short: "海戰棋", bg: "#F2D965", fg: "#1f2740" },
   game9: { full: "Mind Dial 心中有數", short: "心中有數", bg: "#1f2740", fg: "#F5B82E" },
-  game10: { full: "Price King 估價王", short: "估價王", bg: "#1f2740", fg: "#FEFEF2" }
+  game10: { full: "Price King 估價王", short: "估價王", bg: "#1f2740", fg: "#FEFEF2" },
+  game11: { full: "Royal Letter 宮廷密函", short: "宮廷密函", bg: "#EFE4CC", fg: "#7A2335" }
 };
 // 只喺指定地區大廳顯示嘅遊戲（用房號入房唔受限制）
-const REGION_ONLY_GAMES = { game10: ["hk"] };
+const REGION_ONLY_GAMES = { game10: ["hk"], game11: ["hk"] };
 function gamesForRegion() {
   const region = S.region || "hk";
   return Object.keys(ROOM_COVERS).filter((g) => !REGION_ONLY_GAMES[g] || REGION_ONLY_GAMES[g].includes(region));
@@ -827,6 +838,15 @@ function applyRegion(region) {
   });
 
   S.selectedLanguage = REGION_LANG[S.region];
+  renderCoverGrid();
+  if (!gamesForRegion().includes(S.selectedGame)) {
+    S.selectedGame = "game1";
+    const select = $("#gameSelect");
+    if (select) select.value = "game1";
+    S.filters = [];
+    renderCategories();
+  }
+  renderRoomVisual();
   document.querySelectorAll("#langBox .lang-chip").forEach((chip) => {
     chip.classList.toggle("active", chip.dataset.lang === S.selectedLanguage);
   });
@@ -1146,11 +1166,19 @@ S.g9GuessSeconds = 30;
 bindChips("#g9RoundsBox", ".g9-rounds-chip", (chip) => { S.g9Rounds = Number(chip.dataset.rounds) || 2; renderG9Preview(); });
 bindChips("#g9TimeBox", ".g9-time-chip", (chip) => { S.g9GuessSeconds = Number(chip.dataset.sec) || 30; });
 
+/* Game 10 · Royal Letter 宮廷密函 開房設定 */
+S.g11TurnSeconds = 15;
+S.g11Assist = false;
+
 /* =========================
    房間
 ========================= */
 
-$("#createBtn")?.addEventListener("click", createRoom);
+// 宮廷密函：先打開自己嘅開房設定（rl-ui.js），喺嗰度撳「開房」先真正建立房間
+$("#createBtn")?.addEventListener("click", () => {
+  if (S.selectedGame === "game11" && typeof g11OpenSettings === "function") return g11OpenSettings();
+  createRoom();
+});
 $("#joinBtn")?.addEventListener("click", joinRoom);
 $("#closeGame")?.addEventListener("click", leaveRoom);
 
@@ -1249,7 +1277,9 @@ async function createRoom() {
         filters: { categories: S.filters },
         rounds: S.selectedGame === "game3" ? (S.selectedRounds || null) : null,
         writeSeconds: S.selectedGame === "game3" ? (S.selectedWriteSeconds || 60) : null,
-        language: (S.selectedGame === "game1" || S.selectedGame === "game2" || S.selectedGame === "game3" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9") ? (S.selectedLanguage || "yue") : S.selectedGame === "game10" ? "yue" : null,
+        language: S.selectedGame === "game11" ? "yue" : (S.selectedGame === "game1" || S.selectedGame === "game2" || S.selectedGame === "game3" || S.selectedGame === "game4" || S.selectedGame === "game5" || S.selectedGame === "game6" || S.selectedGame === "game7" || S.selectedGame === "game8" || S.selectedGame === "game9") ? (S.selectedLanguage || "yue") : S.selectedGame === "game10" ? "yue" : null,
+        g11TurnSeconds: S.selectedGame === "game11" ? S.g11TurnSeconds : null,
+        g11Assist: S.selectedGame === "game11" ? !!S.g11Assist : null,
         g1VoteSeconds: S.selectedGame === "game1" ? S.g1VoteSeconds : null,
         g1Rounds: S.selectedGame === "game1" ? S.g1Rounds : null,
         g2SpeakSeconds: S.selectedGame === "game2" ? S.g2SpeakSeconds : null,
@@ -1486,6 +1516,8 @@ function handleServerMessage(message) {
     applyGameTheme(message.room?.game);
     S.g6Key = null;
     S.g7Key = null;
+    S.g11Seen = null;
+    S.g11Sel = null;
 
     setConnectionStatus(
       "CONNECTED",
@@ -1543,6 +1575,20 @@ function handleServerMessage(message) {
     renderRoom();
     renderGame();
 
+    return;
+  }
+
+  // 宮廷密函：被提醒準備
+  if (message.type === "g11:nudged") {
+    g11ShowNudge(message);
+    return;
+  }
+  if (message.type === "g11:nudge-sent") {
+    g11Toast(`已經提醒咗 ${message.to}`);
+    return;
+  }
+  if (message.type === "g11:nudge-wait") {
+    g11Toast("啱啱先提醒過，等陣再試");
     return;
   }
 
@@ -1779,6 +1825,13 @@ function renderRoom() {
         ? g9LobbyHtml(room)
         : room.game === "game10" && room.g10Settings
         ? g10LobbyHtml(room)
+        : room.game === "game11" && room.g11Settings
+        ? `<p class="notice" style="margin:10px 0 0">
+            每次出牌 ${Math.round(room.g11Settings.turnMs / 1000)} 秒 ·
+            記牌輔助${room.g11Settings.assist ? "開" : "關"} ·
+            3 人局 5 枚好感、4 人局 4 枚 ·
+            香港版
+          </p>`
         : ""
     }
 
@@ -1880,7 +1933,7 @@ const connectedCount =
   connectedPlayers.length;
 
 const allReady =
-  connectedCount >= 2 &&
+  connectedCount >= (room.g11Settings ? room.g11Settings.minPlayers : 2) &&
   connectedPlayers
     .filter(
       (p) => !p.host
@@ -1944,7 +1997,7 @@ const canStart =
         room.players
           .filter((p) => p.connected)
           .length
-      }/6 人在線。
+      }/${room.g11Settings ? room.g11Settings.maxPlayers : 6} 人在線。
       ${lz("夠人就可以開始。", "人數足夠就可以開始。")}
     </p>
   `;
@@ -2024,9 +2077,13 @@ function renderScoreboard(room) {
           const g9Locked = !!(g9 && g9.phase === "guess" && (g9.lockedIds || []).includes(p.id));
           const g10 = room.game === "game10" && room.gameState && room.gameState.phase === "answer" ? room.gameState : null;
           const g10Locked = !!(g10 && (g10.lockedIds || []).includes(p.id));
+          const g11 = room.game === "game11" && room.gameState && room.gameState.phase === "turn" ? room.gameState : null;
+          const g11Out = !!(g11 && (g11.players || []).includes(p.id) && !(g11.alive || []).includes(p.id));
+          const g11Turn = !!(g11 && g11.currentId === p.id);
+          const g11Prot = !!(g11 && (g11.protected || []).includes(p.id));
 
           return `
-            <div class="sb-row ${isMe ? "me" : ""} ${g7Out || g8Out ? "g7-out" : ""} ${g7Turn || g8Turn || g9Psy ? "g7-turn" : ""}" style="opacity:${p.connected ? (g7Out || g8Out ? ".55" : "1") : ".5"}">
+            <div class="sb-row ${isMe ? "me" : ""} ${g7Out || g8Out || g11Out ? "g7-out" : ""} ${g7Turn || g8Turn || g9Psy || g11Turn ? "g7-turn" : ""}" style="opacity:${p.connected ? (g7Out || g8Out || g11Out ? ".55" : "1") : ".5"}">
               <span class="sb-rank">${index + 1}</span>
               <span class="sb-name">
                 ${
@@ -2044,6 +2101,9 @@ function renderScoreboard(room) {
                 ${g9Psy ? `<span class="sb-tag">${esc(g9T().tagPsy)}</span>` : ""}
                 ${g9Locked ? `<span class="sb-tag">${esc(g9T().tagLocked)}</span>` : ""}
                 ${g10Locked ? `<span class="sb-tag">${esc(G10_TYPE_META[g10.type]?.verb || "已作答")}</span>` : ""}
+                ${g11Out ? '<span class="sb-tag">出局</span>' : ""}
+                ${g11Turn ? '<span class="sb-tag">出牌中</span>' : ""}
+                ${g11Prot ? '<span class="sb-tag">受保護</span>' : ""}
               </span>
               <b class="sb-score">${p.score || 0}</b>
             </div>
@@ -2104,6 +2164,20 @@ function renderScoreboard(room) {
             onclick="g9EndEarly()"
           >
             ${esc(g9T().endEarly)}
+          </button>`
+        : ""
+    }
+
+    ${
+      S.room?.game === "game11" &&
+      room.hostId === S.playerId &&
+      room.gameState?.phase !== "gameover"
+        ? `<button
+            class="btn btn-outline"
+            style="margin-top:8px;font-size:13px;padding:10px"
+            onclick="g11EndEarly()"
+          >
+            提前結算
           </button>`
         : ""
     }
@@ -2225,6 +2299,8 @@ function renderGame() {
     renderGame9(game);
   } else if (S.room.game === "game10") {
     renderGame10(game);
+  } else if (S.room.game === "game11") {
+    renderGame11(game);
   } else {
     renderGame2(game);
   }
@@ -2233,7 +2309,7 @@ function renderGame() {
 
 // 所有遊戲結算畫面：房主「再來一場」；有多個模式嘅遊戲另外有「返回房間」改模式。
 // 原本已經有自己再玩掣嘅遊戲（2、6、7、8、9）唔再重複加「再來一場」。
-const MATCH_HAS_OWN_RESTART = ["game2", "game6", "game7", "game8", "game9", "game10"];
+const MATCH_HAS_OWN_RESTART = ["game2", "game6", "game7", "game8", "game9", "game10", "game11"];
 const MATCH_MULTI_MODE = ["game2", "game5", "game6", "game8"];
 
 function renderMatchEndBar(game) {
@@ -8542,9 +8618,12 @@ function g10ApplyRegion() {
   document.querySelectorAll("[data-region-only]").forEach((el) => {
     el.classList.toggle("hidden", !el.dataset.regionOnly.split(",").includes(S.region || "hk"));
   });
-  const opt = document.querySelector('#gameSelect option[value="game10"]');
-  if (opt) { opt.hidden = hide; opt.disabled = hide; }
-  if (hide && S.selectedGame === "game10") {
+  const shown = gamesForRegion();
+  Object.keys(REGION_ONLY_GAMES).forEach((g) => {
+    const opt = document.querySelector(`#gameSelect option[value="${g}"]`);
+    if (opt) { opt.hidden = !shown.includes(g); opt.disabled = !shown.includes(g); }
+  });
+  if (!shown.includes(S.selectedGame)) {
     S.selectedGame = "game1";
     const select = $("#gameSelect");
     if (select) select.value = "game1";

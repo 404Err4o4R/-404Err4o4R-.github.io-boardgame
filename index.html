@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <link
-    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Baloo+2:wght@700;800&family=Noto+Serif+HK:wght@700;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Baloo+2:wght@700;800&family=Cinzel:wght@700&family=Noto+Serif+TC:wght@700&family=Noto+Serif+HK:wght@700;900&display=swap"
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./style.css?v=43">
+  <link rel="stylesheet" href="./style.css?v=46">
 </head>
 
 <body>
@@ -167,6 +167,9 @@
 
               <option value="game10">
                 Price King 估價王
+              </option>
+              <option value="game11">
+                Royal Letter 宮廷密函
               </option>
 
             </select>
@@ -543,6 +546,19 @@
             <div id="g10Preview" class="g9-preview g10-preview" aria-live="polite"></div>
             <p class="notice" style="margin:6px 0 0">
               全部人同時估價，越接近真實價錢分越高，幾種題型輪流出。2–8 人，香港限定。
+            </p>
+          </div>
+
+
+          <div
+            id="g11Section"
+            class="hidden"
+          >
+            <p class="notice" style="margin:0">
+              每輪抽一張、出一張，用宮廷人物嘅能力淘汰對手，最後拎住最大嘅牌就贏。3–4 人，香港限定。
+            </p>
+            <p class="notice" style="margin:6px 0 0">
+              撳「建立房間」會打開開房設定，揀出牌時限同記牌輔助。
             </p>
           </div>
 
@@ -1133,6 +1149,46 @@
 
       </article>
 
+      <article class="game-card royal-card" data-region-only="hk">
+
+        <div class="sticker">
+          11
+        </div>
+
+        <div class="game-icon">
+          <svg width="60" height="44" viewBox="0 0 60 44" aria-hidden="true">
+            <rect x="6" y="8" width="48" height="32" rx="3" fill="#EFE4CC" stroke="#B8913E" stroke-width="2.5"/>
+            <path d="M6 10 L30 28 L54 10" fill="none" stroke="#B8913E" stroke-width="2.5" stroke-linejoin="round"/>
+            <circle cx="30" cy="28" r="8" fill="#7A2335"/>
+            <path d="M30 32 C26 29 26.5 26 28.5 26 C29.4 26 30 27 30 27.5 C30 27 30.6 26 31.5 26 C33.5 26 34 29 30 32 Z" fill="#D4B46A"/>
+          </svg>
+        </div>
+
+        <h3>
+          Royal<br>
+          Letter<br>
+          <span class="h3-sub">宮廷密函</span>
+        </h3>
+
+        <p>
+          每輪抽一張、出一張，用宮廷人物嘅能力淘汰對手；最後拎住最大嘅牌，就贏得公主好感。
+        </p>
+
+        <div class="tag-row">
+          <span>CARDS</span>
+          <span>HK ONLY</span>
+          <span>3–4</span>
+        </div>
+
+        <button
+          class="btn btn-dark"
+          data-start="game11"
+        >
+          PLAY THIS GAME
+        </button>
+
+      </article>
+
     </div>
 
   </section>
@@ -1271,11 +1327,12 @@
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./sounds.js?v=3" defer></script>
-<script src="./transition.js?v=2" defer></script>
+<script src="./sounds.js?v=5" defer></script>
+<script src="./transition.js?v=4" defer></script>
 <script src="./bgm.js?v=1" defer></script>
 <script src="./chat.js?v=7" defer></script>
-<script src="./app.js?v=64" defer></script>
+<script src="./app.js?v=67" defer></script>
+<script src="./rl-ui.js?v=3" defer></script>
 
 </body>
 </html>
