@@ -27592,21 +27592,21 @@ export const GAME1_QUESTIONS = [
     "question": "回覆好笑訊息你會？",
     "options": [
       "哈哈哈哈",
-      "Stickers"
+      "send stickers"
     ],
     "text": {
       "yue": {
         "question": "回覆好笑訊息你會？",
         "options": [
           "哈哈哈哈",
-          "Stickers"
+          "send stickers"
         ]
       },
       "zh": {
         "question": "回覆好笑的訊息你會？",
         "options": [
           "哈哈哈哈",
-          "Stickers"
+          "傳貼圖"
         ]
       }
     }
