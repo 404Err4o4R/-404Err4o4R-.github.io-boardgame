@@ -27591,22 +27591,22 @@ export const GAME1_QUESTIONS = [
     "type": "binary",
     "question": "回覆好笑訊息你會？",
     "options": [
-      "打哈哈哈哈",
-      "send 貼圖"
+      "哈哈哈哈",
+      "Stickers"
     ],
     "text": {
       "yue": {
         "question": "回覆好笑訊息你會？",
         "options": [
-          "打哈哈哈哈",
-          "send 貼圖"
+          "哈哈哈哈",
+          "Stickers"
         ]
       },
       "zh": {
         "question": "回覆好笑的訊息你會？",
         "options": [
-          "打哈哈哈哈",
-          "傳貼圖"
+          "哈哈哈哈",
+          "Stickers"
         ]
       }
     }
