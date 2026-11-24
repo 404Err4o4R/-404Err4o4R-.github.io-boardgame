@@ -26726,6 +26726,1332 @@ export const GAME1_QUESTIONS = [
         ]
       }
     }
+  },
+  {
+    "id": 1083,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "圓角定直角？",
+    "options": [
+      "圓角",
+      "直角"
+    ],
+    "text": {
+      "yue": {
+        "question": "圓角定直角？",
+        "options": [
+          "圓角",
+          "直角"
+        ]
+      },
+      "zh": {
+        "question": "圓角還是直角？",
+        "options": [
+          "圓角",
+          "直角"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1084,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "房間燈光你鍾意？",
+    "options": [
+      "暖黃光",
+      "白光"
+    ],
+    "text": {
+      "yue": {
+        "question": "房間燈光你鍾意？",
+        "options": [
+          "暖黃光",
+          "白光"
+        ]
+      },
+      "zh": {
+        "question": "房間燈光你喜歡？",
+        "options": [
+          "暖黃光",
+          "白光"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1085,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "屋企裝修你鍾意？",
+    "options": [
+      "極簡乾淨",
+      "擺滿心愛嘅嘢"
+    ],
+    "text": {
+      "yue": {
+        "question": "屋企裝修你鍾意？",
+        "options": [
+          "極簡乾淨",
+          "擺滿心愛嘅嘢"
+        ]
+      },
+      "zh": {
+        "question": "家裡裝潢你喜歡？",
+        "options": [
+          "極簡乾淨",
+          "擺滿喜歡的東西"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1086,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "字款你鍾意？",
+    "options": [
+      "圓碌碌",
+      "方方正正"
+    ],
+    "text": {
+      "yue": {
+        "question": "字款你鍾意？",
+        "options": [
+          "圓碌碌",
+          "方方正正"
+        ]
+      },
+      "zh": {
+        "question": "字型你喜歡？",
+        "options": [
+          "圓滾滾",
+          "方方正正"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1087,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "物件質感你揀？",
+    "options": [
+      "磨砂",
+      "亮面"
+    ],
+    "text": {
+      "yue": {
+        "question": "物件質感你揀？",
+        "options": [
+          "磨砂",
+          "亮面"
+        ]
+      },
+      "zh": {
+        "question": "物品質感你選？",
+        "options": [
+          "霧面",
+          "亮面"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1088,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "圖案你揀？",
+    "options": [
+      "間條",
+      "格仔"
+    ],
+    "text": {
+      "yue": {
+        "question": "圖案你揀？",
+        "options": [
+          "間條",
+          "格仔"
+        ]
+      },
+      "zh": {
+        "question": "花紋你選？",
+        "options": [
+          "條紋",
+          "格紋"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1089,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "風格你偏向？",
+    "options": [
+      "復古",
+      "未來感"
+    ],
+    "text": {
+      "yue": {
+        "question": "風格你偏向？",
+        "options": [
+          "復古",
+          "未來感"
+        ]
+      },
+      "zh": {
+        "question": "風格你偏好？",
+        "options": [
+          "復古",
+          "未來感"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1090,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "配色你鍾意？",
+    "options": [
+      "撞色",
+      "同色系"
+    ],
+    "text": {
+      "yue": {
+        "question": "配色你鍾意？",
+        "options": [
+          "撞色",
+          "同色系"
+        ]
+      },
+      "zh": {
+        "question": "配色你喜歡？",
+        "options": [
+          "撞色",
+          "同色系"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1091,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "飾物你揀？",
+    "options": [
+      "金色",
+      "銀色"
+    ],
+    "text": {
+      "yue": {
+        "question": "飾物你揀？",
+        "options": [
+          "金色",
+          "銀色"
+        ]
+      },
+      "zh": {
+        "question": "飾品你選？",
+        "options": [
+          "金色",
+          "銀色"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1092,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "你啲嘢多數係？",
+    "options": [
+      "可愛風",
+      "型格風"
+    ],
+    "text": {
+      "yue": {
+        "question": "你啲嘢多數係？",
+        "options": [
+          "可愛風",
+          "型格風"
+        ]
+      },
+      "zh": {
+        "question": "你的東西大多是？",
+        "options": [
+          "可愛風",
+          "帥氣風"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1093,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "擺設你鍾意？",
+    "options": [
+      "左右對稱",
+      "隨意錯落"
+    ],
+    "text": {
+      "yue": {
+        "question": "擺設你鍾意？",
+        "options": [
+          "左右對稱",
+          "隨意錯落"
+        ]
+      },
+      "zh": {
+        "question": "擺設你喜歡？",
+        "options": [
+          "左右對稱",
+          "隨意錯落"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1094,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "相片濾鏡你揀？",
+    "options": [
+      "暖色調",
+      "冷色調"
+    ],
+    "text": {
+      "yue": {
+        "question": "相片濾鏡你揀？",
+        "options": [
+          "暖色調",
+          "冷色調"
+        ]
+      },
+      "zh": {
+        "question": "照片濾鏡你選？",
+        "options": [
+          "暖色調",
+          "冷色調"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1095,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "屋企窗外你想見到？",
+    "options": [
+      "海景",
+      "城市夜景"
+    ],
+    "text": {
+      "yue": {
+        "question": "屋企窗外你想見到？",
+        "options": [
+          "海景",
+          "城市夜景"
+        ]
+      },
+      "zh": {
+        "question": "家裡窗外你想看到？",
+        "options": [
+          "海景",
+          "城市夜景"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1096,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "屋企啲牆你想要？",
+    "options": [
+      "白色",
+      "有顏色"
+    ],
+    "text": {
+      "yue": {
+        "question": "屋企啲牆你想要？",
+        "options": [
+          "白色",
+          "有顏色"
+        ]
+      },
+      "zh": {
+        "question": "家裡的牆你想要？",
+        "options": [
+          "白色",
+          "有顏色"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1097,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "包裝靚會影響你買唔買？",
+    "options": [
+      "會",
+      "唔會"
+    ],
+    "text": {
+      "yue": {
+        "question": "包裝靚會影響你買唔買？",
+        "options": [
+          "會",
+          "唔會"
+        ]
+      },
+      "zh": {
+        "question": "漂亮包裝會影響你買不買嗎？",
+        "options": [
+          "會",
+          "不會"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1098,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "揀餐廳你會揀？",
+    "options": [
+      "裝修靚",
+      "好食但殘殘舊舊"
+    ],
+    "text": {
+      "yue": {
+        "question": "揀餐廳你會揀？",
+        "options": [
+          "裝修靚",
+          "好食但殘殘舊舊"
+        ]
+      },
+      "zh": {
+        "question": "選餐廳你會選？",
+        "options": [
+          "裝潢漂亮",
+          "好吃但老舊"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1099,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "傢俬你鍾意？",
+    "options": [
+      "木系溫暖風",
+      "金屬工業風"
+    ],
+    "text": {
+      "yue": {
+        "question": "傢俬你鍾意？",
+        "options": [
+          "木系溫暖風",
+          "金屬工業風"
+        ]
+      },
+      "zh": {
+        "question": "家具你喜歡？",
+        "options": [
+          "木頭溫暖風",
+          "金屬工業風"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1100,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "顏色你偏好？",
+    "options": [
+      "低調莫蘭迪色",
+      "鮮艷亮色"
+    ],
+    "text": {
+      "yue": {
+        "question": "顏色你偏好？",
+        "options": [
+          "低調莫蘭迪色",
+          "鮮艷亮色"
+        ]
+      },
+      "zh": {
+        "question": "顏色你偏好？",
+        "options": [
+          "低飽和莫蘭迪色",
+          "高飽和亮色"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1101,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "簽名你會？",
+    "options": [
+      "練過嘅花式簽名",
+      "寫返個名就算"
+    ],
+    "text": {
+      "yue": {
+        "question": "簽名你會？",
+        "options": [
+          "練過嘅花式簽名",
+          "寫返個名就算"
+        ]
+      },
+      "zh": {
+        "question": "簽名你會？",
+        "options": [
+          "練過的花式簽名",
+          "寫名字就好"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1102,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "送禮你會？",
+    "options": [
+      "自己包裝",
+      "用舖頭包裝"
+    ],
+    "text": {
+      "yue": {
+        "question": "送禮你會？",
+        "options": [
+          "自己包裝",
+          "用舖頭包裝"
+        ]
+      },
+      "zh": {
+        "question": "送禮你會？",
+        "options": [
+          "親手包裝",
+          "用店家包裝"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1103,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "影相構圖你會？",
+    "options": [
+      "主角擺正中",
+      "擺喺一邊"
+    ],
+    "text": {
+      "yue": {
+        "question": "影相構圖你會？",
+        "options": [
+          "主角擺正中",
+          "擺喺一邊"
+        ]
+      },
+      "zh": {
+        "question": "拍照構圖你會？",
+        "options": [
+          "主角置中",
+          "放在一邊"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1104,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "衫你鍾意？",
+    "options": [
+      "大大個 logo",
+      "完全冇 logo"
+    ],
+    "text": {
+      "yue": {
+        "question": "衫你鍾意？",
+        "options": [
+          "大大個 logo",
+          "完全冇 logo"
+        ]
+      },
+      "zh": {
+        "question": "衣服你喜歡？",
+        "options": [
+          "大大的 logo",
+          "完全沒 logo"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1105,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "衫褲你鍾意？",
+    "options": [
+      "Oversize",
+      "貼身"
+    ],
+    "text": {
+      "yue": {
+        "question": "衫褲你鍾意？",
+        "options": [
+          "Oversize",
+          "貼身"
+        ]
+      },
+      "zh": {
+        "question": "衣服版型你喜歡？",
+        "options": [
+          "寬鬆",
+          "合身"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1106,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "房間你想擺滿？",
+    "options": [
+      "植物",
+      "公仔模型"
+    ],
+    "text": {
+      "yue": {
+        "question": "房間你想擺滿？",
+        "options": [
+          "植物",
+          "公仔模型"
+        ]
+      },
+      "zh": {
+        "question": "房間你想擺滿？",
+        "options": [
+          "植物",
+          "公仔模型"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1107,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "牆上面你會掛？",
+    "options": [
+      "海報",
+      "自己啲相"
+    ],
+    "text": {
+      "yue": {
+        "question": "牆上面你會掛？",
+        "options": [
+          "海報",
+          "自己啲相"
+        ]
+      },
+      "zh": {
+        "question": "牆上你會掛？",
+        "options": [
+          "海報",
+          "自己的照片"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1108,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "飲嘢你揀？",
+    "options": [
+      "透明玻璃杯",
+      "陶瓷杯"
+    ],
+    "text": {
+      "yue": {
+        "question": "飲嘢你揀？",
+        "options": [
+          "透明玻璃杯",
+          "陶瓷杯"
+        ]
+      },
+      "zh": {
+        "question": "喝東西你選？",
+        "options": [
+          "透明玻璃杯",
+          "陶瓷杯"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1109,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "手錶你揀？",
+    "options": [
+      "指針",
+      "數字"
+    ],
+    "text": {
+      "yue": {
+        "question": "手錶你揀？",
+        "options": [
+          "指針",
+          "數字"
+        ]
+      },
+      "zh": {
+        "question": "手錶你選？",
+        "options": [
+          "指針錶",
+          "數字錶"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1110,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "筆記簿你揀？",
+    "options": [
+      "有橫線",
+      "全白紙"
+    ],
+    "text": {
+      "yue": {
+        "question": "筆記簿你揀？",
+        "options": [
+          "有橫線",
+          "全白紙"
+        ]
+      },
+      "zh": {
+        "question": "筆記本你選？",
+        "options": [
+          "有橫線",
+          "全白紙"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1111,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "海報設計你鍾意？",
+    "options": [
+      "大量留白",
+      "資訊塞滿"
+    ],
+    "text": {
+      "yue": {
+        "question": "海報設計你鍾意？",
+        "options": [
+          "大量留白",
+          "資訊塞滿"
+        ]
+      },
+      "zh": {
+        "question": "海報設計你喜歡？",
+        "options": [
+          "大量留白",
+          "資訊滿滿"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1112,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "襪你揀？",
+    "options": [
+      "淨色",
+      "有圖案"
+    ],
+    "text": {
+      "yue": {
+        "question": "襪你揀？",
+        "options": [
+          "淨色",
+          "有圖案"
+        ]
+      },
+      "zh": {
+        "question": "襪子你選？",
+        "options": [
+          "素色",
+          "有圖案"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1113,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "頭髮你會？",
+    "options": [
+      "保持天然色",
+      "染色"
+    ],
+    "text": {
+      "yue": {
+        "question": "頭髮你會？",
+        "options": [
+          "保持天然色",
+          "染色"
+        ]
+      },
+      "zh": {
+        "question": "頭髮你會？",
+        "options": [
+          "維持天然髮色",
+          "染色"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1114,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "公仔畫風你鍾意？",
+    "options": [
+      "寫實",
+      "Q 版"
+    ],
+    "text": {
+      "yue": {
+        "question": "公仔畫風你鍾意？",
+        "options": [
+          "寫實",
+          "Q 版"
+        ]
+      },
+      "zh": {
+        "question": "角色畫風你喜歡？",
+        "options": [
+          "寫實",
+          "Q 版"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1115,
+    "category": "個人愛好題",
+    "type": "binary",
+    "question": "建築你覺得邊種靚？",
+    "options": [
+      "舊式唐樓",
+      "玻璃幕牆大廈"
+    ],
+    "text": {
+      "yue": {
+        "question": "建築你覺得邊種靚？",
+        "options": [
+          "舊式唐樓",
+          "玻璃幕牆大廈"
+        ]
+      },
+      "zh": {
+        "question": "建築你覺得哪種好看？",
+        "options": [
+          "老房子",
+          "玻璃帷幕大樓"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1116,
+    "category": "社交題",
+    "type": "binary",
+    "question": "回覆好笑訊息你會？",
+    "options": [
+      "打哈哈哈哈",
+      "send 貼圖"
+    ],
+    "text": {
+      "yue": {
+        "question": "回覆好笑訊息你會？",
+        "options": [
+          "打哈哈哈哈",
+          "send 貼圖"
+        ]
+      },
+      "zh": {
+        "question": "回覆好笑的訊息你會？",
+        "options": [
+          "打哈哈哈哈",
+          "傳貼圖"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1117,
+    "category": "生活習慣題",
+    "type": "binary",
+    "question": "訊息打錯字 send 咗出去，你會？",
+    "options": [
+      "即刻編輯",
+      "由佢啦"
+    ],
+    "text": {
+      "yue": {
+        "question": "訊息打錯字 send 咗出去，你會？",
+        "options": [
+          "即刻編輯",
+          "由佢啦"
+        ]
+      },
+      "zh": {
+        "question": "訊息打錯字送出了，你會？",
+        "options": [
+          "立刻編輯",
+          "算了不管"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1118,
+    "category": "社交題",
+    "type": "binary",
+    "question": "訊息 send 錯人，你會？",
+    "options": [
+      "即刻收回",
+      "將錯就錯解釋"
+    ],
+    "text": {
+      "yue": {
+        "question": "訊息 send 錯人，你會？",
+        "options": [
+          "即刻收回",
+          "將錯就錯解釋"
+        ]
+      },
+      "zh": {
+        "question": "訊息傳錯人，你會？",
+        "options": [
+          "立刻收回",
+          "將錯就錯解釋"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1119,
+    "category": "社交題",
+    "type": "binary",
+    "question": "出咗個 post 冇人 like，你會？",
+    "options": [
+      "刪咗佢",
+      "由佢放喺度"
+    ],
+    "text": {
+      "yue": {
+        "question": "出咗個 post 冇人 like，你會？",
+        "options": [
+          "刪咗佢",
+          "由佢放喺度"
+        ]
+      },
+      "zh": {
+        "question": "貼文沒人按讚，你會？",
+        "options": [
+          "刪掉",
+          "放著不管"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1120,
+    "category": "社交題",
+    "type": "binary",
+    "question": "朋友 tag 你一張好醜嘅相，你會？",
+    "options": [
+      "叫佢刪",
+      "照 like"
+    ],
+    "text": {
+      "yue": {
+        "question": "朋友 tag 你一張好醜嘅相，你會？",
+        "options": [
+          "叫佢刪",
+          "照 like"
+        ]
+      },
+      "zh": {
+        "question": "朋友標註你一張很醜的照片，你會？",
+        "options": [
+          "叫他刪掉",
+          "照樣按讚"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1121,
+    "category": "生活習慣題",
+    "type": "binary",
+    "question": "覆訊息你多數？",
+    "options": [
+      "打字",
+      "錄語音"
+    ],
+    "text": {
+      "yue": {
+        "question": "覆訊息你多數？",
+        "options": [
+          "打字",
+          "錄語音"
+        ]
+      },
+      "zh": {
+        "question": "回訊息你通常？",
+        "options": [
+          "打字",
+          "錄語音"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1122,
+    "category": "生活習慣題",
+    "type": "binary",
+    "question": "睇片你會睇埋留言嗎？",
+    "options": [
+      "一定睇留言",
+      "淨係睇片"
+    ],
+    "text": {
+      "yue": {
+        "question": "睇片你會睇埋留言嗎？",
+        "options": [
+          "一定睇留言",
+          "淨係睇片"
+        ]
+      },
+      "zh": {
+        "question": "看影片你會看留言嗎？",
+        "options": [
+          "一定看留言",
+          "只看影片"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1123,
+    "category": "社交題",
+    "type": "binary",
+    "question": "見到網上有人講錯嘢，你會？",
+    "options": [
+      "留言糾正",
+      "碌走佢"
+    ],
+    "text": {
+      "yue": {
+        "question": "見到網上有人講錯嘢，你會？",
+        "options": [
+          "留言糾正",
+          "碌走佢"
+        ]
+      },
+      "zh": {
+        "question": "看到網路上有人說錯，你會？",
+        "options": [
+          "留言糾正",
+          "直接滑走"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1124,
+    "category": "生活習慣題",
+    "type": "binary",
+    "question": "碌到自己幾年前嘅 post，你會？",
+    "options": [
+      "刪晒佢",
+      "留住當回憶"
+    ],
+    "text": {
+      "yue": {
+        "question": "碌到自己幾年前嘅 post，你會？",
+        "options": [
+          "刪晒佢",
+          "留住當回憶"
+        ]
+      },
+      "zh": {
+        "question": "滑到自己幾年前的貼文，你會？",
+        "options": [
+          "全部刪掉",
+          "留著當回憶"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1125,
+    "category": "社交題",
+    "type": "binary",
+    "question": "有急事搵人，你會？",
+    "options": [
+      "直接打電話",
+      "send 訊息先"
+    ],
+    "text": {
+      "yue": {
+        "question": "有急事搵人，你會？",
+        "options": [
+          "直接打電話",
+          "send 訊息先"
+        ]
+      },
+      "zh": {
+        "question": "有急事找人，你會？",
+        "options": [
+          "直接打電話",
+          "先傳訊息"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1126,
+    "category": "社交題",
+    "type": "binary",
+    "question": "你會唔會 cap 對話畀第三個人睇？",
+    "options": [
+      "會",
+      "唔會"
+    ],
+    "text": {
+      "yue": {
+        "question": "你會唔會 cap 對話畀第三個人睇？",
+        "options": [
+          "會",
+          "唔會"
+        ]
+      },
+      "zh": {
+        "question": "你會把聊天截圖傳給別人看嗎？",
+        "options": [
+          "會",
+          "不會"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1127,
+    "category": "生活習慣題",
+    "type": "binary",
+    "question": "手機話你今個禮拜用多咗，你會？",
+    "options": [
+      "反省吓",
+      "直接 skip 咗佢"
+    ],
+    "text": {
+      "yue": {
+        "question": "手機話你今個禮拜用多咗，你會？",
+        "options": [
+          "反省吓",
+          "直接 skip 咗佢"
+        ]
+      },
+      "zh": {
+        "question": "手機顯示這週使用時間增加了，你會？",
+        "options": [
+          "反省一下",
+          "直接滑掉"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1128,
+    "category": "社交題",
+    "type": "binary",
+    "question": "朋友 send 長文同你訴苦，你會？",
+    "options": [
+      "覆返篇長文",
+      "直接打電話畀佢"
+    ],
+    "text": {
+      "yue": {
+        "question": "朋友 send 長文同你訴苦，你會？",
+        "options": [
+          "覆返篇長文",
+          "直接打電話畀佢"
+        ]
+      },
+      "zh": {
+        "question": "朋友傳長文向你訴苦，你會？",
+        "options": [
+          "回一篇長文",
+          "直接打電話給他"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1129,
+    "category": "社交題",
+    "type": "binary",
+    "question": "抽獎要 tag 三個朋友，你會？",
+    "options": [
+      "照 tag",
+      "唔參加"
+    ],
+    "text": {
+      "yue": {
+        "question": "抽獎要 tag 三個朋友，你會？",
+        "options": [
+          "照 tag",
+          "唔參加"
+        ]
+      },
+      "zh": {
+        "question": "抽獎要標註三位朋友，你會？",
+        "options": [
+          "照標",
+          "不參加"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1130,
+    "category": "生活習慣題",
+    "type": "binary",
+    "question": "半夜收到工作訊息，你會？",
+    "options": [
+      "即刻覆",
+      "聽日先算"
+    ],
+    "text": {
+      "yue": {
+        "question": "半夜收到工作訊息，你會？",
+        "options": [
+          "即刻覆",
+          "聽日先算"
+        ]
+      },
+      "zh": {
+        "question": "半夜收到工作訊息，你會？",
+        "options": [
+          "馬上回",
+          "明天再說"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1131,
+    "category": "社交題",
+    "type": "binary",
+    "question": "朋友借你部手機打電話，你會？",
+    "options": [
+      "直接畀佢",
+      "企喺隔籬睇住"
+    ],
+    "text": {
+      "yue": {
+        "question": "朋友借你部手機打電話，你會？",
+        "options": [
+          "直接畀佢",
+          "企喺隔籬睇住"
+        ]
+      },
+      "zh": {
+        "question": "朋友借你手機打電話，你會？",
+        "options": [
+          "直接給他",
+          "在旁邊盯著"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1132,
+    "category": "社交題",
+    "type": "binary",
+    "question": "朋友 send 條片畀你，你會？",
+    "options": [
+      "睇完先覆",
+      "未睇就覆"
+    ],
+    "text": {
+      "yue": {
+        "question": "朋友 send 條片畀你，你會？",
+        "options": [
+          "睇完先覆",
+          "未睇就覆"
+        ]
+      },
+      "zh": {
+        "question": "朋友傳影片給你，你會？",
+        "options": [
+          "看完才回",
+          "還沒看就回"
+        ]
+      }
+    }
+  },
+  {
+    "id": 1133,
+    "category": "社交題",
+    "type": "binary",
+    "question": "朋友生日你會？",
+    "options": [
+      "私訊祝佢",
+      "出 story tag 佢"
+    ],
+    "text": {
+      "yue": {
+        "question": "朋友生日你會？",
+        "options": [
+          "私訊祝佢",
+          "出 story tag 佢"
+        ]
+      },
+      "zh": {
+        "question": "朋友生日你會？",
+        "options": [
+          "私訊祝福",
+          "發限動標註他"
+        ]
+      }
+    }
   }
 ];
 
